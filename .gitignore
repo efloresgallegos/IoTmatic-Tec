@@ -1,0 +1,14 @@
+# Dependencias
+Iot-front/node_modules/
+Iot-post/node_modules/
+
+# Archivos de entorno
+.env
+.env.local
+
+# Logs
+*.log
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db

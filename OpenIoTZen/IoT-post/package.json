@@ -1,0 +1,26 @@
+{
+  "name": "iot-post",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon ./src/index.js"
+  },
+  "keywords": [],
+  "author": "Angel Isaac Fonseca Gómez",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@huggingface/transformers": "^3.2.0",
+    "bcrypt": "^5.1.1",
+    "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "openai": "^4.77.0",
+    "pg": "^8.13.1",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.37.5"
+  }
+}
