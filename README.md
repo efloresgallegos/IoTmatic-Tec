@@ -88,7 +88,7 @@ Crea un archivo `.env` en las carpetas de **backend** y **frontend** y configura
 
 1. **Clonar el Repositorio**
    ```bash
-   git clone <URL-del-repositorio>
+   git clone https://github.com/efloresgallegos/IoTmatic-Tec
    ```
 
 2. **Ir al Directorio del Frontend**
@@ -172,9 +172,5 @@ Crea un archivo `.env` en las carpetas de **backend** y **frontend** y configura
 
 5. **Crea un Pull Request (PR)**: Ve al repositorio en GitHub y abre un PR explicando tus cambios.
 
-<<<<<<< HEAD
----
-=======
 ---
 
->>>>>>> 826ea184b32fb16dd574750014afb05b5909b6ca
