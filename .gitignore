@@ -1,6 +1,6 @@
 # Dependencias
-Iot-front/node_modules/
-Iot-post/node_modules/
+OpenIoTZen/Iot-front/node_modules/
+OpenIoTZen/Iot-post/node_modules/
 
 # Archivos de entorno
 .env
@@ -8,6 +8,11 @@ Iot-post/node_modules/
 
 # Logs
 *.log
+
+# Generacion de tablas y jsons
+OpenIoTZen/Iot-post/models/data/*
+!OpenIoTZen/Iot-post/models/data/index.js
+OpenIoTZen/Iot-post/jsons/*
 
 # Archivos del sistema
 .DS_Store

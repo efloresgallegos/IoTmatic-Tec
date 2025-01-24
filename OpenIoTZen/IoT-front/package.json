@@ -15,12 +15,16 @@
     "postinstall": "quasar prepare"
   },
   "dependencies": {
+    "@capacitor/android": "^7.0.1",
+    "@capacitor/cli": "^7.0.1",
+    "@capacitor/core": "^7.0.1",
     "@centrogeomx/sisdai-componentes": "^4.12.5",
-    "@centrogeomx/sisdai-css": "^1.7.4",
+    "@centrogeomx/sisdai-css": "github:CentroGeo/sisdai-css",
     "@centrogeomx/sisdai-graficas": "^6.4.5",
     "@quasar/extras": "^1.16.4",
     "axios": "^1.2.1",
     "jsoneditor": "^10.1.2",
+    "moment": "^2.30.1",
     "pinia": "^2.0.11",
     "quasar": "^2.16.0",
     "vue": "^3.4.18",

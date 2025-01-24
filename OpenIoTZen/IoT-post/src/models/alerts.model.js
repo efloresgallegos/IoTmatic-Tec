@@ -4,6 +4,11 @@ import Device from "./devices.model.js";
 import Model from "./models.model.js";
 
 const Alert = sequelize.define('alert', {
+    alert_id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
+    },
     device_id: {
         type: DataTypes.INTEGER,
         references: {

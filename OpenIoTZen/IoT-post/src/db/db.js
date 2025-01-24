@@ -1,7 +1,6 @@
 import pkg from 'pg';
 const { Client } = pkg;
-import {dbName, dbUser, dbPassword, dbHost, dbPort} from './database.js';
-
+import { dbName, dbUser, dbPassword, dbHost, dbPort } from './database.js';
 
 const createDatabaseAndTables = async () => {
     const client = new Client({

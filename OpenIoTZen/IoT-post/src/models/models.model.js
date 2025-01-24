@@ -1,16 +1,17 @@
-import { DataTypes } from "sequelize";
-import { sequelize } from "../db/database.js";
+import { DataTypes } from 'sequelize';
+import { sequelize } from '../db/database.js';
 
-const Model = sequelize.define('model', {
+// En tu modelo de Sequelize
+const Model = sequelize.define('models', {
     model_id: {
         type: DataTypes.INTEGER,
-        autoIncrement: true,
-        primaryKey: true
+        primaryKey: true,
+        autoIncrement: true
     },
-    name: {
-        type: DataTypes.STRING(100),
+    modelname: {
+        type: DataTypes.STRING,
         allowNull: false
-    },
+    }
 }, {
     tableName: 'models',
     timestamps: false

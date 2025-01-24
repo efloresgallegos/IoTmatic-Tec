@@ -4,6 +4,11 @@ import Device from "./devices.model.js";
 import Model from "./models.model.js";
 
 const DeviceModel = sequelize.define("deviceModels", {
+    deviceModel_id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
+    },
     device_id: {
         type: DataTypes.INTEGER,
         allowNull: false,

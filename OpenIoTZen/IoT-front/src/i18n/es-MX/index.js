@@ -9,6 +9,8 @@ export default {
     logout: 'Cerrar sesión',
     toggleSidebar: 'Alternar barra lateral',
     logo: 'Logo',
+    about: 'Acerca de',
+    users: 'Usuarios',
   },
   views: {
     home: {
@@ -75,14 +77,31 @@ export default {
       previewTitle: 'Vista Previa del Modelo',
       errorModelNameRequired: 'El nombre del modelo es obligatorio.',
       successModelGenerated: 'Modelo generado con éxito.',
-      aiPromptTitle: 'Describe los cambios que deseas realizar',
-      aiPromptPlaceholder: 'Describe los cambios que deseas realizar...',
-      aiSubmitButton: 'Enviar cambios',
-      aiChangesTitle: 'Cambios Generados',
-      aiChangesDescription: 'A continuación se muestran los cambios propuestos por la IA.',
-      applyChangesButton: 'Aplicar cambios',
-      errorPromptRequired: 'Por favor ingresa un prompt.',
-      errorProcessingPrompt: 'Hubo un error al procesar el prompt.',
+      AIInteraction: {
+        aiPromptTitle: 'Describe los cambios que deseas realizar',
+        aiPromptPlaceholder: 'Describe los cambios que deseas realizar...',
+        aiSubmitButton: 'Enviar cambios',
+        aiChangesTitle: 'Cambios Generados',
+        aiChangesDescription: 'A continuación se muestran los cambios propuestos por la IA.',
+        applyChangesButton: 'Aplicar cambios',
+        errorPromptRequired: 'Por favor ingresa un prompt.',
+        errorProcessingPrompt: 'Hubo un error al procesar el prompt.',
+      }
+    },
+    users: {
+      title: 'Añadir Usuario',
+      name: 'Nombre',
+      username: 'Nombre de Usuario',
+      password: 'Contraseña',
+      saveButton: 'Guardar',
+      existingUsers: 'Usuarios Existentes',
+      table: {
+        name: 'Nombre',
+        username: 'Usuario',
+        actions: 'Acciones',
+        edit: 'Editar',
+        delete: 'Eliminar',
+      }
     },
     login: {
       welcome: 'Bienvenido a OpenIoTZen',

@@ -73,20 +73,33 @@
     text-align: center;
     margin-top: 1rem;
   }
-  
+  @media (max-width: 767px) {
+    .footer-title {
+      font-size: 1.4rem;
+      margin-bottom: 0.2rem; /* reduced from 0.5rem */
+    }
+    
+    .footer-year {
+      font-size: 0.8rem;
+    }
+  }
+
   @media (min-width: 768px) {
     .footer-container {
       flex-direction: row;
       justify-content: space-between;
       align-items: center;
+      padding: 0.5rem 0; /* added padding to reduce vertical space */
     }
-  
+
     .footer-content {
       text-align: left;
+      margin-bottom: 0; /* removed bottom margin */
     }
-  
+
     .footer-bottom {
       text-align: right;
+      margin-top: 0; /* reduced from 1rem */
     }
   }
   </style>

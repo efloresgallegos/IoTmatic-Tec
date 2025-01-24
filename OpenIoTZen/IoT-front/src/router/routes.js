@@ -5,7 +5,9 @@ const routes = [
     children: [
       { path: '', component: () => import('../pages/IndexPage.vue') },
       { path: 'devices', component: () => import('../pages/DevicesView.vue') },
-      { path: 'modelGenerator', component: () => import('../pages/ModelCreatorView.vue') }
+      { path: 'modelGenerator', component: () => import('../pages/ModelCreatorView.vue') },
+      { path: 'settings', component: () => import('../pages/UserConfiguration.vue') },
+      { path: 'about', component: () => import('../pages/AboutUs.vue') },
     ]
   },
   {

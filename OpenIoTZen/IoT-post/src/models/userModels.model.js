@@ -4,6 +4,11 @@ import User from "./users.model.js";
 import Model from "./models.model.js";
 
 const UserModels = sequelize.define('userModels', {
+    userModels_id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
+    },
     user_id: {
         type: DataTypes.INTEGER,
         allowNull: false

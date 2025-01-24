@@ -1,3 +1,4 @@
+
 export default {
   failed: 'Action failed',
   success: 'Action was successful',
@@ -9,6 +10,8 @@ export default {
     logout: 'Logout',
     toggleSidebar: 'Toggle sidebar',
     logo: 'Logo',
+    about: 'About',
+    users: 'Users',
   },
   views: {
     home: {
@@ -75,14 +78,31 @@ export default {
       previewTitle: 'Model Preview',
       errorModelNameRequired: 'Model name is required.',
       successModelGenerated: 'Model generated successfully.',
-      aiPromptTitle: 'Describe the changes you want to make',
-      aiPromptPlaceholder: 'Describe the changes you want to make...',
-      aiSubmitButton: 'Submit Changes',
-      aiChangesTitle: 'Generated Changes',
-      aiChangesDescription: 'Below are the changes proposed by the AI.',
-      applyChangesButton: 'Apply Changes',
-      errorPromptRequired: 'Please enter a prompt.',
-      errorProcessingPrompt: 'There was an error processing the prompt.',
+      AIInteraction: {
+        aiPromptTitle: 'Describe the changes you want to make',
+        aiPromptPlaceholder: 'Describe the changes you want to make...',
+        aiSubmitButton: 'Submit Changes',
+        aiChangesTitle: 'Generated Changes',
+        aiChangesDescription: 'Below are the changes proposed by the AI.',
+        applyChangesButton: 'Apply Changes',
+        errorPromptRequired: 'Please enter a prompt.',
+        errorProcessingPrompt: 'There was an error processing the prompt.',
+      }
+    },
+    users: {
+      title: 'Add User',
+      name: 'Name',
+      username: 'Username',
+      password: 'Password',
+      saveButton: 'Add User',
+      existingUsers: 'Existing Users',
+      table: {
+        name: 'Name',
+        username: 'Username',
+        actions: 'Actions',
+        edit: 'Edit',
+        delete: 'Delete',
+      }
     },
     login: {
       welcome: 'Welcome to OpenIoTZen',

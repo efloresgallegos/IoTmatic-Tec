@@ -1,63 +1,58 @@
-import User from "../models/users.model.js";
+import usersService from "../services/users.service.js";
 
 const createUser = async (req, res) => {
     const { name, username, password } = req.body;
-
     try {
-        const user = await User.create({ name, username, password });
+        const user = await usersService.createUser({ name, username, password });
         res.status(201).json(user);
-    } catch (error) {
-        res.status(400).json({ error: error.message });
+    }
+    catch (error) {
+        res.status(400).send(error.message);
     }
 };
 
 const getUsers = async (req, res) => {
     try {
-        const users = await User.findAll();
-        res.json(users);
-    } catch (error) {
-        res.status(400).json({ error: error.message });
+        const users = await usersService.getUsers();
+        res.status(200).json(users);
     }
-};
+    catch (error) {
+        res.status(400).send(error.message);
+    }
+}
 
-const getUserbyId = async (req, res) => {
+const getUserById = async (req, res) => {
     const { id } = req.params;
-
     try {
-        const user = await User.findByPk(id);
-        res.json(user);
-    } catch (error) {
-        res.status(400).json({ error: error.message });
+        const user = await usersService.getUserById(id);
+        res.status(200).json(user);
+    }
+    catch (error) {
+        res.status(400).send(error.message);
     }
 };
 
 const updateUser = async (req, res) => {
     const { id } = req.params;
     const { name, username, password } = req.body;
-
     try {
-        const user = await User.findByPk(id);
-        user.name = name;
-        user.username = username;
-        user.password = password;
-        await user.save();
-        res.json(user);
-    } catch (error) {
-        res.status(400).json({ error: error.message });
+        const user = await usersService.updateUser(id, { name, username, password });
+        res.status(200).json(user);
     }
-};
+    catch (error) {
+        res.status(400).send(error.message);
+    }
+}
 
 const deleteUser = async (req, res) => {
     const { id } = req.params;
-
     try {
-        const user = await User.findByPk(id);
-        await user.destroy();
-        res.json({ message: 'User deleted' });
-    } catch (error) {
-        res.status(400).json({ error: error.message });
+        await usersService.deleteUser(id);
+        res.status(204).send();
     }
-};
+    catch (error) {
+        res.status(400).send(error.message);
+    }
+}
 
-export default { createUser, getUsers, getUserbyId, updateUser, deleteUser };
-
+export default { createUser, getUsers, getUserById, updateUser, deleteUser };

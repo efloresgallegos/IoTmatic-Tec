@@ -4,6 +4,11 @@ import Alert from "./alerts.model.js";
 import User from "./users.model.js";
 
 const UserAlert = sequelize.define("userAlerts", {
+    userAlert_id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
+    },
     user_id: {
         type: DataTypes.INTEGER,
         allowNull: false,

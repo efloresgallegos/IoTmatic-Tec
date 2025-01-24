@@ -25,7 +25,8 @@ const systemPrompt = `You are a developer assistant. You generate Sequelize mode
             "required": false
         }
     ]
-}`;
+}
+    Try to separate the response in a JSON format divided in 2 properties, "text" and "Json".`;
 
 const api = new OpenAI({
   apiKey,

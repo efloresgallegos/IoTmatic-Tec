@@ -1,8 +1,11 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import {sequelize} from './db/database.js';
+import { sequelize } from './db/database.js';
 import db from './db/db.js';
+import { WebSocketServer } from 'ws';  // Importar ws para WebSockets
+import { setupWebSocketServer } from './WebSockets/webSocket.server.js'; // Asegúrate de tener esta función para manejar los WebSockets
+
 import usersRoutes from './routes/users.routes.js';
 import devicesRoutes from './routes/devices.routes.js';
 import modelsRoutes from './routes/models.routes.js';
@@ -16,6 +19,7 @@ import deviceModelsRoutes from './routes/deviceModels.routes.js';
 import typesRoutes from './routes/types.routes.js';
 import generatorRoutes from './routes/generator.routes.js';
 import aiRoutes from './routes/ai.routes.js';
+import dataRoutes from './routes/data.routes.js';
 
 const app = express();
 
@@ -42,7 +46,8 @@ const routes = [
   { path: '/device-models', route: deviceModelsRoutes },
   { path: '/types', route: typesRoutes },
   { path: '/generator', route: generatorRoutes },
-  { path: '/ai', route: aiRoutes}
+  { path: '/ai', route: aiRoutes},
+  { path: '/data', route: dataRoutes}
 ];
 
 routes.forEach((route) => {
@@ -61,17 +66,21 @@ app.use((err, req, res, next) => {
 });
 
 // Inicializar servidor
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, async () => {
-  console.log(`Servidor corriendo en el puerto ${PORT}`);
+const server = app.listen(process.env.PORT || 3000, async () => {
+  console.log(`Servidor corriendo en el puerto ${process.env.PORT || 3000}`);
   try {
     await db.createDatabaseAndTables();
     await sequelize.authenticate();
   } catch (error) {
+    await sequelize.sync({ force: true, logging: false });
     console.error('Error al inicializar la base de datos:', error);
     process.exit(1);
   }
 });
+
+// Configuración de WebSocket
+const wss = new WebSocketServer({ server });  // Usar el servidor HTTP para los WebSockets
+setupWebSocketServer(wss);
 
 // Manejo de excepciones no capturadas
 process.on('uncaughtException', (err) => {

@@ -4,6 +4,11 @@ import Model from "./models.model.js";
 import Device from "./devices.model.js";
 
 const Filter = sequelize.define("filter", {
+    filter_id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
+    },
     field: {
         type: DataTypes.STRING,
         allowNull: false,
