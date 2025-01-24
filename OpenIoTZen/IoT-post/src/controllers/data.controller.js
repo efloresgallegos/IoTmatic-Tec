@@ -1,193 +1,71 @@
-import {models} from '../models/data/index.js';
-import modelsModel from '../models/models.model.js';
-import filters from '../controllers/filters.controller.js';
-import { emitNewData, emitNewAlert } from '../WebSockets/webSocket.server.js';
+import dataService from "../services/data.service.js";
 
 const createData = async (req, res) => {
     try {
-      const data = req.body.data;
-      const model_id = data.model_id;
-      const device_id = data.device_id;
-      const modelName = await getModelName(model_id);
-  
-      if (!modelName) {
-        return res.status(404).json({ message: 'Model not found' });
-      }
-  
-      const dataModel = models[modelName];
-      if (!dataModel) {
-        return res.status(404).json({ message: 'Model not found' });
-      }
-  
-      const device = await devices.findByPk(device_id);
-      if (!device) {
-        return res.status(404).json({ message: 'Device not found' });
-      }
-  
-      const alerts = await filters.checkFilter(model_id, device_id, data);
-      if (alerts.length > 0) {
-        // Emitir alerta a los clientes WebSocket
-        emitNewAlert({ device_id, alerts });
-        return res.status(200).json({ message: 'Alerts created', alerts });
-      }
-  
-      const newData = await dataModel.create(data);
-      
-      emitNewData({ device_id, data: newData });
-  
-      return res.status(201).json(newData);
+        const data = await dataService.createData(req.body);
+        res.status(201).json(data);
     } catch (error) {
-      console.error(error);
-      return res.status(500).json({ message: 'Error creating data' });
+        res.status(500).json({ message: error.message });
     }
-  };
+};
 
 const getDatabyModelandDevice = async (req, res) => {
     try {
-        const model_id = req.body.model_id;
-        const device_id = req.body.device_id;
-        const modelName = await getModelName(model_id);
-        if (!modelName) {
-            return res.status(404).json({ message: 'Model not found' });
-        }
-        const dataModel = models[modelName];
-        if (!dataModel) {
-            return res.status(404).json({ message: 'Model not found' });
-        }
-        const device = await devices.findByPk(device_id);
-        if (!device) {
-            return res.status(404).json({ message: 'Device not found' });
-        }
-        const data = await dataModel.findAll({ where: { device_id } });
-        return res.status(200).json(data);
+        const { model, device } = req.params;
+        const data = await dataService.getDatabyModelandDevice(model, device);
+        res.status(200).json(data);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
-    catch (error) {
-        return res.status(500).json({ message: error.message });
-    }
-}
+};
 
 const getDatabyModel = async (req, res) => {
     try {
-        const model_id = req.body.model_id;
-        const modelName = await getModelName(model_id);
-        if (!modelName) {
-            return res.status(404).json({ message: 'Model not found' });
-        }
-        const dataModel = models[modelName];
-        if (!dataModel) {
-            return res.status(404).json({ message: 'Model not found' });
-        }
-        const data = await dataModel.findAll();
-        return res.status(200).json(data);
+        const { model } = req.params;
+        const data = await dataService.getDatabyModel(model);
+        res.status(200).json(data);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
-    catch (error) {
-        return res.status(500).json({ message: error.message });
-    }
-}
+};
 
 const getDatabyDevice = async (req, res) => {
     try {
-        const device_id = req.body.device_id;
-        const device = await devices.findByPk(device_id);
-        if (!device) {
-            return res.status(404).json({ message: 'Device not found' });
-        }
-        let fullData = [];
-        for (const modelName in models) {
-            const dataModel = models[modelName];
-            const data = await dataModel.findAll({ where: { device_id } });
-            if (data.length > 0) {
-                fullData = fullData.concat(data);
-            }
-        }
-        if (fullData.length === 0) {
-            return res.status(404).json({ message: 'Data not found' });
-        }
-        return res.status(200).json(fullData);
+        const { device } = req.params;
+        const data = await dataService.getDatabyDevice(device);
+        res.status(200).json(data);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
-    catch (error) {
-        return res.status(500).json({ message: error.message });
-    }
-}
+};
 
 const getDatabyDateRange = async (req, res) => {
     try {
-        const model_id = req.body.model_id;
-        const device_id = req.body.device_id;
-        const modelName = await getModelName(model_id);
-        if (!modelName) {
-            return res.status(404).json({ message: 'Model not found' });
-        }
-        const dataModel = models[modelName];
-        if (!dataModel) {
-            return res.status(404).json({ message: 'Model not found' });
-        }
-        const device = await devices.findByPk(device_id);
-        if (!device) {
-            return res.status(404).json({ message: 'Device not found' });
-        }
-        const start = req.body.start;
-        const end = req.body.end;
-        const data = await dataModel.findAll({ where: { device_id, createdAt: { [Op.between]: [start, end] } } });
-        return res.status(200).json(data);
+        const { startDate, endDate } = req.query;
+        const data = await dataService.getDatabyDateRange(startDate, endDate);
+        res.status(200).json(data);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
-    catch (error) {
-        return res.status(500).json({ message: error.message });
-    }
-}
+};
 
 const getGraphableData = async (req, res) => {
     try {
-        const model_id = req.body.model_id;
-        const device_id = req.body.device_id;
-        const modelName = await getModelName(model_id);
-        if (!modelName) {
-            return res.status(404).json({ message: 'Model not found' });
-        }
-        const dataModel = models[modelName];
-        if (!dataModel) {
-            return res.status(404).json({ message: 'Model not found' });
-        }
-        const device = await devices.findByPk(device_id);
-        if (!device) {
-            return res.status(404).json({ message: 'Device not found' });
-        }
-        const data = await dataModel.findAll({ where: { device_id } });
-        const graphableData = [];
-        const uniqueKeys = new Set();
-        const getAllKeys = (obj, parentKey = '') => {
-            let keys = new Set();
-            for (const key in obj) {
-                if (key !== 'id' && key !== 'device_id' && key !== 'createdAt' && key !== 'updatedAt') {
-                    if (typeof obj[key] === 'object' && obj[key] !== null) {
-                        // For nested objects, recursively get keys with parent key prefix
-                        const nestedKeys = getAllKeys(obj[key], `${parentKey}${key}.`);
-                        nestedKeys.forEach(nestedKey => keys.add(nestedKey));
-                    } else {
-                        keys.add(`${parentKey}${key}`);
-                    }
-                }
-            }
-            return keys;
-        };
-
-        if (data.length > 0) {
-            const keys = getAllKeys(data[0].dataValues);
-            graphableData.push(...keys);
-        }
-        return res.status(200).json(graphableData);
+        const { model, device } = req.params;
+        const data = await dataService.getGraphableData(model, device);
+        res.status(200).json(data);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
-    catch (error) {
-        return res.status(500).json({ message: error.message });
-    }
-}
+};
 
 const getModelName = async (model_id) => {
-    const model = await modelsModel.findByPk(model_id);
-    if (!model) {
-        return null;
+    try {
+        const modelName = await dataService.getModelName(model_id);
+        return modelName;
+    } catch (error) {
+        throw new Error(error.message);
     }
-    return model.name;
-}
+};
 
-export default { createData, getDatabyModelandDevice, getDatabyModel, getDatabyDevice, getDatabyDateRange, getGraphableData };
+export default { createData, getDatabyModelandDevice, getDatabyModel, getDatabyDevice, getDatabyDateRange, getGraphableData, getModelName };

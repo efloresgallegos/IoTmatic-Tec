@@ -1,100 +1,72 @@
-import Device from '../models/devices.model.js';
-import Type from '../models/types.model.js';
+import devicesService from '../services/devices.service.js';
 
 const getDevices = async (req, res) => {
     try {
-        const devices = await Device.findAll({
-            include: Type
-        });
-        res.json(devices);
+        const devices = await devicesService.getAllDevices();
+        res.status(200).json(devices);
     } catch (error) {
-        res.status(500).json({
-            message: error.message
-        });
+        res.status(500).json({ message: error.message });
     }
 }
 
 const getDevicebyId = async (req, res) => {
     try {
-        const device = await Device.findByPk(req.params.id, {
-            include: Type
-        });
-        res.json(device);
+        const device = await devicesService.getDeviceById(req.params.id);
+        if (device) {
+            res.status(200).json(device);
+        } else {
+            res.status(404).json({ message: 'Device not found' });
+        }
     } catch (error) {
-        res.status(500).json({
-            message: error.message
-        });
+        res.status(500).json({ message: error.message });
     }
 }
 
 const createDevice = async (req, res) => {
     try {
-        const device = await Device.create(req.body);
-        const type = await Type.findByPk(device.type_id);
-        if (!type) {
-            return res.status(404).json({
-                message: 'Type not found'
-            });
-        }
-        res.json(device);
+        const newDevice = await devicesService.createDevice(req.body);
+        res.status(201).json(newDevice);
     } catch (error) {
-        res.status(500).json({
-            message: error.message
-        });
+        res.status(500).json({ message: error.message });
     }
 }
 
 const updateDevice = async (req, res) => {
     try {
-        const device = await Device.findByPk(req.params.id);
-        if (device) {
-            await device.update(req.body);
-            res.json(device);
+        const updatedDevice = await devicesService.updateDevice(req.params.id, req.body);
+        if (updatedDevice) {
+            res.status(200).json(updatedDevice);
         } else {
-            res.status(404).json({
-                message: 'Device not found'
-            });
+            res.status(404).json({ message: 'Device not found' });
         }
     } catch (error) {
-        res.status(500).json({
-            message: error.message
-        });
+        res.status(500).json({ message: error.message });
     }
 }
 
 const patchDevice = async (req, res) => {
     try {
-        const device = await Device.findByPk(req.params.id);
-        if (device) {
-            await device.update(req.body);
-            res.json(device);
+        const patchedDevice = await devicesService.patchDevice(req.params.id, req.body);
+        if (patchedDevice) {
+            res.status(200).json(patchedDevice);
         } else {
-            res.status(404).json({
-                message: 'Device not found'
-            });
+            res.status(404).json({ message: 'Device not found' });
         }
     } catch (error) {
-        res.status(500).json({
-            message: error.message
-        });
+        res.status(500).json({ message: error.message });
     }
 }
 
 const deleteDevice = async (req, res) => {
     try {
-        const device = await Device.findByPk(req.params.id);
-        if (device) {
-            await device.destroy();
-            res.json();
+        const deletedDevice = await devicesService.deleteDevice(req.params.id);
+        if (deletedDevice) {
+            res.status(200).json({ message: 'Device deleted successfully' });
         } else {
-            res.status(404).json({
-                message: 'Device not found'
-            });
+            res.status(404).json({ message: 'Device not found' });
         }
     } catch (error) {
-        res.status(500).json({
-            message: error.message
-        });
+        res.status(500).json({ message: error.message });
     }
 }
 
