@@ -1,0 +1,76 @@
+
+.sisdai-grid {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  padding: 16px;
+  height: 100vh;
+}
+
+.div1, .div2 {
+  grid-row: 1;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+}
+
+.div1 {
+  grid-column: 1;
+}
+
+.div2 {
+  grid-column: 2;
+}
+
+.div3 {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+}
+
+.devices-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.sisdai-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.sisdai-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.sisdai-input,
+.sisdai-select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.sisdai-button-primary {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s ease;
+}
+
+.sisdai-button-primary:hover {
+  background-color: #0056b3;
+}
+

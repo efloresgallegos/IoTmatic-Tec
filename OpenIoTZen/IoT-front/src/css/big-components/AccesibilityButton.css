@@ -1,0 +1,29 @@
+
+.a11y-tipografia {
+    font-family: 'OpenDyslexic', 'Comic Sans MS', 'Arial', sans-serif;
+    line-height: 1.5;
+    letter-spacing: 0.05em;
+    word-spacing: 0.1em;
+}
+
+.a11y-oscura {
+    background-color: #3f3f3f;
+    color: #ffffff;
+}
+
+.a11y-oscura input,
+.a11y-oscura button {
+    background-color: #404040;
+    color: #ffffff;
+    border: 1px solid #666666;
+}
+
+.a11y-oscura input:hover,
+.a11y-oscura button:hover {
+    background-color: #505050;
+    border-color: #777777;
+}
+
+.a11y-oscura font {
+    color: #a09e9e;
+}

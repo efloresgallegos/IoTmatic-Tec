@@ -94,12 +94,5 @@ function handleMenuItemClick() {
 </script>
 
 <style>
-.q-item {
-    color: inherit;
-    text-decoration: none;
-}
-
-.q-item.q-router-link-active {
-    color: var(--q-primary);
-}
+@import '../../css/big-components/NavigationBar.css';
 </style>

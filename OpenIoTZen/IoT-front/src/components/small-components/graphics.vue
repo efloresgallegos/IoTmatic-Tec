@@ -64,13 +64,5 @@ export default {
 </script>
 
 <style scoped>
-
-div {
-    resize: both;
-    overflow: auto;
-    border: 1px solid #ccc;
-    padding: 10px;
-    max-width: 100%;  /* Asegura que el componente no exceda el contenedor */
-    max-height: 80vh; /* Restringe el alto para evitar que el gráfico sea demasiado grande */
-}
+@import '../../css/small-components/graphic.css';
 </style>

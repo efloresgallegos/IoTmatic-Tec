@@ -164,5 +164,53 @@ export default {
 </script>
 
 <style scoped>
-@import '../css/pages/UserConfiguration.css';
+/* Contenedor principal */
+.user-config {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  flex-direction: column;
+  padding: 20px;
+  min-height: 100vh;
+  background-color: #f9f9f9;
+}
+
+/* Contenedor interno */
+.container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Estilos de las tarjetas */
+.q-card {
+  margin-bottom: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos del formulario */
+.form-card {
+  background-color: #ffffff;
+  padding: 20px;
+}
+
+/* Tabla de usuarios */
+.table-card {
+  background-color: #ffffff;
+  padding: 20px;
+}
+
+.user-table {
+  margin-top: 20px;
+}
+
+/* Inputs y botones */
+.input-field {
+  margin-bottom: 15px;
+}
+
+.action-btn {
+  margin-right: 10px;
+}
 </style>

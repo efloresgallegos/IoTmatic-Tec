@@ -1,5 +1,5 @@
 import Filter from '../models/filters.model.js';
-import alertsController from './alerts.controller.js';
+import alertsService from './alerts.service.js';
 
 const getFilters = async () => {
     try {
@@ -125,7 +125,7 @@ const checkFilter = async (model_id, device_id, data) => {
 
             if (isValid && triggers.length > 0) {
                 description += triggers.join(' and ');
-                alertsController.createAlert({
+                alertsService.createAlert({
                     description,
                     filter_id: filter.id,
                     model_id,

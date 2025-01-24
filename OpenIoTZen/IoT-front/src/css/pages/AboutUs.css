@@ -1,0 +1,41 @@
+
+  .about-us-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+    background: #f5f5f5; /* Fondo claro */
+  }
+  
+  .about-card {
+    max-width: 800px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    background: white;
+  }
+  
+  .about-image {
+    max-height: 400px;
+    border-radius: 4px;
+  }
+  
+  .about-list .q-item {
+    margin-bottom: 16px;
+  }
+  
+  .sisdai-text-primary {
+    font-weight: bold;
+    color: #0d47a1; /* Azul oscuro */
+  }
+  
+  .sisdai-text-secondary {
+    font-size: 1rem;
+    color: #616161; /* Gris intermedio */
+  }
+  
+  .sisdai-button {
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+  
