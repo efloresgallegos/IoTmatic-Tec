@@ -172,4 +172,9 @@ Crea un archivo `.env` en las carpetas de **backend** y **frontend** y configura
 
 5. **Crea un Pull Request (PR)**: Ve al repositorio en GitHub y abre un PR explicando tus cambios.
 
+<<<<<<< HEAD
 ---
+=======
+---
+
+>>>>>>> 826ea184b32fb16dd574750014afb05b5909b6ca
