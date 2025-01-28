@@ -13,7 +13,8 @@ const sequelize = new Sequelize(
     {
         host: dbHost,
         dialect: 'postgres',
+        logging: false,
     }
-    );
+);
 
 export { sequelize };

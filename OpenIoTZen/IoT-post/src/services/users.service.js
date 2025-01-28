@@ -1,4 +1,5 @@
 import User from "../models/users.model.js";
+import  jwtMethods  from "../utils/jwt.util.js";
 
 const createUser = async (userData) => {
     const { name, username, password } = userData;
@@ -54,4 +55,19 @@ const deleteUser = async (id) => {
     }
 };
 
-export default { createUser, getUsers, getUserById, updateUser, deleteUser };
+const login = async (username, password) => {
+    try {
+        const user = await User.login(username, password);
+        if (!user) {
+            throw new Error('Invalid login');
+        }
+        const token = jwtMethods.createUserToken(user);
+
+        return {user, token};
+    }
+    catch (error) {
+        throw new Error(error.message);
+    }
+}
+
+export default { createUser, getUsers, getUserById, updateUser, deleteUser, login };

@@ -55,4 +55,15 @@ const deleteUser = async (req, res) => {
     }
 }
 
-export default { createUser, getUsers, getUserById, updateUser, deleteUser };
+const login = async (req, res) => {
+    const { username, password } = req.body;
+    try {
+        const user = await usersService.login(username, password);
+        res.status(200).json(user);
+    }
+    catch (error) {
+        res.status(400).send(error.message);
+    }
+}
+
+export default { createUser, getUsers, getUserById, updateUser, deleteUser, login};

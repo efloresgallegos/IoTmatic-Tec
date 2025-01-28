@@ -23,6 +23,7 @@ const getTypeById = async (id) => {
 
 const createType = async (data) => {
     try {
+        console.log(data);
     const existingType = await Type.findOne({ where: { name: data.name } });
     if (existingType) {
         throw new Error("Type with this name already exists");

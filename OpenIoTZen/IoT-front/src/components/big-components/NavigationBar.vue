@@ -1,29 +1,18 @@
 <template>
-    <q-drawer 
-        v-model="localActive" 
-        side="left" 
-        bordered 
-        class="bg-white shadow-2" 
-        :overlay="!isMobile"
-    >
+    <q-drawer v-model="localActive" side="left" bordered class="bg-white shadow-2" :overlay="!isMobile">
         <div class="text-center q-pa-md">
             <q-img src="/logo.png" class="q-mx-auto" style="max-width: 80px;" />
             <div class="text-primary text-bold text-h6">{{ t('navBar.logo') }}</div>
         </div>
         <q-list>
-            <q-item 
-                v-for="item in menuItems" 
-                :key="item.name" 
-                clickable 
-                v-ripple 
-                :to="item.link"
-                @click="handleMenuItemClick"
-            >
+            <q-item v-for="item in menuItems" :key="item.name" clickable v-ripple :to="item.link"
+                @click="handleMenuItemClick(item)">
                 <q-item-section avatar>
                     <q-icon :name="item.icon" class="text-primary" />
                 </q-item-section>
                 <q-item-section>{{ t(item.name) }}</q-item-section>
             </q-item>
+
         </q-list>
         <div class="q-pa-md">
             <select v-model="$i18n.locale">
@@ -65,7 +54,16 @@ const menuItems = [
     { name: 'navBar.settings', link: '#', icon: 'settings' },
     { name: 'navBar.users', link: '/settings', icon: 'people' },
     { name: 'navBar.about', link: '/about', icon: 'info' },
-    { name: 'navBar.logout', link: '#', icon: 'logout' },
+    {
+        name: 'navBar.logout',
+        link: '/login',
+        icon: 'logout',
+        action: () => {
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            window.location.href = '/#/login';
+        }
+    }
 ];
 
 // Sincroniza la prop `isActive` con `localActive`
@@ -86,11 +84,15 @@ watch(() => route.path, () => {
 });
 
 // Maneja el clic en un ítem del menú
-function handleMenuItemClick() {
+function handleMenuItemClick(item) {
+    if (item.action) {
+        item.action(); // Ejecuta la acción personalizada del ítem
+    }
     if (isMobile.value) {
         localActive.value = false; // Cierra automáticamente en móviles
     }
 }
+
 </script>
 
 <style>

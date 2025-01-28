@@ -2,7 +2,7 @@ import typesService from "../services/types.service.js";
 
 const getTypes = async (req, res) => {
     try {
-        const types = await typesService.getAllTypes();
+        const types = await typesService.getTypes();
         res.status(200).json(types);
     } catch (error) {
         res.status(500).json({ message: error.message });

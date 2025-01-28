@@ -12,6 +12,15 @@ export default {
     about: 'Acerca de',
     users: 'Usuarios',
   },
+  accessibilityButton: {
+    tools: 'Herramientas de accesibilidad',
+    openMenu: 'Abrir menú de accesibilidad',
+    fontChange: 'Cambio de fuente',
+    underlineLinks: 'Enlaces subrayados',
+    textOnly: 'Mostrar solo texto',
+    darkView: 'Vista Oscura',
+    reset: 'Restablecer',
+  },
   views: {
     home: {
       welcome: '¡Bienvenido a IoT Framework!',
@@ -36,9 +45,14 @@ export default {
       createDevice: {
         title: 'Crear Nuevo Dispositivo',
         namePlaceholder: 'Nombre',
-        typePlaceholder: 'Tipo',
+        selectType: 'Seleccionar Tipo',
         descriptionPlaceholder: 'Descripción',
-        createButton: 'Crear',
+        createButton: 'Crear dispositivo',
+      },
+      createType: {
+        createButton: 'Añadir Tipo',
+        title: 'Crear Nuevo Tipo',
+        namePlaceholder: 'Nombre',
       },
       filters: {
         searchPlaceholder: 'Buscar dispositivos...',
@@ -54,6 +68,12 @@ export default {
       aria: {
         filterByType: 'Filtrar por tipo',
         filterByDate: 'Filtrar por fecha',
+      },
+      deviceCard: {
+        name: 'Nombre: ',
+        type: 'Tipo: ',
+        description: 'Descripción: ',
+        action: 'Ir al dispositivo',
       },
     },
     modelCreator: {
@@ -86,7 +106,7 @@ export default {
         applyChangesButton: 'Aplicar cambios',
         errorPromptRequired: 'Por favor ingresa un prompt.',
         errorProcessingPrompt: 'Hubo un error al procesar el prompt.',
-      }
+      },
     },
     users: {
       title: 'Añadir Usuario',
@@ -101,7 +121,7 @@ export default {
         actions: 'Acciones',
         edit: 'Editar',
         delete: 'Eliminar',
-      }
+      },
     },
     login: {
       welcome: 'Bienvenido a OpenIoTZen',
@@ -110,7 +130,9 @@ export default {
       password: 'Contraseña',
       enterPassword: 'Ingresa tu contraseña',
       login: 'Iniciar Sesión',
-      success: 'Inicio de sesión exitoso'
-    }
+      success: 'Inicio de sesión exitoso',
+      selectLanguage: 'Selecciona un idioma',
+      loginSuccess: 'Inicio de sesión exitoso',
+    },
   },
 }

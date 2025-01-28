@@ -1,8 +1,11 @@
 <template>
   <div class="sisdai-grid">
     <div class="div1 sisdai-card">
-      <button class="sisdai-button-primary" @click="openModal">
+      <button class="sisdai-button-primary" @click="openModalDevice">
         {{ t('views.devices.createDevice.createButton') }}
+      </button>
+      <button class="sisdai-button-primary" @click="openModalType">
+        {{ t('views.devices.createType.createButton') }}
       </button>
     </div>
     <div class="div2 sisdai-card">
@@ -19,9 +22,9 @@
           aria-label="t('views.devices.filters.filterByType')"
         >
           <option value="">{{ t('views.devices.filters.allTypes') }}</option>
-          <option v-for="type in deviceTypes" :key="type" :value="type">
-            {{ type }}
-          </option>
+            <option v-for="type in deviceTypes" :key="type.type_id" :value="type.type_id">
+            {{ type.name }}
+            </option>
         </select>
         <input
           type="date"
@@ -41,13 +44,12 @@
         />
       </div>
     </div>
-    <Modal v-if="isModalOpen" @close="closeModal">
-      <!-- Header -->
+
+    <!-- Modal para dispositivos -->
+    <Modal v-if="isModalDeviceOpen" @close="closeModalDevice">
       <template #header>
         <h3>{{ t('views.devices.createDevice.title') }}</h3>
       </template>
-
-      <!-- Body -->
       <template #body>
         <form @submit.prevent="createDevice" class="form-grid">
           <div class="form-group">
@@ -61,20 +63,20 @@
               required
             />
           </div>
-          
-          <div class="form-group">
-            <label for="device-type"><strong>{{ t('views.devices.createDevice.typePlaceholder') }}</strong></label>
-            <input
+            <div class="form-group">
+            <label for="device-type"><strong>{{ t('views.devices.createDevice.selectType') }}</strong></label>
+            <select
               id="device-type"
-              type="text"
-              v-model="newDevice.type"
-              :placeholder="t('views.devices.createDevice.typePlaceholder')"
-              class="sisdai-input"
+              v-model="newDevice.type_id"
+              class="sisdai-select"
               required
-            />
-          </div>
-
-          <!-- Descripción -->
+            >
+              <option value="">{{ t('views.devices.createDevice.selectType') }}</option>
+              <option v-for="type in deviceTypes" :key="type.type_id" :value="type.type_id">
+              {{ type.name }}
+              </option>
+            </select>
+            </div>
           <div class="form-group">
             <label for="device-description"><strong>{{ t('views.devices.createDevice.descriptionPlaceholder') }}</strong></label>
             <textarea
@@ -85,11 +87,35 @@
               required
             ></textarea>
           </div>
-
-          <!-- Botón Crear -->
           <div class="form-group">
-            <br>
+            <br />
             <button type="submit" class="sisdai-button-primary">{{ t('views.devices.createDevice.createButton') }}</button>
+          </div>
+        </form>
+      </template>
+    </Modal>
+
+    <!-- Modal para tipos -->
+    <Modal v-if="isModalTypeOpen" @close="closeModalType">
+      <template #header>
+        <h3>{{ t('views.devices.createType.title') }}</h3>
+      </template>
+      <template #body>
+        <form @submit.prevent="createType" class="form-grid">
+          <div class="form-group">
+            <label for="type-name"><strong>{{ t('views.devices.createType.namePlaceholder') }}</strong></label>
+            <input
+              id="type-name"
+              type="text"
+              v-model="newType.name"
+              :placeholder="t('views.devices.createType.namePlaceholder')"
+              class="sisdai-input"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <br />
+            <button type="submit" class="sisdai-button-primary">{{ t('views.devices.createType.createButton') }}</button>
           </div>
         </form>
       </template>
@@ -98,53 +124,73 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import DeviceCard from "../components/dinamic-components/DeviceCard.vue";
 import Modal from "../components/dinamic-components/MiniModal.vue";
-import { useI18n } from 'vue-i18n'
+import { useI18n } from "vue-i18n";
+import apiService from "src/boot/ApiServices/api.service";
 
 const { t } = useI18n();
-const isModalOpen = ref(false);
+const isModalDeviceOpen = ref(false);
+const isModalTypeOpen = ref(false);
+
 const searchQuery = ref("");
 const selectedType = ref("");
 const selectedDate = ref("");
 const devices = ref([]);
-const newDevice = ref({ name: "", type: "", description: "" });
-const deviceTypes = ref(["Sensor", "Actuador", "Controlador"]);
-const test = [
-  {
-    id: 1,
-    name: "Sensor de Temperatura",
-    type: "Sensor",
-    description: "Mide la temperatura del ambiente en tiempo real.",
-    createdAt: "2024-12-01T10:30:00Z",
-  },
-  {
-    id: 2,
-    name: "Actuador de Ventilación",
-    type: "Actuador",
-    description: "Controla el sistema de ventilación.",
-    createdAt: "2024-12-05T08:15:00Z",
-  },
-];
+const newDevice = ref({ name: "", type_id: "", description: "" });
+const deviceTypes = ref([]);
+const newType = ref({ name: "" });
 
-const openModal = () => {
-  isModalOpen.value = true;
+const openModalDevice = () => {
+  isModalDeviceOpen.value = true;
 };
 
-const closeModal = () => {
-  isModalOpen.value = false;
+const closeModalDevice = () => {
+  isModalDeviceOpen.value = false;
 };
 
-const createDevice = () => {
-  const newId = devices.value.length + 1;
-  const createdAt = new Date().toISOString();
-  devices.value.push({ ...newDevice.value, id: newId, createdAt });
-  newDevice.value = { name: "", type: "", description: "" };
-  closeModal();
+const openModalType = () => {
+  isModalTypeOpen.value = true;
 };
 
-devices.value = test;
+const closeModalType = () => {
+  isModalTypeOpen.value = false;
+};
+
+const createDevice = async () => {
+  const response = await apiService.post("/devices", newDevice.value);
+  if (response.status === 201) {
+    fetchDevices();
+    closeModalDevice();
+  }
+};
+
+const createType = async () => {
+  const response = await apiService.post("/types", newType.value);
+  if (response.status === 201) {
+    fetchTypes();
+    closeModalType();
+  }
+};
+
+const fetchDevices = async () => {
+  const response = await apiService.get("/devices");
+  console.log(response.data);
+  if (response.status === 200) {
+    devices.value = response.data;
+  }
+};
+
+const fetchTypes = async () => {
+  const response = await apiService.get("/types");
+  console.log(response);
+  if (response.status === 200) {
+    console.log("aaaaaaa:",response.data);
+    deviceTypes.value = response.data
+  }
+};
+
 
 const filteredDevices = computed(() =>
   devices.value.filter((device) => {
@@ -152,14 +198,20 @@ const filteredDevices = computed(() =>
       .toLowerCase()
       .includes(searchQuery.value.toLowerCase());
     const matchesType =
-      !selectedType.value || device.type === selectedType.value;
+      !selectedType.value || device.type_id === selectedType.value;
     const matchesDate =
       !selectedDate.value ||
       new Date(device.createdAt).toDateString() ===
-      new Date(selectedDate.value).toDateString();
+        new Date(selectedDate.value).toDateString();
     return matchesQuery && matchesType && matchesDate;
   })
 );
+
+onMounted(() => {
+  fetchDevices();
+  fetchTypes();
+});
+
 </script>
 
 <style scoped>

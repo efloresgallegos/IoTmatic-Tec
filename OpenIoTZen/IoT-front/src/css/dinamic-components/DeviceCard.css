@@ -1,3 +1,10 @@
+.device-container {
+  display: flex;
+  flex-wrap: wrap; /* Permite que las tarjetas se ajusten en filas si no caben */
+  gap: 15px; /* Espacio entre tarjetas */
+  justify-content: center; /* Centra las tarjetas en el contenedor */
+  padding: 20px;
+}
 
 .device-card {
   display: flex;
@@ -14,47 +21,37 @@
 }
 
 .device-card.expanded {
-  width: 350px;
+  width: 350px; /* Ancho para estado expandido */
   padding: 15px;
   box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
 }
 
 .device-image {
-  width: 50px;
+  width: 60px; /* Tamaño más grande para destacar */
   height: auto;
   border-radius: 5px;
-  margin-right: 10px;
+  margin-right: 15px; /* Espacio entre imagen y contenido */
   transition: transform 0.3s ease, opacity 0.3s ease;
-  opacity: 1;
-}
-
-.device-card.expanded .device-image {
-  transform: scale(1.1);
-  opacity: 1; /* Aseguramos que la imagen no desaparezca a otro ritmo */
 }
 
 .device-info {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+  width: calc(100% - 75px); /* Asegura que se adapte al ancho de la tarjeta */
   text-align: left;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.device-card.expanded .device-info {
-  opacity: 1;
-  transform: translateY(0); /* Mantiene la sincronización */
 }
 
 .device-name {
   font-size: 1rem;
   font-weight: bold;
   color: #333;
+  margin-bottom: 5px; /* Reduce el espacio vertical */
+  text-align: center; /* Centrado para mejorar la estética */
 }
 
 .device-details {
-  margin-top: 10px;
+  margin-top: 5px; /* Reduce el espacio vertical */
   font-size: 0.9rem;
   color: #555;
   transition: max-height 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
@@ -70,17 +67,33 @@
   transform: translateY(0);
 }
 
-/* Animaciones para transiciones */
-.fade-slide-enter-active, .fade-slide-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
+.boton-secundario.boton-chico {
+  background-color: #007bff;
+  color: white;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  margin-top: 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
 }
 
-.fade-slide-enter-from, .fade-slide-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
+.boton-secundario.boton-chico:hover {
+  background-color: #0056b3;
 }
 
-.fade-slide-enter-to, .fade-slide-leave-from {
-  opacity: 1;
-  transform: translateY(0);
+/* Estilo responsivo */
+@media (max-width: 768px) {
+  .device-card {
+    width: 100%; /* Tarjetas ocupan el ancho completo */
+  }
+
+  .device-image {
+    width: 80px;
+    margin-right: 10px; /* Ajusta el espacio en pantallas pequeñas */
+  }
+
+  .device-name {
+    font-size: 0.9rem;
+  }
 }

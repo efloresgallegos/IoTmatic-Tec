@@ -3,7 +3,7 @@ import { sequelize } from "../db/database.js";
 import Type from "./types.model.js";
 
 
-const Device = sequelize.define('device', {
+const Device = sequelize.define('devices', {
     device_id: {
         type: DataTypes.INTEGER,
         primaryKey: true,

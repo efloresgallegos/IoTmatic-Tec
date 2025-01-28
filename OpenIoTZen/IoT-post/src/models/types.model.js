@@ -1,7 +1,7 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../db/database.js";
 
-const Type = sequelize.define("type", {
+const Type = sequelize.define("types", {
     type_id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -14,7 +14,7 @@ const Type = sequelize.define("type", {
 },
 {
     tableName: 'types',
-    timestamps: false
+    timestamps: true,
 });
 
 export default Type;

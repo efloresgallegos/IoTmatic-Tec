@@ -1,12 +1,13 @@
 <template>
   <div>
-  <AccesibilityButton />
-  <router-view />
-</div>
+    <AccessibilityButton />
+    <router-view />
+  </div>
 </template>
 
 <script setup>
-import AccesibilityButton from './components/big-components/AccesibilityButton.vue';
+import AccessibilityButton from './components/big-components/AccessibilityButton.vue';
 import '@centrogeomx/sisdai-css'
 import '@centrogeomx/sisdai-componentes'
+
 </script>

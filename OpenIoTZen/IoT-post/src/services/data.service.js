@@ -175,13 +175,54 @@ const getGraphableData = async (model_id, device_id) => {
         throw new Error(error.message);
     }
 };
+const getJsonForPost = async (model_id, device_id, user_id) => {
+    try {
+        // Obtiene el nombre del modelo
+        const model = await modelsModel.findByPk(Number(model_id));
+        const modelName = model ? model.name : null;
+        if (!modelName) {
+            throw new Error('Model not found');
+        }
+
+        // Importa dinámicamente el archivo JSON correspondiente
+        const jsonPath = `../jsons/${modelName}.json`;
+        const jsonModel = await import(jsonPath, { assert: { type: "json" } });
+
+        // Valida que el JSON tenga una estructura válida
+        if (!jsonModel || !jsonModel.fields || !Array.isArray(jsonModel.fields)) {
+            throw new Error('Invalid JSON structure');
+        }
+
+        // Transforma el JSON en el formato requerido
+        const transformedJson = {
+            module_id: model_id,
+            device_id: device_id,
+            user_id: user_id,
+            sensores: {}
+        };
+
+        jsonModel.fields.forEach(field => {
+            // Agrega los campos que no sean module_id, device_id ni user_id
+            if (!['module_id', 'device_id', 'user_id'].includes(field.name)) {
+                transformedJson.sensores[field.name] = field.type.toLowerCase();
+            }
+        });
+
+        return transformedJson;
+    } catch (error) {
+        // Manejo de errores
+        console.error('Error generating JSON for POST:', error.message);
+        throw error;
+    }
+};
+
 
 const getModelName = async (model_id) => {
-    const model = await modelsModel.findByPk(model_id);
+    const model = await modelsModel.findByPk(Number(model_id));
     if (!model) {
         return null;
     }
     return model.name;
 };
 
-export default { createData, getDatabyModelandDevice, getDatabyModel, getDatabyDevice, getDatabyDateRange, getGraphableData };
+export default { createData, getDatabyModelandDevice, getDatabyModel, getDatabyDevice, getDatabyDateRange, getGraphableData, getJsonForPost };

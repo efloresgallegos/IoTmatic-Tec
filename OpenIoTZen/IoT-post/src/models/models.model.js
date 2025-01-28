@@ -8,7 +8,7 @@ const Model = sequelize.define('models', {
         primaryKey: true,
         autoIncrement: true
     },
-    modelname: {
+    name: {
         type: DataTypes.STRING,
         allowNull: false
     }

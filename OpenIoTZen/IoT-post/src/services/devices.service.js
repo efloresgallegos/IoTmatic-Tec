@@ -25,11 +25,12 @@ const getDevicebyId = async (id) => {
 
 const createDevice = async (deviceData) => {
     try {
-        const device = await Device.create(deviceData);
-        const type = await Type.findByPk(device.type_id);
+        console.log(deviceData);
+        const type = await Type.findByPk(Number(deviceData.type_id));
         if (!type) {
             throw new Error('Type not found');
         }
+        let device = await Device.create(deviceData);
         return device;
     } catch (error) {
         throw new Error(error.message);
@@ -69,7 +70,7 @@ const deleteDevice = async (id) => {
         const device = await Device.findByPk(id);
         if (device) {
             await device.destroy();
-            return;
+            return 1;
         } else {
             throw new Error('Device not found');
         }

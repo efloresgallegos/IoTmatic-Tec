@@ -9,9 +9,12 @@
       <p class="device-name">{{ data.name }}</p>
       <transition name="fade-slide">
         <div v-if="isExpanded" class="device-details">
-          <p><strong>Nombre:</strong> {{ data.name }}</p>
-          <p><strong>Type:</strong> {{ data.type }}</p>
-          <p><strong>Description:</strong> {{ data.description }}</p>
+          <p><strong>{{ $t('views.devices.deviceCard.name') }}</strong> {{ data.name }}</p>
+          <p><strong>{{ $t('views.devices.deviceCard.type') }}</strong> {{ data.type.name }}</p>
+          <p><strong>{{ $t('views.devices.deviceCard.description') }}</strong> {{ data.description }}</p>
+            <button @click.stop="goDevice" class="boton-secundario boton-chico">
+            {{ $t('views.devices.deviceCard.action') }}
+            </button>
         </div>
       </transition>
     </div>
@@ -44,6 +47,9 @@ export default {
   methods: {
     toggleExpanded() {
       this.isExpanded = !this.isExpanded;
+    },
+    goDevice() {
+      this.$router.push(`/devices/${this.data.device_id}`);
     },
   },
 };

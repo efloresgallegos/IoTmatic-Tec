@@ -49,15 +49,17 @@ const createDatabaseAndTables = async () => {
 
         await dbClient.query(`
             CREATE TABLE IF NOT EXISTS types (
-                type_id SERIAL PRIMARY KEY,
-                type VARCHAR(50) NOT NULL
+            type_id SERIAL PRIMARY KEY,
+            name VARCHAR(50) NOT NULL,
+            createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
 
         await dbClient.query(`
             CREATE TABLE IF NOT EXISTS models (
                 model_id SERIAL PRIMARY KEY,
-                modelName VARCHAR(100) NOT NULL
+                name VARCHAR(100) NOT NULL
             )
         `);
 

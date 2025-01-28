@@ -23,11 +23,14 @@
             class="input" 
             :placeholder="$t('views.login.enterPassword')" 
             required 
-          /> <br> <br>
-          <select v-model="$i18n.locale" class="language-select">
-                <option value="es-MX">Español</option>
-                <option value="en-US">English</option>
-            </select>
+          />
+        </div>
+        <div class="form-group">
+          <label for="language" class="label">{{ $t('views.login.selectLanguage') }}</label>
+          <select v-model="$i18n.locale" id="language" class="language-select">
+            <option value="es-MX">Español</option>
+            <option value="en-US">English</option>
+          </select>
         </div>
         <button type="submit" class="btn-submit">{{ $t('views.login.login') }}</button>
       </form>
@@ -35,7 +38,10 @@
   </div>
 </template>
 
+
 <script>
+import { api } from 'src/boot/axios';
+
 export default {
   data() {
     return {
@@ -44,15 +50,47 @@ export default {
     };
   },
   methods: {
-    handleLogin() {
-      // Lógica de inicio de sesión
-      console.log('Usuario:', this.username);
-      console.log('Contraseña:', this.password);
-      alert(this.$t('views.login.success'));
+    async handleLogin() {
+      try {
+        const response = await api.post('/users/login', {
+          username: this.username,
+          password: this.password
+        });
+        console.log('Login successful:', response.data);
+        this.$q.notify({
+          message: this.$t('views.login.loginSuccess'),
+          color: 'positive'
+        });
+        // Guardar datos en localStorage
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        localStorage.setItem('token', response.data.token);
+
+        // Redirigir al inicio
+        this.$router.push('/');
+      } catch (error) {
+        console.error('Login error:', error);
+
+        // Mostrar mensaje de error
+        this.$toast.open({
+          message: this.$t('views.login.loginError'),
+          type: 'error'
+        });
+      }
+    },
+    checkLoggedIn() {
+      const user = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
+      if (user && token) {
+        this.$router.push('/');
+      }
     }
+  },
+  mounted() {
+    this.checkLoggedIn();
   }
 };
 </script>
+
 
 <style scoped>
 @import '../../css/pages/auth/LoginView.css';

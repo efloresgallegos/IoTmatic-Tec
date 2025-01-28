@@ -8,7 +8,7 @@ const createUserToken = (obj) => {
         id: obj.id,
         username: obj.username,
         iat: moment().unix(),
-        exp: moment().add(30, 'minutes').unix()
+        exp: moment().add(2, 'hours').unix()
     }
     return jwt.encode(payload, secret)
 }
@@ -28,4 +28,4 @@ const jwtMethods = {
     createDataToken
 }
 
-export default {jwtMethods, tokenforTest}
+export default jwtMethods

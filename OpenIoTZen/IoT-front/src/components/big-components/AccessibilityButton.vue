@@ -5,14 +5,14 @@
     >
         <button
             class="menu-flotante-boton"
-            aria-labelledby="herramientasaccesibilidad"
+            :aria-labelledby="$t('accessibilityButton.tools')"
             aria-controls="menua11y"
             :aria-expanded="estaAbierto"
             @click="estaAbierto = !estaAbierto"
             type="button"
-            aria-label="Abrir menú de accesibilidad"
+            :aria-label="$t('accessibilityButton.openMenu')"
         >
-            <span class="pictograma-accesibilidad" aria-hidden="true"/>
+            <span class="pictograma-accesibilidad" aria-hidden="true" />
         </button>
 
         <div 
@@ -21,31 +21,31 @@
             :aria-hidden="!estaAbierto"
         >
             <p id="herramientasaccesibilidad" class="menu-flotante-titulo">
-                Herramientas de accesibilidad
+                {{ $t('accessibilityButton.tools') }}
             </p>
 
             <input id="a11y-tipografia" type="checkbox" v-model="settings.tipografia" @change="alternarTipografiaAccesible"/>
             <label for="a11y-tipografia">
                 <span aria-hidden="true" class="pictograma-cambio-tipografia"></span>
-                Cambio de fuente
+                {{ $t('accessibilityButton.fontChange') }}
             </label>
 
             <input id="a11y-hipervinculos" type="checkbox" v-model="settings.hipervinculos" @change="alternarEnlacesSubrayados"/>
             <label for="a11y-hipervinculos">
                 <span aria-hidden="true" class="pictograma-enlace-subrayado"></span>
-                Enlaces subrayados
+                {{ $t('accessibilityButton.underlineLinks') }}
             </label>
 
             <input id="a11y-simplificada" type="checkbox" v-model="settings.simplificada" @change="alternarVistaSimplificada"/>
             <label for="a11y-simplificada">
                 <span aria-hidden="true" class="pictograma-vista-simplificada"></span>
-                Mostrar solo texto
+                {{ $t('accessibilityButton.textOnly') }}
             </label>
 
             <input id="a11y-oscura" type="checkbox" v-model="settings.oscura" @change="alternarVistaOscura"/>
             <label for="a11y-oscura">
                 <span aria-hidden="true" class="pictograma-contraste"></span>
-                Vista Oscura
+                {{ $t('accessibilityButton.darkView') }}
             </label>
             
             <button 
@@ -53,11 +53,12 @@
                 type="button"
                 @click="resetSettings"
             >
-                Restablecer
+                {{ $t('accessibilityButton.reset') }}
             </button>
         </div>
     </div>
 </template>
+
 
 <script>
 export default {

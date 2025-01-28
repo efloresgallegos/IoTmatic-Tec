@@ -70,7 +70,17 @@ const ${name} = sequelize.define('${name}', {
         primaryKey: true,
         autoIncrement: true
     },
-    ${jsFields.join(',\n    ')}
+    ${jsFields.join(',\n    ')},
+    createdAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.NOW
+    },
+    updatedAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.NOW
+    }
 }, {
     timestamps: true,
     tableName: '${name}',
@@ -203,7 +213,6 @@ const generateJson = (name, fields) => {
         fields: jsonFields
     };
 };
-
 const createJson = async (name, fields) => {
     const jsonModel = generateJson(name, fields);
 
@@ -215,7 +224,7 @@ const createJson = async (name, fields) => {
     }
 
     fs.writeFileSync(filePath, JSON.stringify(jsonModel, null, 2), 'utf8');
-    console.log(`Modelo ${name} generado exitosamente`);
+    console.log(`JSON del modelo ${name} generado exitosamente`);
 };
 
 // Controlador final
@@ -224,7 +233,7 @@ const finalController = async (req, res) => {
     try {
         await createDataModel(name, fields);
         await createJson(name, fields);
-        await Model.create({ modelname: name }); // Asegúrate de pasar 'modelName' en lugar de 'name'
+        await Model.create({ name: name }); // Asegúrate de pasar 'modelName' en lugar de 'name'
         res.json({ message: 'Modelo y tabla creados exitosamente' });
     } catch (error) {
         console.error('Error al crear el modelo y la tabla:', error);

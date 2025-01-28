@@ -68,4 +68,14 @@ const getModelName = async (model_id) => {
     }
 };
 
-export default { createData, getDatabyModelandDevice, getDatabyModel, getDatabyDevice, getDatabyDateRange, getGraphableData, getModelName };
+const getJsonForPost = async (req, res) => {
+    try {
+        const {model_id, device_id, user_id} = req.body;
+        const data = await dataService.getJsonForPost(model_id, device_id, user_id);
+        res.status(200).json(data);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}
+
+export default { createData, getDatabyModelandDevice, getDatabyModel, getDatabyDevice, getDatabyDateRange, getGraphableData, getModelName, getJsonForPost };

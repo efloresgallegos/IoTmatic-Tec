@@ -1,4 +1,3 @@
-
 export default {
   failed: 'Action failed',
   success: 'Action was successful',
@@ -12,6 +11,15 @@ export default {
     logo: 'Logo',
     about: 'About',
     users: 'Users',
+  },
+  accessibilityButton: {
+    tools: 'Accessibility Tools',
+    openMenu: 'Open accessibility menu',
+    fontChange: 'Font Change',
+    underlineLinks: 'Underline Links',
+    textOnly: 'Text Only View',
+    darkView: 'Dark View',
+    reset: 'Reset',
   },
   views: {
     home: {
@@ -37,9 +45,14 @@ export default {
       createDevice: {
         title: 'Create New Device',
         namePlaceholder: 'Name',
-        typePlaceholder: 'Type',
+        selectType: 'Select Type',
         descriptionPlaceholder: 'Description',
-        createButton: 'Create',
+        createButton: 'Create Device',
+      },
+      createType: {
+        createButton: 'Add Type',
+        title: 'Add a New Device Type',
+        namePlaceholder: 'Enter type name',
       },
       filters: {
         searchPlaceholder: 'Search devices...',
@@ -55,6 +68,12 @@ export default {
       aria: {
         filterByType: 'Filter by type',
         filterByDate: 'Filter by date',
+      },
+      deviceCard: {
+        name: 'Name: ',
+        type: 'Type: ',
+        description: 'Description: ',
+        action: 'Go to device',
       },
     },
     modelCreator: {
@@ -87,7 +106,7 @@ export default {
         applyChangesButton: 'Apply Changes',
         errorPromptRequired: 'Please enter a prompt.',
         errorProcessingPrompt: 'There was an error processing the prompt.',
-      }
+      },
     },
     users: {
       title: 'Add User',
@@ -102,7 +121,7 @@ export default {
         actions: 'Actions',
         edit: 'Edit',
         delete: 'Delete',
-      }
+      },
     },
     login: {
       welcome: 'Welcome to OpenIoTZen',
@@ -111,7 +130,16 @@ export default {
       password: 'Password',
       enterPassword: 'Enter your password',
       login: 'Log In',
-      success: 'Login successful'
-    }
+      success: 'Login successful',
+      selectLanguage: 'Select Language',
+      loginSuccess: 'Login successful',
+      createDevice: {
+        createButton: 'Create Device',
+        title: 'Add a New Device',
+        namePlaceholder: 'Enter device name',
+        typePlaceholder: 'Enter device type',
+        descriptionPlaceholder: 'Enter device description',
+      },
+    },
   },
 }

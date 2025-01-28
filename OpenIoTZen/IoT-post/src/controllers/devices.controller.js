@@ -2,7 +2,7 @@ import devicesService from '../services/devices.service.js';
 
 const getDevices = async (req, res) => {
     try {
-        const devices = await devicesService.getAllDevices();
+        const devices = await devicesService.getDevices();
         res.status(200).json(devices);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -60,7 +60,7 @@ const patchDevice = async (req, res) => {
 const deleteDevice = async (req, res) => {
     try {
         const deletedDevice = await devicesService.deleteDevice(req.params.id);
-        if (deletedDevice) {
+        if (deletedDevice === 1) {
             res.status(200).json({ message: 'Device deleted successfully' });
         } else {
             res.status(404).json({ message: 'Device not found' });

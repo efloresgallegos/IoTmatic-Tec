@@ -8,6 +8,7 @@ const routes = [
       { path: 'modelGenerator', component: () => import('../pages/ModelCreatorView.vue') },
       { path: 'settings', component: () => import('../pages/UserConfiguration.vue') },
       { path: 'about', component: () => import('../pages/AboutUs.vue') },
+      { path: 'devices/:id', component: () => import('../pages/DeviceView.vue') },
     ]
   },
   {
