@@ -22,7 +22,7 @@ Este proyecto consiste en un **framework IoT** para dispositivos inteligentes, i
 1. **Gestión IoT**: Soporte para integración y control de dispositivos inteligentes.
 2. **Inteligencia Artificial**: Integración con GPT (OpenAI) para análisis avanzado.
 3. **Frontend moderno**: Construido con **Vue 3**, **Quasar** y **Pinia**.
-4. **Backend robusto**: Implementado con **Node.js**, **Express**, **GraphQL**, y **Sequelize** para manejar bases de datos relacionales.
+4. **Backend robusto**: Implementado con **Node.js**, **Express**, y **Sequelize** para manejar bases de datos relacionales.
 5. **Seguridad**: Autenticación JWT y protección de datos sensibles.
 
 ---
