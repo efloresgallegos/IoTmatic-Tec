@@ -25,7 +25,6 @@ const getDevicebyId = async (id) => {
 
 const createDevice = async (deviceData) => {
     try {
-        console.log(deviceData);
         const type = await Type.findByPk(Number(deviceData.type_id));
         if (!type) {
             throw new Error('Type not found');

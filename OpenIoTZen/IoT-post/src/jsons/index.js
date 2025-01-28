@@ -42,5 +42,5 @@ const readJsonFiles = async (fileNames) => {
 
 const jsonNames = await getJsonFileNames();
 const jsons = await readJsonFiles(jsonNames);
-console.log(jsons);
+
 export { jsons };

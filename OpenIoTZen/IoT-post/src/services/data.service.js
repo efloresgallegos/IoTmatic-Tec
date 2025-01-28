@@ -2,6 +2,7 @@ import { models } from '../models/data/index.js';
 import modelsModel from '../models/models.model.js';
 import filters from '../controllers/filters.controller.js';
 import { emitNewData, emitNewAlert } from '../WebSockets/webSocket.server.js';
+import { jsons } from '../jsons/index.js';
 
 const createData = async (data) => {
     try {
@@ -184,9 +185,11 @@ const getJsonForPost = async (model_id, device_id, user_id) => {
             throw new Error('Model not found');
         }
 
-        // Importa dinámicamente el archivo JSON correspondiente
-        const jsonPath = `../jsons/${modelName}.json`;
-        const jsonModel = await import(jsonPath, { assert: { type: "json" } });
+        // Obtiene el JSON correspondiente al modelo
+        const jsonModel = jsons.find(json => json.name === modelName);
+        if (!jsonModel) {
+            throw new Error('Model JSON not found');
+        }
 
         // Valida que el JSON tenga una estructura válida
         if (!jsonModel || !jsonModel.fields || !Array.isArray(jsonModel.fields)) {
@@ -198,13 +201,12 @@ const getJsonForPost = async (model_id, device_id, user_id) => {
             module_id: model_id,
             device_id: device_id,
             user_id: user_id,
-            sensores: {}
         };
 
         jsonModel.fields.forEach(field => {
             // Agrega los campos que no sean module_id, device_id ni user_id
             if (!['module_id', 'device_id', 'user_id'].includes(field.name)) {
-                transformedJson.sensores[field.name] = field.type.toLowerCase();
+                transformedJson[field.name] = field.value || null;
             }
         });
 
