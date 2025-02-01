@@ -54,6 +54,7 @@ const menuItems = [
     { name: 'navBar.settings', link: '#', icon: 'settings' },
     { name: 'navBar.users', link: '/settings', icon: 'people' },
     { name: 'navBar.about', link: '/about', icon: 'info' },
+    { name: 'navBar.alerts', link: '/alerts', icon: 'warning' },    
     {
         name: 'navBar.logout',
         link: '/login',

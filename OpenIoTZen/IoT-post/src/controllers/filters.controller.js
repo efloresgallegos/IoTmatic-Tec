@@ -72,9 +72,9 @@ const patchFilter = async (req, res) => {
     }
 }
 
-const checkFilter = async (model_id, device_id, data) => {
+const checkFilter = async (data) => {
     try {
-        const isValid = await filtersService.checkFilter(model_id, device_id, data);
+        const isValid = await filtersService.checkFilter(data.model_id, data.device_id, data);
         return isValid;
     } catch (error) {
         throw new Error(error.message);

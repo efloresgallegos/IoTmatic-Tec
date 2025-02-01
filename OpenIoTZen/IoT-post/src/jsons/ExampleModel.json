@@ -1,0 +1,56 @@
+{
+  "name": "ExampleModel",
+  "fields": [
+    {
+      "name": "title",
+      "type": "String",
+      "required": true
+    },
+    {
+      "name": "description",
+      "type": "Text",
+      "required": false
+    },
+    {
+      "name": "price",
+      "type": "Float",
+      "required": true
+    },
+    {
+      "name": "isAvailable",
+      "type": "Boolean",
+      "required": true
+    },
+    {
+      "name": "createdAt",
+      "type": "Date",
+      "required": true
+    },
+    {
+      "name": "updatedAt",
+      "type": "Date",
+      "required": true
+    },
+    {
+      "name": "device_id",
+      "type": "Number",
+      "required": true,
+      "ref": "devices",
+      "refColumn": "device_id"
+    },
+    {
+      "name": "model_id",
+      "type": "Number",
+      "required": true,
+      "ref": "models",
+      "refColumn": "model_id"
+    },
+    {
+      "name": "user_id",
+      "type": "Number",
+      "required": true,
+      "ref": "users",
+      "refColumn": "user_id"
+    }
+  ]
+}

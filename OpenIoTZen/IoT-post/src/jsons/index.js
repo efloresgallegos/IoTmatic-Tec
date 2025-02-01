@@ -33,7 +33,6 @@ const readJsonFiles = async (fileNames) => {
                 return JSON.parse(fileContent);
             })
         );
-        console.log(jsonFiles);
         return jsonFiles;
     } catch (error) {
         console.error('Error reading JSON files:', error);
@@ -43,4 +42,4 @@ const readJsonFiles = async (fileNames) => {
 const jsonNames = await getJsonFileNames();
 const jsons = await readJsonFiles(jsonNames);
 
-export { jsons };
+export { jsons }; 

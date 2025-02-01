@@ -1,44 +1,51 @@
-import { models } from '../models/data/index.js';
+import { models, getJsFile } from '../models/data/index.js';
 import modelsModel from '../models/models.model.js';
-import filters from '../controllers/filters.controller.js';
 import { emitNewData, emitNewAlert } from '../WebSockets/webSocket.server.js';
 import { jsons } from '../jsons/index.js';
+import DeviceModel from '../models/devices.model.js';
+import Filter from '../services/filters.service.js';
+
 
 const createData = async (data) => {
     try {
-        const model_id = data.model_id;
-        const device_id = data.device_id;
-        const modelName = await getModelName(model_id);
+        const { model_id, device_id } = data;
 
+        // Validate model
+        const modelName = await getModelName(model_id);
         if (!modelName) {
             throw new Error('Model not found');
         }
 
-        const dataModel = models[modelName];
+        // Load the model dynamically
+        const dataModel = await getJsFile(modelName);
         if (!dataModel) {
             throw new Error('Model not found');
         }
 
-        const device = await devices.findByPk(device_id);
+        // Validate device
+        const device = await DeviceModel.findByPk(device_id);
         if (!device) {
             throw new Error('Device not found');
         }
 
-        const alerts = await filters.checkFilter(model_id, device_id, data);
+        // Check for alerts
+        const alerts = await Filter.checkFilter(data);
         if (alerts.length > 0) {
             emitNewAlert({ device_id, alerts });
             return { message: 'Alerts created', alerts };
         }
 
+        // Create new data
         const newData = await dataModel.create(data);
         emitNewData({ device_id, data: newData });
 
         return newData;
     } catch (error) {
-        console.error(error);
+        console.error('Error creating data:', error);
         throw new Error('Error creating data');
     }
 };
+
 
 const getDatabyModelandDevice = async (model_id, device_id) => {
     try {
@@ -52,7 +59,7 @@ const getDatabyModelandDevice = async (model_id, device_id) => {
             throw new Error('Model not found');
         }
 
-        const device = await devices.findByPk(device_id);
+        const device = await DeviceModel.findByPk(device_id);
         if (!device) {
             throw new Error('Device not found');
         }
@@ -85,7 +92,7 @@ const getDatabyModel = async (model_id) => {
 
 const getDatabyDevice = async (device_id) => {
     try {
-        const device = await devices.findByPk(device_id);
+        const device = await DeviceModel.findByPk(device_id);
         if (!device) {
             throw new Error('Device not found');
         }
@@ -121,7 +128,7 @@ const getDatabyDateRange = async (model_id, device_id, start, end) => {
             throw new Error('Model not found');
         }
 
-        const device = await devices.findByPk(device_id);
+        const device = await DeviceModel.findByPk(device_id);
         if (!device) {
             throw new Error('Device not found');
         }
@@ -133,49 +140,61 @@ const getDatabyDateRange = async (model_id, device_id, start, end) => {
     }
 };
 
-const getGraphableData = async (model_id, device_id) => {
+const getGraphableData = async (model_id) => {
     try {
         const modelName = await getModelName(model_id);
         if (!modelName) {
             throw new Error('Model not found');
         }
-
-        const dataModel = models[modelName];
-        if (!dataModel) {
-            throw new Error('Model not found');
+        console.log(modelName);
+        const jsonModel = jsons.find(json => json.name === modelName);
+        if (!jsonModel) {
+            throw new Error('Model JSON not found');
         }
 
-        const device = await devices.findByPk(device_id);
-        if (!device) {
-            throw new Error('Device not found');
-        }
-
-        const data = await dataModel.findAll({ where: { device_id } });
         const graphableData = [];
-        const getAllKeys = (obj, parentKey = '') => {
-            let keys = new Set();
-            for (const key in obj) {
-                if (key !== 'id' && key !== 'device_id' && key !== 'createdAt' && key !== 'updatedAt') {
-                    if (typeof obj[key] === 'object' && obj[key] !== null) {
-                        const nestedKeys = getAllKeys(obj[key], `${parentKey}${key}.`);
-                        nestedKeys.forEach(nestedKey => keys.add(nestedKey));
-                    } else {
-                        keys.add(`${parentKey}${key}`);
-                    }
-                }
-            }
-            return keys;
+
+        // Función para obtener las claves de valores numéricos
+        const getNumericKeys = (fields) => {
+            const numericTypes = ['Float', 'Number']; // Tipos de datos numéricos
+            return fields
+                .filter(field => numericTypes.includes(field.type) && !excludeKeys.includes(field.name)) // Filtramos solo los campos numéricos y excluimos las claves
+                .map(field => field.name); // Extraemos los nombres de los campos
         };
 
-        if (data.length > 0) {
-            const keys = getAllKeys(data[0].dataValues);
-            graphableData.push(...keys);
-        }
+        // Extraemos las claves numéricas del JSON
+        const numericKeys = getNumericKeys(jsonModel.fields);
+        graphableData.push(...numericKeys);
+
         return graphableData;
     } catch (error) {
         throw new Error(error.message);
     }
 };
+
+const excludeKeys = ['model_id', 'device_id', 'user_id'];   
+
+const getBooleanFields = async (model_id) => {
+    try {
+        const modelName = await getModelName(model_id);
+        if (!modelName) {
+            throw new Error('Model not found');
+        }
+        const jsonModel = jsons.find(json => json.name === modelName);
+        if (!jsonModel) {
+            throw new Error('Model JSON not found');
+        }
+
+        const booleanFields = jsonModel.fields
+            .filter(field => field.type === 'Boolean' && !excludeKeys.includes(field.name))
+            .map(field => field.name);
+
+        return booleanFields;
+    } catch (error) {
+        throw new Error(error.message);
+    }
+};
+
 const getJsonForPost = async (model_id, device_id, user_id) => {
     try {
         // Obtiene el nombre del modelo
@@ -198,14 +217,14 @@ const getJsonForPost = async (model_id, device_id, user_id) => {
 
         // Transforma el JSON en el formato requerido
         const transformedJson = {
-            module_id: model_id,
+            model_id: model_id,
             device_id: device_id,
             user_id: user_id,
         };
 
         jsonModel.fields.forEach(field => {
             // Agrega los campos que no sean module_id, device_id ni user_id
-            if (!['module_id', 'device_id', 'user_id'].includes(field.name)) {
+            if (!['model_id', 'device_id', 'user_id'].includes(field.name)) {
                 transformedJson[field.name] = field.value || null;
             }
         });
@@ -218,6 +237,30 @@ const getJsonForPost = async (model_id, device_id, user_id) => {
     }
 };
 
+const getLatestData = async (model_id, device_id) => {
+    try {
+        const modelName = await getModelName(model_id);
+        if (!modelName) {
+            throw new Error('Model not found');
+        }
+
+        const dataModel = models[modelName];
+        if (!dataModel) {
+            throw new Error('Model not found');
+        }
+
+        const device = await DeviceModel.findByPk(device_id);
+        if (!device) {
+            throw new Error('Device not found');
+        }
+
+        const data = await dataModel.findAll({ where: { device_id }, order: [['createdAt', 'DESC']], limit: 1 });
+        return data;
+    } catch (error) {
+        throw new Error(error.message);
+    }
+};
+
 
 const getModelName = async (model_id) => {
     const model = await modelsModel.findByPk(Number(model_id));
@@ -227,4 +270,4 @@ const getModelName = async (model_id) => {
     return model.name;
 };
 
-export default { createData, getDatabyModelandDevice, getDatabyModel, getDatabyDevice, getDatabyDateRange, getGraphableData, getJsonForPost };
+export default { createData, getDatabyModelandDevice, getDatabyModel, getDatabyDevice, getDatabyDateRange, getGraphableData, getJsonForPost, getBooleanFields };

@@ -77,14 +77,14 @@ const getFiltersByModelAndDevice = async (model_id, device_id) => {
     }
 };
 
-const checkFilter = async (model_id, device_id, data) => {
+const checkFilter = async (data) => {
     try {
+        const { model_id, device_id, user_id } = data;
         const filters = await Filter.findAll({ where: { model_id, device_id } });
         if (filters.length === 0) {
             console.log('No filters found');
             return [];
         }
-
         const alerts = [];
         filters.forEach(filter => {
             const conditions = Array.isArray(filter.conditions) ? filter.conditions : [filter.conditions];
@@ -130,7 +130,6 @@ const checkFilter = async (model_id, device_id, data) => {
                     filter_id: filter.id,
                     model_id,
                     device_id,
-                    data: data
                 });
                 alerts.push({ filter, description });
             }

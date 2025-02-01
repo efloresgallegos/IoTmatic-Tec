@@ -11,6 +11,7 @@ export default {
     logo: 'Logo',
     about: 'About',
     users: 'Users',
+    alerts: 'Alerts',
   },
   accessibilityButton: {
     tools: 'Accessibility Tools',
@@ -140,6 +141,43 @@ export default {
         typePlaceholder: 'Enter device type',
         descriptionPlaceholder: 'Enter device description',
       },
+    },
+    alertsAndFilters: {
+      title: "Alert and Filter Management",
+      tabs: {
+        alerts: "Alerts",
+        filters: "Filters",
+        createFilter: "Create Filter"
+      },
+      alerts: {
+        title: "Alerts Overview",
+        description: "Description",
+        device: "Device",
+        module: "Module",
+        status: "Status",
+        resolved: "Resolved",
+        pending: "Pending"
+      },
+      filters: {
+        title: "Manage Filters",
+        device: "Device",
+        module: "Module",
+        field: "Field",
+        conditions: "Conditions",
+        actions: "Actions"
+      },
+      createFilter: {
+        title: "Create Filter",
+        selectDevice: "Select a device",
+        selectModule: "Select a module",
+        selectField: "Select a field",
+        condition: "Condition",
+        threshold: "Threshold",
+        addCondition: "Add Condition",
+        conditionsList: "Conditions:",
+        createFilterButton: "Create Filter"
+      },
+      loading: "Loading..."
     },
   },
 }

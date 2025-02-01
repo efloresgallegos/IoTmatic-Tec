@@ -11,6 +11,7 @@ export default {
     logo: 'Logo',
     about: 'Acerca de',
     users: 'Usuarios',
+    alerts: 'Alertas',
   },
   accessibilityButton: {
     tools: 'Herramientas de accesibilidad',
@@ -133,6 +134,43 @@ export default {
       success: 'Inicio de sesión exitoso',
       selectLanguage: 'Selecciona un idioma',
       loginSuccess: 'Inicio de sesión exitoso',
+    },
+    alertsAndFilters: {
+      title: "Gestión de Alertas y Filtros",
+      tabs: {
+        alerts: "Alertas",
+        filters: "Filtros",
+        createFilter: "Crear Filtro"
+      },
+      alerts: {
+        title: "Visualización de Alertas",
+        description: "Descripción",
+        device: "Dispositivo",
+        module: "Módulo",
+        status: "Estado",
+        resolved: "Resuelta",
+        pending: "Pendiente"
+      },
+      filters: {
+        title: "Gestionar Filtros",
+        device: "Dispositivo",
+        module: "Módulo",
+        field: "Campo",
+        conditions: "Condiciones",
+        actions: "Acciones"
+      },
+      createFilter: {
+        title: "Crear Filtro",
+        selectDevice: "Selecciona un dispositivo",
+        selectModule: "Selecciona un módulo",
+        selectField: "Selecciona un campo",
+        condition: "Condición",
+        threshold: "Threshold",
+        addCondition: "Agregar Condición",
+        conditionsList: "Condiciones:",
+        createFilterButton: "Crear Filtro"
+      },
+      loading: "Cargando..."
     },
   },
 }

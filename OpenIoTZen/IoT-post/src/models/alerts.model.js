@@ -3,7 +3,7 @@ import { sequelize } from "../db/database.js";
 import Device from "./devices.model.js";
 import Model from "./models.model.js";
 
-const Alert = sequelize.define('alert', {
+const Alert = sequelize.define('alerts', {
     alert_id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -14,6 +14,13 @@ const Alert = sequelize.define('alert', {
         references: {
             model: 'devices',
             key: 'device_id'
+        }
+    },
+    filter_id: {
+        type: DataTypes.INTEGER,
+        references: {
+            model: 'filters',
+            key: 'filter_id'
         }
     },
     model_id:{

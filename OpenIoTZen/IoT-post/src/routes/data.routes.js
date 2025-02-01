@@ -7,8 +7,10 @@ router.post("/create", dataController.createData);
 router.get("/getByModelDevice", dataController.getDatabyModelandDevice);
 router.get("/getByModel", dataController.getDatabyModel);
 router.get("/getByDevice", dataController.getDatabyDevice);
+router.get("/getLatest", dataController.getLatestData);
 router.get("/getByRange", dataController.getDatabyDateRange);
-router.get("/getGraphable", dataController.getGraphableData);
+router.get("/getGraphable/:id", dataController.getGraphableData);
 router.post("/getJson", dataController.getJsonForPost);
+router.get("/getBooleanFields/:id", dataController.getBooleanFields);
 
 export default router;

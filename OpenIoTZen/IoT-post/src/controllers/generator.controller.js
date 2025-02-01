@@ -122,15 +122,19 @@ export default ${name};
 };
 
 const createDataModel = async (name, fields) => {
-    fields.push(
-        { name: 'device_id', type: 'Number', required: true, ref: 'devices', refColumn: 'device_id' },
-        { name: 'model_id', type: 'Number', required: true, ref: 'models', refColumn: 'model_id' },
-        { name: 'user_id', type: 'Number', required: true, ref: 'users', refColumn: 'user_id' }
-    );
-
-    const jsModel = genJSModel(name, fields);
-
     try {
+        // Agregar el campo primary key
+        fields.push(
+            { name: `${name}_id`, type: 'Number', required: true, primaryKey: true, autoIncrement: true },
+            { name: 'device_id', type: 'Number', required: true, ref: 'devices', refColumn: 'device_id' },
+            { name: 'model_id', type: 'Number', required: true, ref: 'models', refColumn: 'model_id' },
+            { name: 'user_id', type: 'Number', required: true, ref: 'users', refColumn: 'user_id' }
+        );
+
+        // Generación dinámica del modelo
+        const jsModel = genJSModel(name, fields);
+
+        // Definir el modelo con Sequelize
         const model = sequelize.define(name, fields.reduce((acc, field) => {
             let fieldType;
 
@@ -166,10 +170,13 @@ const createDataModel = async (name, fields) => {
                     fieldType = DataTypes.TEXT;
             }
 
+            // Definir los campos y sus atributos
             acc[field.name] = {
                 type: fieldType,
                 allowNull: !field.required,
-                ...(field.ref ? { references: { model: field.ref, key: field.refColumn || `${field.ref}_id` } } : {})
+                ...(field.ref ? { references: { model: field.ref, key: field.refColumn || `${field.ref}_id` } } : {}),
+                ...(field.primaryKey ? { primaryKey: field.primaryKey } : {}),
+                ...(field.autoIncrement ? { autoIncrement: field.autoIncrement } : {}),
             };
 
             return acc;
@@ -181,20 +188,20 @@ const createDataModel = async (name, fields) => {
         // Intentar sincronizar la base de datos sin eliminar datos existentes
         await model.sync({ alter: true });
         console.log(`Tabla ${name} creada exitosamente`);
+
+        // Guardar el modelo generado en un archivo JS
+        const dirPath = path.join(__dirname, '../models/data'); // Usando __dirname
+        const filePath = path.join(dirPath, `${name}.js`);
+
+        if (!fs.existsSync(dirPath)) {
+            fs.mkdirSync(dirPath, { recursive: true });
+        }
+
+        fs.writeFileSync(filePath, jsModel, 'utf8');
+        console.log(`Modelo ${name} generado exitosamente`);
     } catch (error) {
         console.error('Error al crear la tabla:', error);
     }
-
-    // Guardar el modelo en un archivo JavaScript
-    const dirPath = path.join(__dirname, '../models/data'); // Usando __dirname
-    const filePath = path.join(dirPath, `${name}.js`);
-
-    if (!fs.existsSync(dirPath)) {
-        fs.mkdirSync(dirPath, { recursive: true });
-    }
-
-    fs.writeFileSync(filePath, jsModel, 'utf8');
-    console.log(`Modelo ${name} generado exitosamente`);
 };
 
 const generateJson = (name, fields) => {

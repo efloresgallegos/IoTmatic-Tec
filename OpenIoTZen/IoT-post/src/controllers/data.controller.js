@@ -51,8 +51,19 @@ const getDatabyDateRange = async (req, res) => {
 
 const getGraphableData = async (req, res) => {
     try {
-        const { model, device } = req.params;
-        const data = await dataService.getGraphableData(model, device);
+        const  model_id = req.params.id;
+        console.log(model_id);
+        const data = await dataService.getGraphableData(model_id);
+        res.status(200).json(data);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const getBooleanFields = async (req, res) => {
+    try {
+        const  model_id  = req.params.id;
+        const data = await dataService.getBooleanFields(model_id);
         res.status(200).json(data);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -70,6 +81,7 @@ const getModelName = async (model_id) => {
 
 const getJsonForPost = async (req, res) => {
     try {
+        console.log(req.body);
         const {model_id, device_id, user_id} = req.body;
         const data = await dataService.getJsonForPost(model_id, device_id, user_id);
         res.status(200).json(data);
@@ -78,4 +90,14 @@ const getJsonForPost = async (req, res) => {
     }
 }
 
-export default { createData, getDatabyModelandDevice, getDatabyModel, getDatabyDevice, getDatabyDateRange, getGraphableData, getModelName, getJsonForPost };
+const getLatestData = async (req, res) => {
+    try {
+        const {model_id, device_id} = req.body;
+        const data = await dataService.getLatestData(model_id, device_id);
+        res.status(200).json(data);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}
+
+export default { createData, getDatabyModelandDevice, getDatabyModel, getDatabyDevice, getDatabyDateRange, getGraphableData, getModelName, getJsonForPost, getLatestData, getBooleanFields };
