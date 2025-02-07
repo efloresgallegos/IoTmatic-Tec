@@ -27,3 +27,11 @@
 .a11y-oscura font {
     color: #a09e9e;
 }
+.menu-flotante {
+    position: fixed;
+    z-index: 9999; /* Asegurar que esté encima */
+}
+.q-menu {
+    z-index: 10000 !important; /* Forzar que el menú de Quasar esté sobre todo */
+}
+

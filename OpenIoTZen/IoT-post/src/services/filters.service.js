@@ -85,9 +85,11 @@ const checkFilter = async (data) => {
             console.log('No filters found');
             return [];
         }
+
         const alerts = [];
         filters.forEach(filter => {
-            const conditions = Array.isArray(filter.conditions) ? filter.conditions : [filter.conditions];
+            const conditions = Array.isArray(filter.conditions) ? filter.conditions : 
+                              (filter.conditions ? [filter.conditions] : []);
             let isValid = true;
             let description = `Alert for ${filter.name}: `;
             const triggers = [];
@@ -95,30 +97,43 @@ const checkFilter = async (data) => {
             conditions.forEach(condition => {
                 const { condition: operator, threshold } = condition;
                 const fieldValue = data[filter.field];
-                
+
+                // Validar que el campo exista en los datos
+                if (fieldValue === undefined) {
+                    console.warn(`Field "${filter.field}" not found in data`);
+                    return;
+                }
+
+                // Convertir el threshold a número
+                const thresholdNumber = parseFloat(threshold);
+                if (isNaN(thresholdNumber)) {
+                    console.warn(`Invalid threshold value: ${threshold}`);
+                    return;
+                }
+
                 let conditionMet = false;
                 switch (operator) {
                     case '=':
-                        conditionMet = fieldValue === threshold;
+                        conditionMet = fieldValue === thresholdNumber;
                         break;
                     case '>':
-                        conditionMet = fieldValue > threshold;
+                        conditionMet = fieldValue > thresholdNumber;
                         break;
                     case '<':
-                        conditionMet = fieldValue < threshold;
+                        conditionMet = fieldValue < thresholdNumber;
                         break;
                     case '>=':
-                        conditionMet = fieldValue >= threshold;
+                        conditionMet = fieldValue >= thresholdNumber;
                         break;
                     case '<=':
-                        conditionMet = fieldValue <= threshold;
+                        conditionMet = fieldValue <= thresholdNumber;
                         break;
                     default:
                         conditionMet = false;
                 }
 
                 if (conditionMet) {
-                    triggers.push(`${filter.field} is ${operator} ${threshold} (current value: ${fieldValue})`);
+                    triggers.push(`${filter.field} is ${operator} ${thresholdNumber} (current value: ${fieldValue})`);
                 }
                 isValid = isValid && conditionMet;
             });
@@ -134,8 +149,10 @@ const checkFilter = async (data) => {
                 alerts.push({ filter, description });
             }
         });
+
         return alerts;
     } catch (error) {
+        console.error('Error in checkFilter:', error.message);
         throw new Error(error.message);
     }
 };

@@ -6,6 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const basename = path.basename(__filename);
 
+// Get all valid .js file names in the directory
 const getJsFileNames = async () => {
   try {
     const files = await fs.readdir(__dirname);
@@ -24,34 +25,52 @@ const getJsFileNames = async () => {
   }
 };
 
-const getJsFile = async (name) => {
+// Check if a file exists
+const fileExists = async (filePath) => {
   try {
-    const filePath = path.join(__dirname, `${name}.js`);
-
-    // Verificar si el archivo existe
     await fs.access(filePath);
-
-    // Convertir la ruta a una URL válida para import()
-    const fileUrl = pathToFileURL(filePath).href;
-
-    // Cargar el módulo dinámicamente
-    const model = await import(fileUrl);
-    return model.default || model; // Devuelve la exportación por defecto si existe
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      throw new Error(`El archivo "${name}.js" no existe en el directorio de modelos.`);
-    } else {
-      console.error(`Error al cargar el archivo "${name}.js":`, error.message);
-      throw new Error(`Error al cargar el modelo "${name}".`);
-    }
+    return true;
+  } catch {
+    return false;
   }
 };
 
+// Dynamically load a JavaScript file by name
+const getJsFile = async (name) => {
+  const filePath = path.join(__dirname, `${name}.js`);
+
+  if (!(await fileExists(filePath))) {
+    throw new Error(`El archivo "${name}.js" no existe en el directorio de modelos.`);
+  }
+
+  try {
+    const fileUrl = pathToFileURL(filePath).href;
+    return await import(fileUrl);
+  } catch (error) {
+    console.error(`Error al cargar el archivo "${name}.js":`, error.message);
+    throw new Error(`Error al cargar el modelo "${name}".`);
+  }
+};
+
+// Load all models concurrently
 const loadModels = async () => {
-  const models = await getJsFileNames();
+  const modelNames = await getJsFileNames();
+  const models = {};
+
+  const results = await Promise.allSettled(modelNames.map(getJsFile));
+
+  results.forEach((result, index) => {
+    if (result.status === 'fulfilled') {
+      models[modelNames[index]] = result.value;
+    } else {
+      console.error(`Error al cargar el modelo "${modelNames[index]}":`, result.reason);
+    }
+  });
+
   return models;
 };
 
-const models = await loadModels();
+// Export the promise for models and the getJsFile function
+const modelsPromise = loadModels();
 
-export { models, getJsFile };
+export { modelsPromise as models, getJsFile };

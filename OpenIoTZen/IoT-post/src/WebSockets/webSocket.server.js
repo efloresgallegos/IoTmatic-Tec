@@ -1,4 +1,5 @@
 const connections = new Map();
+const subscriptions = new Map();
 
 export const setupWebSocketServer = (wss) => {
   wss.on('connection', (ws, req) => {
@@ -16,12 +17,20 @@ export const setupWebSocketServer = (wss) => {
 
     ws.on('message', (message) => {
       try {
-        const messageString = message.toString();
-        console.log('Mensaje recibido:', messageString);
-
-        const parsedMessage = JSON.parse(messageString);
+        const parsedMessage = JSON.parse(message.toString());
         if (parsedMessage.type === 'subscribe') {
-          console.log(`Cliente se ha suscrito al evento: ${parsedMessage.eventName}`);
+          const { eventName } = parsedMessage;
+          if (!subscriptions.has(eventName)) {
+            subscriptions.set(eventName, new Set());
+          }
+          subscriptions.get(eventName).add(ws);
+          console.log(`Cliente se ha suscrito al evento: ${eventName}`);
+        } else if (parsedMessage.type === 'unsubscribe') {
+          const { eventName } = parsedMessage;
+          if (subscriptions.has(eventName)) {
+            subscriptions.get(eventName).delete(ws);
+            console.log(`Cliente se ha desuscrito del evento: ${eventName}`);
+          }
         }
       } catch (error) {
         console.error('Error al procesar el mensaje:', error);
@@ -30,27 +39,44 @@ export const setupWebSocketServer = (wss) => {
 
     ws.on('close', () => {
       console.log('Cliente desconectado desde IP:', ip);
-      connections.set(ip, connections.get(ip) - 1);
+      const count = connections.get(ip) - 1;
+      if (count === 0) {
+        connections.delete(ip);
+      } else {
+        connections.set(ip, count);
+      }
+
+      // Limpiar suscripciones del cliente
+      subscriptions.forEach((clients, eventName) => {
+        clients.delete(ws);
+        if (clients.size === 0) {
+          subscriptions.delete(eventName);
+        }
+      });
     });
 
     ws.send(JSON.stringify({ message: 'Bienvenido al servidor WebSocket!' }));
   });
 };
 
-// Función para emitir nuevos datos
 export const emitNewData = (wss, data) => {
-  wss.clients.forEach(client => {
-    if (client.readyState === client.OPEN) {
-      client.send(JSON.stringify({ event: 'newData', data }));
-    }
-  });
+  const eventName = 'newData';
+  if (subscriptions.has(eventName)) {
+    subscriptions.get(eventName).forEach(client => {
+      if (client.readyState === client.OPEN) {
+        client.send(JSON.stringify({ event: eventName, data }));
+      }
+    });
+  }
 };
 
-// Función para emitir nuevas alertas
 export const emitNewAlert = (wss, alert) => {
-  wss.clients.forEach(client => {
-    if (client.readyState === client.OPEN) {
-      client.send(JSON.stringify({ event: 'newAlert', alert }));
-    }
-  });
+  const eventName = 'newAlert';
+  if (subscriptions.has(eventName)) {
+    subscriptions.get(eventName).forEach(client => {
+      if (client.readyState === client.OPEN) {
+        client.send(JSON.stringify({ event: eventName, alert }));
+      }
+    });
+  }
 };

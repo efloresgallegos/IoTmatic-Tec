@@ -55,10 +55,20 @@
             >
                 {{ $t('accessibilityButton.reset') }}
             </button>
+
+            <!-- Selector de idioma -->
+            <div class="menu-flotante-seccion">
+                <label for="idioma-select" class="menu-flotante-label">
+                    {{ $t('accessibilityButton.language') }}
+                </label>
+                <select id="idioma-select" v-model="$i18n.locale" class="menu-flotante-select">
+                    <option value="es-MX">Español</option>
+                    <option value="en-US">English</option>
+                </select>
+            </div>
         </div>
     </div>
 </template>
-
 
 <script>
 export default {
@@ -105,4 +115,23 @@ export default {
 <style>
 @import '../../css/big-components/AccesibilityButton.css';
 
+.menu-flotante-seccion {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.menu-flotante-label {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.menu-flotante-select {
+    padding: 0.5rem;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    background-color: white;
+    font-size: 1rem;
+}
 </style>

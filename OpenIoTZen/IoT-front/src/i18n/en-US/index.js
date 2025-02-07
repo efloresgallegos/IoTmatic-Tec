@@ -1,3 +1,4 @@
+
 export default {
   failed: 'Action failed',
   success: 'Action was successful',
@@ -21,6 +22,7 @@ export default {
     textOnly: 'Text Only View',
     darkView: 'Dark View',
     reset: 'Reset',
+    language: 'Language',
   },
   views: {
     home: {
@@ -29,16 +31,23 @@ export default {
         'The system is designed to optimize the management and supervision of IoT devices through the integration of IoT technologies. This system allows users to manage and analyze real-time data from various sensors distributed in the greenhouse, facilitating informed decision-making to improve agricultural production.',
       features: 'Main Features',
       featuresList: {
+        dataModels: 'Data Models',
+        dataMonitoring: 'Data Monitoring',
+        jsonManagement: 'JSON Management',
+        dataVisualization: 'Data Visualization',
+        dataComparison: 'Data Comparison',
+      },
+      featuresDescriptions: {
         dataModels:
-          'Data Models: IOT_Framework will allow the creation of specific data models for each type of sensor, facilitating communication between IoT devices and the platform.',
+          'IOT_Framework will allow the creation of specific data models for each type of sensor, facilitating communication between IoT devices and the platform.',
         dataMonitoring:
-          'Data Monitoring: Intuitive interface for real-time monitoring of data collected by sensors.',
+          'Intuitive interface for real-time monitoring of data collected by sensors.',
         jsonManagement:
-          'JSON Management: Flexibility to design and import custom data models through JSON files, enabling easy configuration and adaptation of the system to different needs.',
+          'Flexibility to design and import custom data models through JSON files, enabling easy configuration and adaptation of the system to different needs.',
         dataVisualization:
-          'Data Visualization: Visualization tools to graph data over time and compare information from different sensors on specific dates.',
+          'Visualization tools to graph data over time and compare information from different sensors on specific dates.',
         dataComparison:
-          'Data Comparison: Ability to compare data from different sensors at various times to identify trends and patterns.',
+          'Ability to compare data from different sensors at various times to identify trends and patterns.',
       },
       saveJson: 'Save JSON',
     },

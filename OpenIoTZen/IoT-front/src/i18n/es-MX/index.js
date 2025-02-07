@@ -21,24 +21,32 @@ export default {
     textOnly: 'Mostrar solo texto',
     darkView: 'Vista Oscura',
     reset: 'Restablecer',
+    language: 'Idioma',
   },
   views: {
     home: {
       welcome: '¡Bienvenido a IoT Framework!',
       introduction:
-        'El sistema está diseñado para optimizar el manejo y la supervisión de dispositivos IoT a través de la integración de tecnologías IoT. Este sistema permitirá a los usuarios gestionar y analizar datos en tiempo real provenientes de diversos sensores distribuidos en el invernadero, facilitando la toma de decisiones informadas para mejorar la producción agrícola.',
+        'El sistema está diseñado para optimizar la gestión y supervisión de dispositivos IoT mediante la integración de tecnologías IoT. Este sistema permite a los usuarios gestionar y analizar datos en tiempo real de varios sensores distribuidos en el invernadero, facilitando la toma de decisiones informadas para mejorar la producción agrícola.',
       features: 'Características Principales',
       featuresList: {
+        dataModels: 'Modelos de Datos',
+        dataMonitoring: 'Monitoreo de Datos',
+        jsonManagement: 'Gestión de JSON',
+        dataVisualization: 'Visualización de Datos',
+        dataComparison: 'Comparación de Datos',
+      },
+      featuresDescriptions: {
         dataModels:
-          'Modelos de Datos: IOT_Framework permitirá la creación de modelos de datos específicos para cada tipo de sensor, facilitando la comunicación entre los dispositivos IoT y la plataforma.',
+          'IoT_Framework permitirá la creación de modelos de datos específicos para cada tipo de sensor, facilitando la comunicación entre los dispositivos IoT y la plataforma.',
         dataMonitoring:
-          'Monitoreo de Datos: Interfaz intuitiva para la monitorización en tiempo real de los datos recolectados por los sensores.',
+          'Interfaz intuitiva para el monitoreo en tiempo real de los datos recopilados por los sensores.',
         jsonManagement:
-          'Gestión de JSON: Flexibilidad para diseñar e importar modelos de datos personalizados mediante archivos JSON, permitiendo una fácil configuración y adaptación del sistema a diferentes necesidades.',
+          'Flexibilidad para diseñar e importar modelos de datos personalizados a través de archivos JSON, permitiendo una configuración y adaptación fácil del sistema a diferentes necesidades.',
         dataVisualization:
-          'Graficación de Datos: Herramientas de visualización que permitirán graficar los datos a lo largo del tiempo y comparar información de diferentes sensores en fechas específicas.',
+          'Herramientas de visualización para graficar datos a lo largo del tiempo y comparar información de diferentes sensores en fechas específicas.',
         dataComparison:
-          'Comparaciones de Datos: Capacidad de comparar datos de diferentes sensores en distintos momentos para identificar tendencias y patrones.',
+          'Capacidad para comparar datos de diferentes sensores en distintos momentos para identificar tendencias y patrones.',
       },
       saveJson: 'Guardar JSON',
     },

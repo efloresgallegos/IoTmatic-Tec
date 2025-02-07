@@ -14,12 +14,6 @@
             </q-item>
 
         </q-list>
-        <div class="q-pa-md">
-            <select v-model="$i18n.locale">
-                <option value="es-MX">Español</option>
-                <option value="en-US">English</option>
-            </select>
-        </div>
     </q-drawer>
 </template>
 

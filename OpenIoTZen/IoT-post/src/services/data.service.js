@@ -1,51 +1,67 @@
-import { models, getJsFile } from '../models/data/index.js';
+import { models } from '../models/data/index.js';
 import modelsModel from '../models/models.model.js';
 import { emitNewData, emitNewAlert } from '../WebSockets/webSocket.server.js';
 import { jsons } from '../jsons/index.js';
 import DeviceModel from '../models/devices.model.js';
 import Filter from '../services/filters.service.js';
 
+let loadModels;
+
+(async () => {
+    try {
+        loadModels = await models;
+        console.log('Models loaded:', loadModels);
+    } catch (error) {
+        console.error('Error loading models:', error.message);
+    }
+})();
 
 const createData = async (data) => {
     try {
+        // Ensure models are loaded
+        if (!loadModels) {
+            throw new Error('Models are not yet loaded');
+        }
+
         const { model_id, device_id } = data;
 
-        // Validate model
+        // Obtener el nombre del modelo
         const modelName = await getModelName(model_id);
         if (!modelName) {
             throw new Error('Model not found');
         }
 
-        // Load the model dynamically
-        const dataModel = await getJsFile(modelName);
+        // Acceder correctamente al modelo en loadModels
+        const dataModel = loadModels[modelName]?.default; // Access the default export
         if (!dataModel) {
-            throw new Error('Model not found');
+            throw new Error(`Model "${modelName}" not found in loaded models`);
         }
 
-        // Validate device
+        console.log('Using model:', modelName);
+
+        // Validar existencia del dispositivo
         const device = await DeviceModel.findByPk(device_id);
         if (!device) {
             throw new Error('Device not found');
         }
 
-        // Check for alerts
+        // Verificar alertas
         const alerts = await Filter.checkFilter(data);
         if (alerts.length > 0) {
             emitNewAlert({ device_id, alerts });
             return { message: 'Alerts created', alerts };
         }
 
-        // Create new data
-        const newData = await dataModel.create(data);
+        // Crear nuevo dato
+        const newData = await dataModel.create(data); // Use the model to create data
         emitNewData({ device_id, data: newData });
 
         return newData;
     } catch (error) {
-        console.error('Error creating data:', error);
+        console.error('Error creating data:', error.message);
         throw new Error('Error creating data');
     }
 };
-
 
 const getDatabyModelandDevice = async (model_id, device_id) => {
     try {
