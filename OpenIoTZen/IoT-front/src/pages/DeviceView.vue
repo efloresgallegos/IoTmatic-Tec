@@ -162,7 +162,7 @@ export default {
         const response = await apiService.post(`/data/getJson/`, {
           model_id: this.selectedModel.model_id, // Asegúrate de usar model_id
           device_id: Number(this.$route.params.id),
-          user_id: user.user_id,
+          user_id: Number(user.user_id),
         });
         console.log("JSON generado:", response);
         const json = response.data;

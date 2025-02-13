@@ -118,7 +118,10 @@
 import JSONEditor from "jsoneditor";
 import "jsoneditor/dist/jsoneditor.css";
 import AiInteraction from "../components/dinamic-components/AiInteraction.vue";
+import apiService from "../boot/ApiServices/api.service";
+import { useQuasar } from "quasar";
 
+this.$q = useQuasar();
 export default {
   components: { AiInteraction },
   data() {
@@ -170,22 +173,79 @@ export default {
     removeSubField(fieldIndex, subFieldIndex) {
       this.fields[fieldIndex].fields.splice(subFieldIndex, 1);
     },
-    handleSubmit() {
+    async handleSubmit() {
       if (!this.modelName.trim()) {
-        this.modelNameError = true;
-        return;
+      this.modelNameError = true;
+      return;
       }
       this.modelNameError = false;
-      console.log("Model generated:", this.model);
-      alert(this.$t("views.modelCreator.successModelGenerated"));
+
+      try {
+      const response = await apiService.post('/generator', {
+        name: this.modelName,
+        fields: this.fields
+      });
+
+      console.log("Model generated:", response.data);
+      this.$q.notify({
+        type: 'positive',
+        message: this.$t("views.modelCreator.successModelGenerated")
+      });
       this.modelName = "";
       this.fields = [];
+      } catch (error) {
+      console.error("Error generating model:", error);
+      this.$q.notify({
+        type: 'negative', 
+        message: this.$t("common.errorMessage")
+      });
+      }
     },
-    handleAiModelUpdated(updatedModel) {
+    async handleAiModelUpdated(updatedModel) {
+      // Create dialog with JSON comparison
+      const dialog = this.$q.dialog({
+      title: this.$t('views.modelCreator.aiUpdateTitle'),
+      message: `
+        <div>
+        <h6>Current Model:</h6>
+        <pre>${JSON.stringify(this.model, null, 2)}</pre>
+        <h6>AI Suggested Model:</h6>
+        <pre>${JSON.stringify(updatedModel, null, 2)}</pre>
+        </div>
+      `,
+      html: true,
+      ok: this.$t('common.accept'),
+      cancel: this.$t('common.cancel'),
+      persistent: true
+      });
+
+      try {
+      await dialog;
+      // If user accepts, update the model
       this.modelName = updatedModel.name;
-      this.fields = updatedModel.fields;
-      if (this.editor) this.editor.set(this.model);
-    },
+      this.fields = updatedModel.fields.map(field => ({
+        name: field.name,
+        type: field.type,
+        required: field.required || false,
+        fields: field.fields ? field.fields.map(subField => ({
+        name: subField.name,
+        type: subField.type,
+        required: subField.required || false
+        })) : []
+      }));
+      this.$q.notify({
+        type: 'positive',
+        message: this.$t('views.modelCreator.aiUpdateSuccess')
+      });
+      } catch {
+      // User cancelled
+      this.$q.notify({
+        type: 'info',
+        message: this.$t('views.modelCreator.aiUpdateCancelled')
+      });
+      }
+  if (this.editor) this.editor.set(this.model);
+}
   },
   watch: {
     model: {

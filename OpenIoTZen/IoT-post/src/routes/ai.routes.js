@@ -1,9 +1,8 @@
-import ai from '../ai/AIConection.js';
 import { Router } from 'express';
+import  sendToAI from '../ai/AIConection.js';
 
 const router = Router();
 
-router.post('/GPT', ai.sendToGPT);
-router.post('/DeepSeek', ai.sendToDeepSeek);
+router.post('/sendToAI', sendToAI.sendToAI);
 
 export default router;

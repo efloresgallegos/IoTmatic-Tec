@@ -1,0 +1,41 @@
+{
+  "name": "SolarLightMonitor",
+  "fields": [
+    {
+      "name": "location",
+      "type": "String",
+      "required": true
+    },
+    {
+      "name": "lightIntensity",
+      "type": "Number",
+      "required": true
+    },
+    {
+      "name": "SolarLightMonitor_id",
+      "type": "Number",
+      "required": true
+    },
+    {
+      "name": "device_id",
+      "type": "Number",
+      "required": true,
+      "ref": "devices",
+      "refColumn": "device_id"
+    },
+    {
+      "name": "model_id",
+      "type": "Number",
+      "required": true,
+      "ref": "models",
+      "refColumn": "model_id"
+    },
+    {
+      "name": "user_id",
+      "type": "Number",
+      "required": true,
+      "ref": "users",
+      "refColumn": "user_id"
+    }
+  ]
+}

@@ -58,9 +58,9 @@ const genJSModel = (name, fields) => {
 
     return `
 
-import User from './users.model.js';
-import Device from './devices.model.js';
-import Model from './models.model.js';
+import User from '../users.model.js';
+import Device from '../devices.model.js';
+import Model from '../models.model.js';
 import { Sequelize, DataTypes } from 'sequelize';
 import { sequelize } from '../../db/database.js'; // Ajusta la ruta a tu configuración de Sequelize
 

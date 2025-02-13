@@ -1,34 +1,24 @@
 {
-  "name": "ExampleModel",
+  "name": "SolarLightMonitoring",
   "fields": [
     {
-      "name": "title",
+      "name": "lightIntensity",
+      "type": "Number",
+      "required": true
+    },
+    {
+      "name": "weatherConditions",
+      "type": "String",
+      "required": false
+    },
+    {
+      "name": "location",
       "type": "String",
       "required": true
     },
     {
-      "name": "description",
-      "type": "Text",
-      "required": false
-    },
-    {
-      "name": "price",
-      "type": "Float",
-      "required": true
-    },
-    {
-      "name": "isAvailable",
-      "type": "Boolean",
-      "required": true
-    },
-    {
-      "name": "createdAt",
-      "type": "Date",
-      "required": true
-    },
-    {
-      "name": "updatedAt",
-      "type": "Date",
+      "name": "SolarLightMonitoring_id",
+      "type": "Number",
       "required": true
     },
     {

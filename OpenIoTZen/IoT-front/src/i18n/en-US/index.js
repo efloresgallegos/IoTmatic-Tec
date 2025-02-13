@@ -1,5 +1,18 @@
 
 export default {
+  common: {
+    loading: 'Loading...',
+    error: 'Error',
+    accept: 'Accept',
+    cancel: 'Cancel',
+    confirm: 'Confirm',
+    delete: 'Delete',
+    edit: 'Edit',
+    save: 'Save',
+    close: 'Close',
+    add: 'Add',
+    create: 'Create'
+    },
   failed: 'Action failed',
   success: 'Action was successful',
   navBar: {
@@ -117,6 +130,9 @@ export default {
         errorPromptRequired: 'Please enter a prompt.',
         errorProcessingPrompt: 'There was an error processing the prompt.',
       },
+      aiUpdateTitle: 'Update Model with AI',
+      aiUpdateSuccess: 'Model updated successfully.',
+      aiUpdateCancelled: 'Model update cancelled.',
     },
     users: {
       title: 'Add User',

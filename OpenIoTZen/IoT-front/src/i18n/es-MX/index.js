@@ -1,4 +1,17 @@
 export default {
+  common: {
+    loading: 'Cargando...',
+    error: 'Error',
+    accept: 'Aceptar',
+    cancel: 'Cancelar',
+    confirm: 'Confirmar',
+    delete: 'Eliminar',
+    edit: 'Editar',
+    save: 'Guardar',
+    close: 'Cerrar',
+    add: 'Añadir',
+    create: 'Crear'
+  },
   failed: 'La acción falló',
   success: 'La acción fue exitosa',
   navBar: {
@@ -116,6 +129,10 @@ export default {
         errorPromptRequired: 'Por favor ingresa un prompt.',
         errorProcessingPrompt: 'Hubo un error al procesar el prompt.',
       },
+      aiUpdateTitle: 'Actualizar Modelo con IA',
+      aiUpdateSuccess: 'Modelo actualizado con éxito.',
+      aiUpdateCancelled: 'Actualización del modelo cancelada.',
+
     },
     users: {
       title: 'Añadir Usuario',
