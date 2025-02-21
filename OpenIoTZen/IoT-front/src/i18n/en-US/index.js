@@ -133,6 +133,10 @@ export default {
       aiUpdateTitle: 'Update Model with AI',
       aiUpdateSuccess: 'Model updated successfully.',
       aiUpdateCancelled: 'Model update cancelled.',
+      currentModel: "Current Model",
+      aiSuggestedModel: "AI Suggested Model",
+      dialogWarning: "Warning, you are about to generate a new model. This will replace the current model. Are you sure you want to proceed?",
+
     },
     users: {
       title: 'Add User',

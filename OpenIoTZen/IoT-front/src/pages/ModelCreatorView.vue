@@ -121,9 +121,14 @@ import AiInteraction from "../components/dinamic-components/AiInteraction.vue";
 import apiService from "../boot/ApiServices/api.service";
 import { useQuasar } from "quasar";
 
-this.$q = useQuasar();
+
 export default {
   components: { AiInteraction },
+
+  setup() {
+    const $q = useQuasar();
+    return { $q };
+  },
   data() {
     return {
       modelName: "",
@@ -140,7 +145,7 @@ export default {
           name: field.name,
           type: field.type,
           required: field.required,
-          fields: field.type === "Object" ? field.fields || [] : undefined,
+          fields: field.type === "Object" ? field.fields || [] : undefined
         })),
       };
     },
@@ -202,50 +207,91 @@ export default {
       }
     },
     async handleAiModelUpdated(updatedModel) {
-      // Create dialog with JSON comparison
-      const dialog = this.$q.dialog({
-      title: this.$t('views.modelCreator.aiUpdateTitle'),
-      message: `
-        <div>
-        <h6>Current Model:</h6>
-        <pre>${JSON.stringify(this.model, null, 2)}</pre>
-        <h6>AI Suggested Model:</h6>
-        <pre>${JSON.stringify(updatedModel, null, 2)}</pre>
-        </div>
-      `,
-      html: true,
-      ok: this.$t('common.accept'),
-      cancel: this.$t('common.cancel'),
-      persistent: true
-      });
+  // Estilos para la presentación del JSON
+  const jsonStyles = `
+    background: #f5f5f5;
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 0.5rem 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    white-space: pre-wrap;
+    max-height: 40vh;
+    overflow: auto;
+    border: 1px solid #ddd;
+  `;
 
-      try {
-      await dialog;
-      // If user accepts, update the model
+  const dialogContent = `
+    <div style="max-width: 800px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem;">
+        <div>
+          <h6 style="color: #2c3e50; margin: 0 0 0.5rem 0; font-weight: 600;">
+            ${this.$t('views.modelCreator.currentModel')}
+          </h6>
+          <div style="${jsonStyles}">${JSON.stringify(this.model, null, 2)}</div>
+        </div>
+        <div>
+          <h6 style="color: #27ae60; margin: 0 0 0.5rem 0; font-weight: 600;">
+            ${this.$t('views.modelCreator.aiSuggestedModel')}
+          </h6>
+          <div style="${jsonStyles}">${JSON.stringify(updatedModel, null, 2)}</div>
+        </div>
+      </div>
+      <p style="color: #7f8c8d; font-size: 0.9rem; margin: 0;">
+        ${this.$t('views.modelCreator.dialogWarning')}
+      </p>
+    </div>
+  `;
+
+  try {
+    const confirmed = await this.$q.dialog({
+      title: this.$t('views.modelCreator.aiUpdateTitle'),
+      message: dialogContent,
+      html: true,
+      ok: {
+        label: this.$t('common.accept'),
+        color: 'positive',
+        flat: false
+      },
+      cancel: {
+        label: this.$t('common.cancel'),
+        color: 'negative',
+        flat: true
+      },
+      persistent: true,
+      style: 'min-width: 70vw;'
+    });
+
+    if (confirmed) {
       this.modelName = updatedModel.name;
       this.fields = updatedModel.fields.map(field => ({
         name: field.name,
         type: field.type,
         required: field.required || false,
-        fields: field.fields ? field.fields.map(subField => ({
-        name: subField.name,
-        type: subField.type,
-        required: subField.required || false
-        })) : []
+        fields: field.fields?.map(subField => ({
+          name: subField.name,
+          type: subField.type,
+          required: subField.required || false
+        })) || []
       }));
+      
       this.$q.notify({
         type: 'positive',
-        message: this.$t('views.modelCreator.aiUpdateSuccess')
+        message: this.$t('views.modelCreator.aiUpdateSuccess'),
+        icon: 'check_circle'
       });
-      } catch {
-      // User cancelled
-      this.$q.notify({
-        type: 'info',
-        message: this.$t('views.modelCreator.aiUpdateCancelled')
-      });
-      }
-  if (this.editor) this.editor.set(this.model);
-}
+      
+      if (this.editor) this.editor.set(this.model);
+    }
+  } catch (error) {
+    this.$q.notify({
+      type: 'info',
+      message: this.$t('views.modelCreator.aiUpdateCancelled'),
+      icon: 'info'
+    });
+    console.error('Error updating model:', error); 
+  }
+},
   },
   watch: {
     model: {

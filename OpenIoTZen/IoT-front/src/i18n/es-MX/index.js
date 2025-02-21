@@ -132,6 +132,10 @@ export default {
       aiUpdateTitle: 'Actualizar Modelo con IA',
       aiUpdateSuccess: 'Modelo actualizado con éxito.',
       aiUpdateCancelled: 'Actualización del modelo cancelada.',
+      currentModel: "Modelo Actual",
+      aiSuggestedModel: "Modelo Sugerido por IA",
+      dialogWarning: "¿Desea reemplazar su modelo actual con la sugerencia de la IA? Esta acción no se puede deshacer.",
+
 
     },
     users: {
