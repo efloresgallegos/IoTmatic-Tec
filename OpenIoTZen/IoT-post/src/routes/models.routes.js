@@ -1,12 +1,13 @@
-import modeController from '../controllers/models.controller.js';
+import modelController from '../controllers/models.controller.js';
 import { Router } from 'express';
 
 const router = Router();
 
-router.get('/', modeController.getModels);
-router.post('/', modeController.createModel);
-router.put('/:id', modeController.updateModel);
-router.get('/:id', modeController.getModelById);
-router.delete('/:id', modeController.deleteModel);
+router.get('/', modelController.getModels);
+router.post('/', modelController.createModel);
+router.put('/:id', modelController.updateModel);
+router.get('/:id', modelController.getModelById);
+router.delete('/:id', modelController.deleteModel);
+router.get('/:id/json', modelController.getFullJson);
 
 export default router;

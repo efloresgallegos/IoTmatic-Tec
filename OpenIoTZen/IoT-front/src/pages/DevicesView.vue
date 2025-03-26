@@ -53,42 +53,39 @@
       <template #body>
         <form @submit.prevent="createDevice" class="form-grid">
           <div class="form-group">
-            <label for="device-name"><strong>{{ t('views.devices.createDevice.namePlaceholder') }}</strong></label>
+            <label for="device-name">{{ t('views.devices.createDevice.namePlaceholder') }}</label>
             <input
               id="device-name"
               type="text"
               v-model="newDevice.name"
               :placeholder="t('views.devices.createDevice.namePlaceholder')"
-              class="sisdai-input"
               required
             />
           </div>
-            <div class="form-group">
-            <label for="device-type"><strong>{{ t('views.devices.createDevice.selectType') }}</strong></label>
+          <div class="form-group">
+            <label for="device-type">{{ t('views.devices.createDevice.selectType') }}</label>
             <select
               id="device-type"
               v-model="newDevice.type_id"
-              class="sisdai-select"
               required
             >
               <option value="">{{ t('views.devices.createDevice.selectType') }}</option>
               <option v-for="type in deviceTypes" :key="type.type_id" :value="type.type_id">
-              {{ type.name }}
+                {{ type.name }}
               </option>
             </select>
-            </div>
+          </div>
           <div class="form-group">
-            <label for="device-description"><strong>{{ t('views.devices.createDevice.descriptionPlaceholder') }}</strong></label>
+            <label for="device-description">{{ t('views.devices.createDevice.descriptionPlaceholder') }}</label>
             <textarea
               id="device-description"
               v-model="newDevice.description"
               :placeholder="t('views.devices.createDevice.descriptionPlaceholder')"
-              class="sisdai-input"
               required
+              rows="3"
             ></textarea>
           </div>
           <div class="form-group">
-            <br />
             <button type="submit" class="sisdai-button-primary">{{ t('views.devices.createDevice.createButton') }}</button>
           </div>
         </form>

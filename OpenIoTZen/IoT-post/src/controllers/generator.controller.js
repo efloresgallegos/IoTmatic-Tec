@@ -1,5 +1,3 @@
-
-
 import fs from 'fs';
 import path from 'path';
 import { DataTypes } from 'sequelize';
@@ -18,8 +16,11 @@ const genJSModel = (name, fields) => {
             case 'String':
                 fieldType = 'Sequelize.STRING';
                 break;
-            case 'Number':
+            case 'Integer':
                 fieldType = 'Sequelize.INTEGER';
+                break;
+            case 'Number':
+                fieldType = 'Sequelize.FLOAT';
                 break;
             case 'Float':
                 fieldType = 'Sequelize.FLOAT';
@@ -57,7 +58,6 @@ const genJSModel = (name, fields) => {
     });
 
     return `
-
 import User from '../users.model.js';
 import Device from '../devices.model.js';
 import Model from '../models.model.js';
@@ -65,28 +65,12 @@ import { Sequelize, DataTypes } from 'sequelize';
 import { sequelize } from '../../db/database.js'; // Ajusta la ruta a tu configuración de Sequelize
 
 const ${name} = sequelize.define('${name}', {
-    ${name}_id: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true
-    },
-    ${jsFields.join(',\n    ')},
-    createdAt: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: Sequelize.NOW
-    },
-    updatedAt: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: Sequelize.NOW
-    }
+    ${jsFields.join(',\n    ')}
 }, {
     timestamps: true,
     tableName: '${name}',
     hooks: {
         beforeSave: (instance) => {
-            // Serializar campos tipo JSON si es necesario
             for (const key of Object.keys(instance.dataValues)) {
                 if (typeof instance[key] === 'object' && !Array.isArray(instance[key])) {
                     instance[key] = JSON.stringify(instance[key]);
@@ -94,7 +78,6 @@ const ${name} = sequelize.define('${name}', {
             }
         },
         afterFind: (results) => {
-            // Deserializar campos tipo JSON si es necesario
             if (Array.isArray(results)) {
                 results.forEach(instance => {
                     for (const key of Object.keys(instance.dataValues)) {
@@ -112,7 +95,6 @@ const ${name} = sequelize.define('${name}', {
     },
 });
 
-
 ${name}.belongsTo(Device, { foreignKey: 'device_id' });
 ${name}.belongsTo(Model, { foreignKey: 'model_id' });
 ${name}.belongsTo(User, { foreignKey: 'user_id' });
@@ -123,19 +105,46 @@ export default ${name};
 
 const createDataModel = async (name, fields) => {
     try {
-        // Agregar el campo primary key
-        fields.push(
-            { name: `${name}_id`, type: 'Number', required: true, primaryKey: true, autoIncrement: true },
-            { name: 'device_id', type: 'Number', required: true, ref: 'devices', refColumn: 'device_id' },
-            { name: 'model_id', type: 'Number', required: true, ref: 'models', refColumn: 'model_id' },
-            { name: 'user_id', type: 'Number', required: true, ref: 'users', refColumn: 'user_id' }
-        );
+        // Agregar campos base incluyendo el ID primario
+        const baseFields = [
+            { 
+                name: `${name}_id`, 
+                type: 'Number', 
+                required: true, 
+                primaryKey: true, 
+                autoIncrement: true 
+            },
+            { 
+                name: 'device_id', 
+                type: 'Number', 
+                required: true, 
+                ref: 'devices', 
+                refColumn: 'device_id' 
+            },
+            { 
+                name: 'model_id', 
+                type: 'Number', 
+                required: true, 
+                ref: 'models', 
+                refColumn: 'model_id' 
+            },
+            { 
+                name: 'user_id', 
+                type: 'Number', 
+                required: true, 
+                ref: 'users', 
+                refColumn: 'user_id' 
+            }
+        ];
+
+        // Combinar los campos personalizados con los campos base
+        const allFields = [...fields, ...baseFields];
 
         // Generación dinámica del modelo
-        const jsModel = genJSModel(name, fields);
+        const jsModel = genJSModel(name, allFields);
 
         // Definir el modelo con Sequelize
-        const model = sequelize.define(name, fields.reduce((acc, field) => {
+        const modelFields = allFields.reduce((acc, field) => {
             let fieldType;
 
             switch (field.type) {
@@ -170,27 +179,27 @@ const createDataModel = async (name, fields) => {
                     fieldType = DataTypes.TEXT;
             }
 
-            // Definir los campos y sus atributos
             acc[field.name] = {
                 type: fieldType,
                 allowNull: !field.required,
                 ...(field.ref ? { references: { model: field.ref, key: field.refColumn || `${field.ref}_id` } } : {}),
                 ...(field.primaryKey ? { primaryKey: field.primaryKey } : {}),
                 ...(field.autoIncrement ? { autoIncrement: field.autoIncrement } : {}),
+                ...(field.type === 'Number' ? { validate: { isInt: true } } : {})
             };
 
             return acc;
-        }, {}), {
+        }, {});
+
+        const model = sequelize.define(name, modelFields, {
             timestamps: true,
-            tableName: name,
+            tableName: name
         });
 
-        // Intentar sincronizar la base de datos sin eliminar datos existentes
         await model.sync({ alter: true });
         console.log(`Tabla ${name} creada exitosamente`);
 
-        // Guardar el modelo generado en un archivo JS
-        const dirPath = path.join(__dirname, '../models/data'); // Usando __dirname
+        const dirPath = path.join(__dirname, '../models/data');
         const filePath = path.join(dirPath, `${name}.js`);
 
         if (!fs.existsSync(dirPath)) {
@@ -220,6 +229,7 @@ const generateJson = (name, fields) => {
         fields: jsonFields
     };
 };
+
 const createJson = async (name, fields) => {
     const jsonModel = generateJson(name, fields);
 
@@ -238,6 +248,27 @@ const createJson = async (name, fields) => {
 const finalController = async (req, res) => {
     const { name, fields } = req.body;
     try {
+        // Verificar si ya existe un modelo con el mismo nombre
+        if (!name || !fields) {
+            return res.status(400).json({ message: 'Faltan datos para crear el modelo' });
+        }
+        if(name === 'index' || name === 'models' || name === 'users' || name === 'devices') {
+            return res.status(400).json({ message: 'No puedes usar ese nombre para crear un modelo' });
+        }
+        if (fields.length === 0) {
+            return res.status(400).json({ message: 'El modelo debe tener al menos un campo' });
+        }
+        if (fields.some(field => field.name === '')) {
+            return res.status(400).json({ message: 'Todos los campos deben tener un nombre' });
+        }
+        if (fields.some(field => field.type === '')) {
+            return res.status(400).json({ message: 'Todos los campos deben tener un tipo' });
+        }
+        const existingModel = await Model.findOne({ where: { name } });
+        if (existingModel) {
+            return res.status(400).json({ message: 'Ya existe un modelo con ese nombre' });
+        }
+
         await createDataModel(name, fields);
         await createJson(name, fields);
         await Model.create({ name: name }); // Asegúrate de pasar 'modelName' en lugar de 'name'

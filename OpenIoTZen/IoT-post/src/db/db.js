@@ -15,14 +15,14 @@ const createDatabaseAndTables = async () => {
         await client.connect();
         const dbExists = await client.query(
             `SELECT 1 FROM pg_database WHERE datname = $1`,
-            ['Framework']
+            [dbName]
         );
 
         if (dbExists.rowCount === 0) {
-            await client.query(`CREATE DATABASE "Framework"`);
-            console.log("Database 'Framework' created successfully!");
+            await client.query(`CREATE DATABASE "${dbName}"`);
+            console.log(`Database '${dbName}' created successfully!`);
         } else {
-            console.log("Database 'Framework' already exists.");
+            console.log(`Database '${dbName}' already exists.`);
         }
         await client.end();
 
@@ -51,15 +51,17 @@ const createDatabaseAndTables = async () => {
             CREATE TABLE IF NOT EXISTS types (
             type_id SERIAL PRIMARY KEY,
             name VARCHAR(50) NOT NULL,
-            createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
 
         await dbClient.query(`
             CREATE TABLE IF NOT EXISTS models (
                 model_id SERIAL PRIMARY KEY,
-                name VARCHAR(100) NOT NULL
+                name VARCHAR(100) NOT NULL,
+                "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
 
@@ -69,6 +71,8 @@ const createDatabaseAndTables = async () => {
                 name VARCHAR(100) NOT NULL,
                 type_id INT,
                 description VARCHAR(500) NOT NULL,
+                "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (type_id) REFERENCES types(type_id)
             )
         `);
@@ -78,6 +82,8 @@ const createDatabaseAndTables = async () => {
                 deviceModels_id SERIAL PRIMARY KEY,
                 device_id INT,
                 model_id INT,
+                "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (device_id) REFERENCES devices(device_id),
                 FOREIGN KEY (model_id) REFERENCES models(model_id)
             )
@@ -90,6 +96,8 @@ const createDatabaseAndTables = async () => {
                 field VARCHAR(50) NOT NULL,
                 device_id INT,
                 model_id INT,
+                "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (device_id) REFERENCES devices(device_id),
                 FOREIGN KEY (model_id) REFERENCES models(model_id)
             )
@@ -103,6 +111,8 @@ const createDatabaseAndTables = async () => {
                 description VARCHAR(500) NOT NULL,
                 seen BOOLEAN DEFAULT FALSE,
                 resolved BOOLEAN DEFAULT FALSE,
+                "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (device_id) REFERENCES devices(device_id),
                 FOREIGN KEY (model_id) REFERENCES models(model_id)
             )
@@ -113,6 +123,8 @@ const createDatabaseAndTables = async () => {
                 userFilters_id SERIAL PRIMARY KEY,
                 filter_id INT,
                 user_id INT,
+                "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (filter_id) REFERENCES filters(filter_id),
                 FOREIGN KEY (user_id) REFERENCES users(user_id)
             )
@@ -123,6 +135,8 @@ const createDatabaseAndTables = async () => {
                 userAlerts_id SERIAL PRIMARY KEY,
                 user_id INT,
                 alert_id INT,
+                "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(user_id),
                 FOREIGN KEY (alert_id) REFERENCES alerts(alert_id)
             )
@@ -133,6 +147,8 @@ const createDatabaseAndTables = async () => {
                 userDevices_id SERIAL PRIMARY KEY,
                 user_id INT,
                 device_id INT,
+                "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(user_id),
                 FOREIGN KEY (device_id) REFERENCES devices(device_id)
             )

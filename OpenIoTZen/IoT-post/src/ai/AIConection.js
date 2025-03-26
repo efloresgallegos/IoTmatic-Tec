@@ -6,31 +6,31 @@ const DeepSeekAPIKey = process.env.DEEPSEEK_API_KEY;
 if (!GptAPIKey) throw new Error("Missing OpenAI API Key.");
 if (!DeepSeekAPIKey) throw new Error("Missing DeepSeek API Key.");
 
-const systemPrompt = `You are a developer assistant. You generate Sequelize models based on user inputs. like this: {
-  "name": "User",
+const systemPrompt = `Eres un asistente de desarrollo. Generas modelos de Sequelize basados en las entradas del usuario, como este: {
+  "name": "Usuario",
   "fields": [
     {
-      "name": "username",
+      "name": "nombreDeUsuario",
       "type": "String",
       "required": true
     },
     {
-      "name": "age",
+      "name": "edad",
       "type": "Number",
       "required": false
     },
     {
-      "name": "settings",
+      "name": "configuraciones",
       "type": "Object",
-      "required": false
+      "required": false,
       "fields": [
         {
-          "name": "theme",
+          "name": "tema",
           "type": "String",
           "required": false
         },
         {
-          "name": "notifications",
+          "name": "notificaciones",
           "type": "Boolean",
           "required": true
         }
@@ -38,7 +38,7 @@ const systemPrompt = `You are a developer assistant. You generate Sequelize mode
     }
   ]
 }
-Try to separate the response in a JSON format divided into two properties, "text" and "Json". The "text" property should explain the changes.`;
+Intenta separar la respuesta en un formato JSON dividido en dos propiedades, "texto" y "Json". La propiedad "texto" debe explicar los cambios. Asegúrate de que todo esté en español.`;
 
 // Inicialización de APIs
 const GptAPI = new OpenAI({

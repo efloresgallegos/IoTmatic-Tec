@@ -5,14 +5,47 @@
             <div class="text-primary text-bold text-h6">{{ t('navBar.logo') }}</div>
         </div>
         <q-list>
-            <q-item v-for="item in menuItems" :key="item.name" clickable v-ripple :to="item.link"
-                @click="handleMenuItemClick(item)">
-                <q-item-section avatar>
-                    <q-icon :name="item.icon" class="text-primary" />
-                </q-item-section>
-                <q-item-section>{{ t(item.name) }}</q-item-section>
-            </q-item>
-
+            <!-- Elementos de menú normales -->
+            <template v-for="item in menuItems" :key="item.name">
+                <!-- Elemento desplegable para modelos -->
+                <template v-if="item.hasSubmenu">
+                    <q-expansion-item
+                        :icon="item.icon"
+                        :label="t(item.name)"
+                        header-class="text-primary"
+                        expand-icon-class="text-primary"
+                    >
+                        <q-list padding class="q-pl-lg">
+                            <q-item 
+                                v-for="subItem in item.submenu" 
+                                :key="subItem.name" 
+                                clickable 
+                                v-ripple 
+                                :to="subItem.link"
+                                @click="handleMenuItemClick(subItem)"
+                            >
+                                <q-item-section avatar>
+                                    <q-icon :name="subItem.icon" class="text-primary" />
+                                </q-item-section>
+                                <q-item-section>{{ t(subItem.name) }}</q-item-section>
+                            </q-item>
+                        </q-list>
+                    </q-expansion-item>
+                </template>
+                <!-- Elementos normales sin submenú -->
+                <q-item 
+                    v-else 
+                    clickable 
+                    v-ripple 
+                    :to="item.link"
+                    @click="handleMenuItemClick(item)"
+                >
+                    <q-item-section avatar>
+                        <q-icon :name="item.icon" class="text-primary" />
+                    </q-item-section>
+                    <q-item-section>{{ t(item.name) }}</q-item-section>
+                </q-item>
+            </template>
         </q-list>
     </q-drawer>
 </template>
@@ -44,7 +77,23 @@ const isMobile = computed(() => $q.screen.lt.md);
 const menuItems = [
     { name: 'navBar.home', link: '/', icon: 'home' },
     { name: 'navBar.devices', link: '/devices', icon: 'devices' },
-    { name: 'navBar.modelGenerator', link: '/modelGenerator', icon: 'edit' },
+    { 
+        name: 'navBar.models', 
+        icon: 'dataset', 
+        hasSubmenu: true,
+        submenu: [
+            { 
+                name: 'navBar.modelGenerator', 
+                link: '/modelGenerator', 
+                icon: 'edit' 
+            },
+            { 
+                name: 'navBar.modelsList', 
+                link: '/models', 
+                icon: 'list' 
+            }
+        ]
+    },
     { name: 'navBar.settings', link: '#', icon: 'settings' },
     { name: 'navBar.users', link: '/settings', icon: 'people' },
     { name: 'navBar.about', link: '/about', icon: 'info' },

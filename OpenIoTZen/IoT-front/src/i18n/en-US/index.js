@@ -1,4 +1,3 @@
-
 export default {
   common: {
     loading: 'Loading...',
@@ -18,7 +17,9 @@ export default {
   navBar: {
     home: 'Home',
     devices: 'Devices',
+    models: 'Models',
     modelGenerator: 'Model Generator',
+    modelsList: 'Models List',
     settings: 'Settings',
     logout: 'Logout',
     toggleSidebar: 'Toggle sidebar',

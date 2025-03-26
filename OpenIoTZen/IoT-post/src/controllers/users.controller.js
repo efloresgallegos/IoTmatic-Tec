@@ -2,6 +2,7 @@ import usersService from "../services/users.service.js";
 
 const createUser = async (req, res) => {
     const { name, username, password } = req.body;
+    console.log(name, username, password);
     try {
         const user = await usersService.createUser({ name, username, password });
         res.status(201).json(user);

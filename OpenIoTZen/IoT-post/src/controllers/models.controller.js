@@ -1,11 +1,10 @@
-import Model from "../models/models.model.js";
-
+import modelsService from "../services/models.service.js";
 
 const createModel = async (req, res) => {
     const { name } = req.body;
 
     try {
-        const model = await Model.create({ name });
+        const model = await modelsService.createModel({ name });
         res.status(201).json(model);
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -14,7 +13,7 @@ const createModel = async (req, res) => {
 
 const getModels = async (req, res) => {
     try {
-        const models = await Model.findAll();
+        const models = await modelsService.getModels();
         res.json(models);
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -25,7 +24,7 @@ const getModelById = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const model = await Model.findByPk(id);
+        const model = await modelsService.getModelById(id);
         res.json(model);
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -37,9 +36,7 @@ const updateModel = async (req, res) => {
     const { name } = req.body;
 
     try {
-        const model = await Model.findByPk(id);
-        model.name = name;
-        await model.save();
+        const model = await modelsService.updateModel(id, { name });
         res.json(model);
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -50,12 +47,22 @@ const deleteModel = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const model = await Model.findByPk(id);
-        await model.destroy();
-        res.json({ message: 'Model deleted' });
+        const result = await modelsService.deleteModel(id);
+        res.json(result);
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
 }
 
-export default { createModel, getModels, getModelById, updateModel, deleteModel };
+const getFullJson = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const json = await modelsService.getFullJson(id);
+        res.json(json);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+}
+
+export default { createModel, getModels, getModelById, updateModel, deleteModel, getFullJson };

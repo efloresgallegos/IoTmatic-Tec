@@ -10,6 +10,7 @@ const routes = [
       { path: 'about', component: () => import('../pages/AboutUs.vue') },
       { path: 'devices/:id', component: () => import('../pages/DeviceView.vue') },
       { path: '/alerts', component: () => import('../pages/AlertsAndFiltersView.vue') },
+      { path: '/models', component: () => import('../pages/ModelsView.vue') },
     ]
   },
   {

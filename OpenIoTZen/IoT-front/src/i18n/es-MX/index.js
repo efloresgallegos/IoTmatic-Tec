@@ -17,7 +17,9 @@ export default {
   navBar: {
     home: 'Inicio',
     devices: 'Dispositivos',
+    models: 'Modelos',
     modelGenerator: 'Generador de Modelos',
+    modelsList: 'Lista de Modelos',
     settings: 'Configuración',
     logout: 'Cerrar sesión',
     toggleSidebar: 'Alternar barra lateral',

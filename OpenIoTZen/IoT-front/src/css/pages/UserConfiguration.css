@@ -1,49 +1,141 @@
-
 .user-config {
   display: flex;
   justify-content: center;
   align-items: flex-start;
   flex-direction: column;
-  padding: 20px;
+  padding: 2rem;
   min-height: 100vh;
-  background-color: #f9f9f9;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
 }
 
-/* Contenedor interno */
 .container {
   width: 100%;
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
 }
 
-/* Estilos de las tarjetas */
 .q-card {
-  margin-bottom: 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin-bottom: 0;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
 }
 
-/* Estilos del formulario */
+.q-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+
 .form-card {
-  background-color: #ffffff;
-  padding: 20px;
+  padding: 2rem;
 }
 
-/* Tabla de usuarios */
 .table-card {
-  background-color: #ffffff;
-  padding: 20px;
+  padding: 2rem;
+}
+
+.text-h6 {
+  color: #2c3e50;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+  position: relative;
+  padding-bottom: 0.5rem;
+}
+
+.text-h6::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 50px;
+  height: 3px;
+  background: linear-gradient(90deg, #1976d2, #64b5f6);
+  border-radius: 2px;
 }
 
 .user-table {
-  margin-top: 20px;
+  margin-top: 1rem;
 }
 
-/* Inputs y botones */
 .input-field {
-  margin-bottom: 15px;
+  margin-bottom: 1.5rem;
+}
+
+.input-field .q-field__native {
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+}
+
+.input-field .q-field__label {
+  font-size: 0.9rem;
+  color: #546e7a;
 }
 
 .action-btn {
-  margin-right: 10px;
+  margin-right: 1rem;
+  padding: 0.5rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  text-transform: none;
+  transition: all 0.3s ease;
+}
+
+.action-btn:last-child {
+  margin-right: 0;
+}
+
+.q-table {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.q-table thead tr th {
+  background: #f8f9fa;
+  color: #2c3e50;
+  font-weight: 600;
+  padding: 1rem;
+}
+
+.q-table tbody tr td {
+  padding: 1rem;
+  color: #546e7a;
+}
+
+.q-table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.q-btn--flat {
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.q-btn--flat:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+@media (max-width: 768px) {
+  .user-config {
+    padding: 1rem;
+  }
+  
+  .container {
+    gap: 1rem;
+  }
+  
+  .form-card,
+  .table-card {
+    padding: 1.5rem;
+  }
+  
+  .text-h6 {
+    font-size: 1.25rem;
+  }
 }

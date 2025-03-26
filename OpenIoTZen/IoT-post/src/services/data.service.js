@@ -46,11 +46,11 @@ const createData = async (data) => {
         }
 
         // Verificar alertas
-        const alerts = await Filter.checkFilter(data);
-        if (alerts.length > 0) {
-            emitNewAlert({ device_id, alerts });
-            return { message: 'Alerts created', alerts };
-        }
+        // const alerts = await Filter.checkFilter(data);
+        // if (alerts.length > 0) {
+        //     emitNewAlert({ device_id, alerts });
+        //     return { message: 'Alerts created', alerts };
+        // }
 
         // Crear nuevo dato
         const newData = await dataModel.create(data); // Use the model to create data
@@ -59,6 +59,7 @@ const createData = async (data) => {
         return newData;
     } catch (error) {
         console.error('Error creating data:', error.message);
+        console.log(error); 
         throw new Error('Error creating data');
     }
 };
