@@ -35,7 +35,11 @@
         />
       </div>
     </div>
-    <div class="div3 devices-container">
+    <div class="div3 realtime-section">
+      <RealtimeDevicesList />
+    </div>
+    
+    <div class="div4 devices-container">
       <div class="devices-grid">
         <DeviceCard
           v-for="device in filteredDevices"
@@ -124,19 +128,22 @@
 import { ref, computed, onMounted } from "vue";
 import DeviceCard from "../components/dinamic-components/DeviceCard.vue";
 import Modal from "../components/dinamic-components/MiniModal.vue";
+import RealtimeDevicesList from "../components/dinamic-components/RealtimeDevicesList.vue";
 import { useI18n } from "vue-i18n";
-import apiService from "src/boot/ApiServices/api.service";
+import { useDevicesStore } from "../stores/devices-store";
+import { storeToRefs } from "pinia";
 
 const { t } = useI18n();
+const devicesStore = useDevicesStore();
+const { devices, deviceTypes } = storeToRefs(devicesStore);
+
 const isModalDeviceOpen = ref(false);
 const isModalTypeOpen = ref(false);
 
 const searchQuery = ref("");
 const selectedType = ref("");
 const selectedDate = ref("");
-const devices = ref([]);
 const newDevice = ref({ name: "", type_id: "", description: "" });
-const deviceTypes = ref([]);
 const newType = ref({ name: "" });
 
 const openModalDevice = () => {
@@ -156,37 +163,26 @@ const closeModalType = () => {
 };
 
 const createDevice = async () => {
-  const response = await apiService.post("/devices", newDevice.value);
-  if (response.status === 201) {
-    fetchDevices();
+  try {
+    await devicesStore.createDevice(newDevice.value);
     closeModalDevice();
+    newDevice.value = { name: "", type_id: "", description: "" };
+  } catch (err) {
+    console.error("Error al crear dispositivo:", err);
   }
 };
 
 const createType = async () => {
-  const response = await apiService.post("/types", newType.value);
-  if (response.status === 201) {
-    fetchTypes();
+  try {
+    await devicesStore.createDeviceType(newType.value);
     closeModalType();
+    newType.value = { name: "" };
+  } catch (err) {
+    console.error("Error al crear tipo de dispositivo:", err);
   }
 };
 
-const fetchDevices = async () => {
-  const response = await apiService.get("/devices");
-  console.log(response.data);
-  if (response.status === 200) {
-    devices.value = response.data;
-  }
-};
 
-const fetchTypes = async () => {
-  const response = await apiService.get("/types");
-  console.log(response);
-  if (response.status === 200) {
-    console.log("aaaaaaa:",response.data);
-    deviceTypes.value = response.data
-  }
-};
 
 
 const filteredDevices = computed(() =>
@@ -204,9 +200,13 @@ const filteredDevices = computed(() =>
   })
 );
 
-onMounted(() => {
-  fetchDevices();
-  fetchTypes();
+onMounted(async () => {
+  try {
+    await devicesStore.fetchDevices();
+    await devicesStore.fetchDeviceTypes();
+  } catch (err) {
+    console.error("Error al cargar datos iniciales:", err);
+  }
 });
 
 </script>

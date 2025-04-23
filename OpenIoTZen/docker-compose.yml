@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # Servicio de backend
+  backend:
+    build:
+      context: ./IoT-post
+      dockerfile: Dockerfile
+    container_name: openiotzen-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=openiotzen
+      - DB_PORT=5432
+      - AI_API_KEY=${AI_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+    volumes:
+      - ./IoT-post:/app
+      - /app/node_modules
+    depends_on:
+      - db
+    restart: unless-stopped
+    networks:
+      - openiotzen-network
+
+  # Servicio de frontend
+  frontend:
+    build:
+      context: ./IoT-front
+      dockerfile: Dockerfile
+    container_name: openiotzen-frontend
+    ports:
+      - "9000:9000"
+    environment:
+      - NODE_ENV=production
+      - VITE_API_URL=http://localhost:3000
+    volumes:
+      - ./IoT-front:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - openiotzen-network
+
+  # Servicio de base de datos
+  db:
+    image: postgres:14-alpine
+    container_name: openiotzen-db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=openiotzen
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - openiotzen-network
+
+networks:
+  openiotzen-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

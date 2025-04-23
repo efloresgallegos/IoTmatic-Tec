@@ -6,8 +6,8 @@
     
     <div v-if="isVisible" class="ai-chat-content">
       <div class="ai-chat-header">
-        <h3>Chat con IA</h3>
-        <button class="close-button" @click="toggleVisibility">&times;</button>
+        <h3>{{ $t('AIInteraction.chatTitle') }}</h3>
+        <button class="close-button" @click="toggleVisibility" :aria-label="$t('AIInteraction.closeChat')">&times;</button>
       </div>
       
       <div class="ai-chat-body" ref="chatContainer">
@@ -24,7 +24,7 @@
       
       <div class="input-container">
         <textarea v-model="aiPrompt" 
-                  placeholder="Escribe un mensaje..." 
+                  :placeholder="$t('AIInteraction.inputPlaceholder')" 
                   class="input"
                   rows="1"
                   @keyup.enter="sendPromptToBackend"></textarea>
@@ -43,8 +43,19 @@
 <script>
 import moment from "moment";
 import apiService from "src/boot/ApiServices/api.service";
+import { useModelStore } from "src/stores/model-store";
+import { mapState, mapActions } from "pinia";
 
 export default {
+  props: {
+    currentModel: {
+      type: Object,
+      default: () => ({
+        name: "",
+        fields: []
+      })
+    }
+  },
   data() {
     return {
       aiPrompt: "",
@@ -52,7 +63,12 @@ export default {
       messages: []
     };
   },
+  computed: {
+    ...mapState(useModelStore, ['currentModel'])
+  },
   methods: {
+    ...mapActions(useModelStore, ['updateModelFromAI']),
+    
     async sendPromptToBackend() {
       if (!this.aiPrompt.trim()) return;
 
@@ -63,9 +79,20 @@ export default {
       this.scrollToBottom();
 
       try {
+        // Enviar el modelo actual junto con el prompt para contexto
+        // Incluir información sobre el formato de campo invernaderoId
         const response = await apiService.post("/ai/sendToAI", { 
           prompt: userMessage.text, 
-          AI: "GPT" 
+          AI: "GPT",
+          currentModel: this.currentModel,
+          supportedFieldTypes: {
+            invernaderoId: {
+              type: "String",
+              required: true,
+              defaultValue: null,
+              fields: []
+            }
+          }
         });
 
         // Mostrar texto de respuesta
@@ -76,8 +103,12 @@ export default {
         };
         this.messages.push(aiTextMessage);
 
-        // Emitir JSON si existe
+        // Actualizar el modelo en el store si la IA devuelve un JSON
         if (response.data.Json) {
+          // Actualizar el modelo en el store
+          this.updateModelFromAI(response.data.Json);
+          
+          // Emitir evento para notificar al componente padre
           this.$emit('modelUpdated', response.data.Json);
         }
 

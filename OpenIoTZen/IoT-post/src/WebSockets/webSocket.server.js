@@ -1,82 +1,108 @@
-const connections = new Map();
-const subscriptions = new Map();
+import { WebSocketServer } from 'ws';
+import { subscribeToGraphUpdates } from './graph.socket.js';
+import { subscribeToDeviceStatus } from './device.socket.js';
+import { processSubscriptionMessage, unsubscribeFromAllEvents } from './subscription.socket.js';
+import { verifyToken } from './subscription.socket.js';
 
-export const setupWebSocketServer = (wss) => {
+const rooms = new Map();
+
+function setupWebSocketServer(wss) {
   wss.on('connection', (ws, req) => {
-    const ip = req.socket.remoteAddress;
-    const count = connections.get(ip) || 0;
-
-    if (count >= 1) {
-      ws.close(1008, 'Too many connections');
-      return;
+    console.log('Nueva conexión WebSocket');
+    
+    // Extraer token de los headers si existe
+    const authHeader = req.headers['authorization'] || req.headers['sec-websocket-protocol'];
+    let token = null;
+    
+    if (authHeader) {
+      // Extraer token del header de autorización
+      token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+      
+      // Verificar token
+      const tokenData = verifyToken(token);
+      if (tokenData) {
+        console.log(`Cliente autenticado: usuario ${tokenData.user}, dispositivo ${tokenData.device}, modelo ${tokenData.model}`);
+        ws.tokenData = tokenData; // Almacenar datos del token en el objeto WebSocket
+      } else {
+        console.log('Token inválido o expirado');
+      }
     }
-
-    connections.set(ip, count + 1);
-
-    console.log('Cliente conectado desde IP:', ip);
 
     ws.on('message', (message) => {
       try {
-        const parsedMessage = JSON.parse(message.toString());
-        if (parsedMessage.type === 'subscribe') {
-          const { eventName } = parsedMessage;
-          if (!subscriptions.has(eventName)) {
-            subscriptions.set(eventName, new Set());
-          }
-          subscriptions.get(eventName).add(ws);
-          console.log(`Cliente se ha suscrito al evento: ${eventName}`);
-        } else if (parsedMessage.type === 'unsubscribe') {
-          const { eventName } = parsedMessage;
-          if (subscriptions.has(eventName)) {
-            subscriptions.get(eventName).delete(ws);
-            console.log(`Cliente se ha desuscrito del evento: ${eventName}`);
-          }
+        const parsedMessage = JSON.parse(message);
+        console.log(`Mensaje recibido: ${message}`);
+        
+        // Manejar diferentes tipos de mensajes
+        switch (parsedMessage.event) {
+          case 'subscribe_to_graph_updates':
+            subscribeToGraphUpdates(ws, parsedMessage.data);
+            break;
+          case 'subscribe_to_device_status':
+            subscribeToDeviceStatus(ws, parsedMessage.data);
+            break;
+          case 'subscribe':
+          case 'unsubscribe':
+          case 'data':
+            // Usar el nuevo sistema de suscripciones
+            processSubscriptionMessage(ws, parsedMessage);
+            break;
+          default:
+            console.log(`Tipo de mensaje no manejado: ${parsedMessage.event}`);
         }
       } catch (error) {
-        console.error('Error al procesar el mensaje:', error);
+        console.error('Error al procesar mensaje:', error);
       }
     });
 
     ws.on('close', () => {
-      console.log('Cliente desconectado desde IP:', ip);
-      const count = connections.get(ip) - 1;
-      if (count === 0) {
-        connections.delete(ip);
-      } else {
-        connections.set(ip, count);
-      }
-
-      // Limpiar suscripciones del cliente
-      subscriptions.forEach((clients, eventName) => {
-        clients.delete(ws);
-        if (clients.size === 0) {
-          subscriptions.delete(eventName);
+      console.log('Conexión WebSocket cerrada');
+      // Limpiar la sala cuando el usuario se desconecta
+      for (const [roomId, clients] of rooms.entries()) {
+        if (clients.has(ws)) {
+          clients.delete(ws);
+          if (clients.size === 0) {
+            rooms.delete(roomId);
+          }
         }
-      });
+      }
+      // Limpiar suscripciones
+      unsubscribeFromAllEvents(ws);
     });
-
-    ws.send(JSON.stringify({ message: 'Bienvenido al servidor WebSocket!' }));
   });
-};
+}
 
-export const emitNewData = (wss, data) => {
-  const eventName = 'newData';
-  if (subscriptions.has(eventName)) {
-    subscriptions.get(eventName).forEach(client => {
-      if (client.readyState === client.OPEN) {
-        client.send(JSON.stringify({ event: eventName, data }));
+function emitToRoom(roomId, event, data) {
+  const clients = rooms.get(roomId);
+  if (clients) {
+    clients.forEach(client => {
+      if (client.readyState === 1) { // 1 es el valor de WebSocket.OPEN
+        client.send(JSON.stringify({ event, data }));
       }
     });
   }
-};
+}
 
-export const emitNewAlert = (wss, alert) => {
-  const eventName = 'newAlert';
-  if (subscriptions.has(eventName)) {
-    subscriptions.get(eventName).forEach(client => {
-      if (client.readyState === client.OPEN) {
-        client.send(JSON.stringify({ event: eventName, alert }));
+function emitNewAlert(roomId, alertData) {
+  const clients = rooms.get(roomId);
+  if (clients) {
+    clients.forEach(client => {
+      if (client.readyState === 1) { // 1 es el valor de WebSocket.OPEN
+        client.send(JSON.stringify({ event: 'new_alert', data: alertData }));
       }
     });
   }
-};
+}
+
+function emitNewData(roomId, data) {
+  const clients = rooms.get(roomId);
+  if (clients) {
+    clients.forEach(client => {
+      if (client.readyState === 1) { // 1 es el valor de WebSocket.OPEN
+        client.send(JSON.stringify({ event: 'new_data', data }));
+      }
+    });
+  }
+}
+
+export { setupWebSocketServer, emitToRoom, emitNewAlert, emitNewData };

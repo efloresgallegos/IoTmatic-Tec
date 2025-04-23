@@ -134,6 +134,47 @@
                                     class="sisdai-checkbox"
                                   />
                                 </div>
+
+                                <!-- Opciones específicas para subcampos de tipo String -->
+                                <div v-if="subField.type === 'String' || subField.type === 'Text'" class="sisdai-string-options">
+                                  <div class="sisdai-form-group">
+                                    <q-input
+                                      v-model="subField.defaultValue"
+                                      :label="$t('views.modelCreator.defaultValueLabel') || 'Valor predeterminado'"
+                                      outlined
+                                      class="sisdai-input"
+                                      :hint="$t('views.modelCreator.defaultValueHint') || 'Valor por defecto'"
+                                    />
+                                  </div>
+                                </div>
+
+                                <!-- Opciones específicas para subcampos de tipo Number o Float -->
+                                <div v-if="subField.type === 'Number' || subField.type === 'Float'" class="sisdai-number-options">
+                                  <div class="sisdai-form-group">
+                                    <q-input
+                                      v-model.number="subField.defaultValue"
+                                      :label="$t('views.modelCreator.defaultValueLabel') || 'Valor predeterminado'"
+                                      outlined
+                                      class="sisdai-input"
+                                      type="number"
+                                      :hint="$t('views.modelCreator.defaultValueHint') || 'Valor por defecto'"
+                                    />
+                                  </div>
+                                </div>
+
+                                <!-- Opciones específicas para subcampos de tipo Date -->
+                                <div v-if="subField.type === 'Date'" class="sisdai-date-options">
+                                  <div class="sisdai-form-group">
+                                    <q-input
+                                      v-model="subField.defaultValue"
+                                      :label="$t('views.modelCreator.defaultDateLabel') || 'Fecha predeterminada'"
+                                      outlined
+                                      class="sisdai-input"
+                                      type="date"
+                                      :hint="$t('views.modelCreator.defaultDateHint') || 'Valor por defecto'"
+                                    />
+                                  </div>
+                                </div>
                               </q-card-section>
                             </q-card>
                           </div>
@@ -148,63 +189,57 @@
                         <!-- Opciones específicas para tipo Date -->
                         <div v-if="field.type === 'Date'" class="sisdai-date-options">
                           <div class="sisdai-form-group">
-                            <q-checkbox
-                              v-model="field.includeTime"
-                              :label="$t('views.modelCreator.includeTimeLabel')"
-                              class="sisdai-checkbox"
-                            />
-                          </div>
-                          <div class="sisdai-form-group">
-                            <q-select
-                              v-model="field.dateFormat"
-                              :options="dateFormats"
-                              :label="$t('views.modelCreator.dateFormatLabel')"
-                              outlined
-                              class="sisdai-select"
-                            />
-                          </div>
-                          <div class="sisdai-form-group">
-                            <q-input
-                              v-model="field.minDate"
-                              :label="$t('views.modelCreator.minDateLabel')"
-                              outlined
-                              class="sisdai-input"
-                              :type="field.includeTime ? 'datetime-local' : 'date'"
-                              :hint="$t('views.modelCreator.minDateHint')"
-                            />
-                          </div>
-                          <div class="sisdai-form-group">
-                            <q-input
-                              v-model="field.maxDate"
-                              :label="$t('views.modelCreator.maxDateLabel')"
-                              outlined
-                              class="sisdai-input"
-                              :type="field.includeTime ? 'datetime-local' : 'date'"
-                              :hint="$t('views.modelCreator.maxDateHint')"
-                            />
-                          </div>
-                          <div class="sisdai-form-group">
                             <q-input
                               v-model="field.defaultValue"
                               :label="$t('views.modelCreator.defaultDateLabel')"
                               outlined
                               class="sisdai-input"
-                              :type="field.includeTime ? 'datetime-local' : 'date'"
+                              type="date"
                               :hint="$t('views.modelCreator.defaultDateHint')"
                             />
                           </div>
                         </div>
+
+                        <!-- Opciones específicas para tipo String -->
+                        <div v-if="field.type === 'String' || field.type === 'Text'" class="sisdai-string-options">
+                          <div class="sisdai-form-group">
+                            <q-input
+                              v-model="field.defaultValue"
+                              :label="$t('views.modelCreator.defaultValueLabel') || 'Valor predeterminado'"
+                              outlined
+                              class="sisdai-input"
+                              :hint="$t('views.modelCreator.defaultValueHint') || 'Valor por defecto'"
+                            />
+                          </div>
+                        </div>
+
+                        <!-- Opciones específicas para tipo Number o Float -->
+                        <div v-if="field.type === 'Number' || field.type === 'Float'" class="sisdai-number-options">
+                          <div class="sisdai-form-group">
+                            <q-input
+                              v-model.number="field.defaultValue"
+                              :label="$t('views.modelCreator.defaultValueLabel') || 'Valor predeterminado'"
+                              outlined
+                              class="sisdai-input"
+                              type="number"
+                              :hint="$t('views.modelCreator.defaultValueHint') || 'Valor por defecto'"
+                            />
+                          </div>
+                        </div>
+
                       </q-card-section>
                     </q-card>
                   </div>
 
-                  <!-- Botón para Agregar Campo -->
-                  <q-btn
-                    :label="$t('views.modelCreator.addFieldButton')"
-                    color="primary"
-                    class="sisdai-button q-mt-md"
-                    @click="addField"
-                  />
+                  <!-- Botones para Agregar Campos -->
+                  <div class="row q-gutter-md q-mt-md">
+                    <q-btn
+                      :label="$t('views.modelCreator.addFieldButton')"
+                      color="primary"
+                      class="sisdai-button"
+                      @click="addField"
+                    />
+                  </div>
                 </div>
 
                 <!-- Botón de Envío -->
@@ -240,12 +275,13 @@
 <script>
 import JSONEditor from "jsoneditor";
 import "jsoneditor/dist/jsoneditor.css";
-import AiInteraction from "../components/dinamic-components/AIInteraction.vue";
-import apiService from "../boot/ApiServices/api.service";
+import AiInteractionWithStore from "../components/dinamic-components/AIInteractionWithStore.vue";
 import { useQuasar } from "quasar";
+import { useModelStore } from "../stores/model-store";
+import { mapState, mapActions } from "pinia";
 
 export default {
-  components: { AiInteraction },
+  components: { AiInteraction: AiInteractionWithStore },
 
   setup() {
     const $q = useQuasar();
@@ -254,9 +290,6 @@ export default {
 
   data() {
     return {
-      modelName: "",
-      fields: [],
-      isSubmitting: false,
       editor: null,
       fieldTypes: [
         { value: "String", label: "Texto" },
@@ -267,96 +300,109 @@ export default {
         { value: "Text", label: "Texto Largo" },
         { value: "UUID", label: "UUID" },
         { value: "JSON", label: "JSON" },
-        { value: "Array", label: "Array" }
-      ],
-      dateFormats: [
-        { value: "ISO", label: "ISO 8601" },
-        { value: "DD/MM/YYYY", label: "DD/MM/YYYY" },
-        { value: "MM/DD/YYYY", label: "MM/DD/YYYY" },
-        { value: "YYYY-MM-DD", label: "YYYY-MM-DD" }
+        { value: "Array", label: "Array" },
+        { value: "Object", label: "Objeto" }
       ]
     };
   },
-
+  
   computed: {
+    ...mapState(useModelStore, ['currentModel', 'isSubmitting', 'lastCreatedModelId']),
+    
+    modelName: {
+      get() {
+        return this.currentModel.name;
+      },
+      set(value) {
+        this.updateCurrentModelName(value);
+      }
+    },
+    
+    fields: {
+      get() {
+        return this.currentModel.fields;
+      },
+      set(value) {
+        this.updateCurrentModelFields(value);
+      }
+    },
+    
     model() {
-      return {
-        name: this.modelName,
-        fields: this.fields.map((field) => ({
-          name: field.name,
-          type: field.type === 'Integer' ? 'Number' : field.type,
-          required: field.required,
-          includeTime: field.type === 'Date' ? field.includeTime : undefined,
-          dateFormat: field.type === 'Date' ? field.dateFormat : undefined,
-          minDate: field.type === 'Date' ? field.minDate : undefined,
-          maxDate: field.type === 'Date' ? field.maxDate : undefined,
-          defaultValue: field.type === 'Date' ? field.defaultValue : undefined,
-          fields: field.type === "Object" ? field.fields.map(subField => ({
-            name: subField.name,
-            type: subField.type,
-            required: subField.required,
-            includeTime: subField.type === 'Date' ? subField.includeTime : undefined,
-            dateFormat: subField.type === 'Date' ? subField.dateFormat : undefined,
-            minDate: subField.type === 'Date' ? subField.minDate : undefined,
-            maxDate: subField.type === 'Date' ? subField.maxDate : undefined,
-            defaultValue: subField.type === 'Date' ? subField.defaultValue : undefined
-          })) : undefined
-        })),
-      };
+      return this.currentModel;
     },
   },
 
   methods: {
+    ...mapActions(useModelStore, [
+      'setCurrentModel',
+      'updateCurrentModelName',
+      'updateCurrentModelFields',
+      'addField',
+      'removeField',
+      'addSubField',
+      'removeSubField',
+      'updateFieldType',
+      'saveModel',
+      'updateModelFromAI'
+    ]),
+    
     syncFromJson(jsonModel) {
-      this.modelName = jsonModel.name || "";
-      this.fields = (jsonModel.fields || []).map(field => ({
-        name: field.name || "",
-        type: field.type || "String",
-        required: field.required || false,
-        includeTime: field.type === 'Date' ? (field.includeTime || false) : false,
-        dateFormat: field.type === 'Date' ? (field.dateFormat || "ISO") : "ISO",
-        minDate: field.type === 'Date' ? field.minDate : null,
-        maxDate: field.type === 'Date' ? field.maxDate : null,
-        defaultValue: field.type === 'Date' ? field.defaultValue : null,
-        fields: field.type === "Object" ? (field.fields || []).map(subField => ({
-          name: subField.name || "",
-          type: subField.type || "String",
-          required: subField.required || false,
-          includeTime: subField.type === 'Date' ? (subField.includeTime || false) : false,
-          dateFormat: subField.type === 'Date' ? (subField.dateFormat || "ISO") : "ISO",
-          minDate: subField.type === 'Date' ? subField.minDate : null,
-          maxDate: subField.type === 'Date' ? subField.maxDate : null,
-          defaultValue: subField.type === 'Date' ? subField.defaultValue : null
-        })) : undefined
-      }));
-    },
-
-    handleFieldTypeChange(index) {
-      const field = this.fields[index];
-      if (field.type === 'Date') {
-        field.includeTime = false;
-        field.dateFormat = 'ISO';
-        field.minDate = null;
-        field.maxDate = null;
-        field.defaultValue = null;
+      if (!jsonModel) {
+        console.error('Error: jsonModel is undefined or null');
+        return;
       }
-      // Actualizar el editor JSON
+      
+      this.updateModelFromAI(jsonModel);
+      
+      // Actualizar el editor JSON si existe
       if (this.editor) {
         this.editor.set(this.model);
       }
     },
+    
+    initJsonEditor() {
+      try {
+        const container = document.getElementById("json-editor-container");
+        if (!container) {
+          console.error("JSON editor container not found");
+          return;
+        }
+        
+        const options = {
+          mode: "tree",
+          modes: ["tree", "view", "form", "text", "code"],
+          onChange: () => {
+            try {
+              const updatedModel = this.editor.get();
+              this.syncFromJson(updatedModel);
+            } catch (error) {
+              console.error("Error updating model from editor:", error);
+            }
+          },
+          onError: (error) => {
+            console.error("JSONEditor error:", error);
+            this.$q.notify({
+              type: 'negative',
+              message: this.$t('views.modelCreator.jsonEditorError'),
+              position: 'top'
+            });
+          }
+        };
+        
+        this.editor = new JSONEditor(container, options);
+        this.editor.set(this.model);
+      } catch (error) {
+        console.error("Error initializing JSON editor:", error);
+        this.$q.notify({
+          type: 'negative',
+          message: this.$t('views.modelCreator.jsonEditorInitError') || 'Error al inicializar el editor JSON',
+          position: 'top'
+        });
+      }
+    },
 
-    addField() {
-      this.fields.push({
-        name: "",
-        type: "String",
-        required: false,
-        includeTime: false,
-        dateFormat: "ISO",
-        minDate: null,
-        maxDate: null,
-        defaultValue: null
-      });
+    handleFieldTypeChange(index) {
+      this.updateFieldType(index, this.fields[index].type);
       // Actualizar el editor JSON
       if (this.editor) {
         this.editor.set(this.model);
@@ -376,7 +422,8 @@ export default {
           color: 'primary'
         }
       }).onOk(() => {
-        this.fields.splice(index, 1);
+        // Llamar a la acción del store mapeada
+        this.removeField(index);
         // Actualizar el editor JSON
         if (this.editor) {
           this.editor.set(this.model);
@@ -387,26 +434,6 @@ export default {
           position: 'top'
         });
       });
-    },
-
-    addSubField(fieldIndex) {
-      if (!this.fields[fieldIndex].fields) {
-        this.fields[fieldIndex].fields = [];
-      }
-      this.fields[fieldIndex].fields.push({
-        name: "",
-        type: "String",
-        required: false,
-        includeTime: false,
-        dateFormat: "ISO",
-        minDate: null,
-        maxDate: null,
-        defaultValue: null
-      });
-      // Actualizar el editor JSON
-      if (this.editor) {
-        this.editor.set(this.model);
-      }
     },
 
     removeSubField(fieldIndex, subFieldIndex) {
@@ -422,7 +449,8 @@ export default {
           color: 'primary'
         }
       }).onOk(() => {
-        this.fields[fieldIndex].fields.splice(subFieldIndex, 1);
+        // Llamar a la acción del store mapeada
+        this.removeSubField(fieldIndex, subFieldIndex);
         // Actualizar el editor JSON
         if (this.editor) {
           this.editor.set(this.model);
@@ -436,6 +464,7 @@ export default {
     },
 
     async handleSubmit() {
+      // Validación del nombre del modelo
       if (!this.modelName.trim()) {
         this.$q.notify({
           type: 'negative',
@@ -445,36 +474,86 @@ export default {
         return;
       }
 
-      this.isSubmitting = true;
+      // Validación de campos
+      if (this.fields.length === 0) {
+        this.$q.notify({
+          type: 'negative',
+          message: this.$t('views.modelCreator.errorNoFields'),
+          position: 'top'
+        });
+        return;
+      }
+
+      // Validar que todos los campos tengan nombre
+      const emptyNameField = this.fields.find(field => !field.name.trim());
+      if (emptyNameField) {
+        this.$q.notify({
+          type: 'negative',
+          message: this.$t('views.modelCreator.errorEmptyFieldName'),
+          position: 'top'
+        });
+        return;
+      }
+
+      // Validar nombres duplicados
+      const fieldNames = this.fields.map(field => field.name.trim());
+      if (new Set(fieldNames).size !== fieldNames.length) {
+        this.$q.notify({
+          type: 'negative',
+          message: this.$t('views.modelCreator.errorDuplicateFieldNames'),
+          position: 'top'
+        });
+        return;
+      }
+
       try {
-        await apiService.post('/generator', this.model);
+        await this.saveModel();
+        
         this.$q.notify({
           type: 'positive',
           message: this.$t('views.modelCreator.successModelGenerated'),
-          position: 'top'
+          position: 'top',
+          timeout: 3000
         });
+        
         this.resetForm();
       } catch (error) {
         console.error("Error generating model:", error);
+        // Mostrar mensaje de error específico si está disponible
+        const errorMessage = error.response && error.response.data && error.response.data.message
+          ? error.response.data.message
+          : this.$t('common.errorMessage');
+          
         this.$q.notify({
           type: 'negative',
-          message: this.$t('common.errorMessage'),
-          position: 'top'
+          message: errorMessage,
+          position: 'top',
+          timeout: 5000
         });
-      } finally {
-        this.isSubmitting = false;
       }
     },
 
     resetForm() {
-      this.modelName = "";
-      this.fields = [];
+      this.setCurrentModel({
+        name: "",
+        fields: []
+      });
       if (this.editor) {
         this.editor.set(this.model);
       }
     },
 
     async handleAiModelUpdated(updatedModel) {
+      // Validar que el modelo actualizado sea válido
+      if (!updatedModel || !updatedModel.name || !Array.isArray(updatedModel.fields)) {
+        this.$q.notify({
+          type: 'negative',
+          message: this.$t('views.modelCreator.invalidAiModel') || 'El modelo sugerido por la IA no es válido',
+          position: 'top'
+        });
+        return;
+      }
+      
       // Estilos para la presentación del JSON
       const jsonStyles = `
         background: #f5f5f5;
@@ -489,6 +568,10 @@ export default {
         border: 1px solid #ddd;
       `;
 
+      // Formatear los modelos para la visualización
+      const currentModelJson = JSON.stringify(this.model, null, 2);
+      const updatedModelJson = JSON.stringify(updatedModel, null, 2);
+
       const dialogContent = `
         <div style="max-width: 800px;">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem;">
@@ -496,13 +579,13 @@ export default {
               <h6 style="color: #2c3e50; margin: 0 0 0.5rem 0; font-weight: 600;">
                 ${this.$t('views.modelCreator.currentModel')}
               </h6>
-              <div style="${jsonStyles}">${JSON.stringify(this.model, null, 2)}</div>
+              <div style="${jsonStyles}">${currentModelJson}</div>
             </div>
             <div>
               <h6 style="color: #27ae60; margin: 0 0 0.5rem 0; font-weight: 600;">
                 ${this.$t('views.modelCreator.aiSuggestedModel')}
               </h6>
-              <div style="${jsonStyles}">${JSON.stringify(updatedModel, null, 2)}</div>
+              <div style="${jsonStyles}">${updatedModelJson}</div>
             </div>
           </div>
           <p style="color: #7f8c8d; font-size: 0.9rem; margin: 0;">
@@ -531,18 +614,31 @@ export default {
         });
 
         if (confirmed) {
-          this.syncFromJson(updatedModel);
-          this.$q.notify({
-            type: 'positive',
-            message: this.$t('views.modelCreator.aiUpdateSuccess'),
-            icon: 'check_circle'
-          });
+          try {
+            this.updateModelFromAI(updatedModel);
+            this.$q.notify({
+              type: 'positive',
+              message: this.$t('views.modelCreator.aiUpdateSuccess'),
+              icon: 'check_circle',
+              position: 'top',
+              timeout: 3000
+            });
+          } catch (syncError) {
+            console.error('Error syncing model:', syncError);
+            this.$q.notify({
+              type: 'negative',
+              message: this.$t('views.modelCreator.syncError') || 'Error al sincronizar el modelo',
+              position: 'top',
+              timeout: 3000
+            });
+          }
         }
       } catch (error) {
         this.$q.notify({
           type: 'info',
           message: this.$t('views.modelCreator.aiUpdateCancelled'),
-          icon: 'info'
+          icon: 'info',
+          position: 'top'
         });
         console.error('Error updating model:', error); 
       }
@@ -550,19 +646,11 @@ export default {
   },
 
   mounted() {
-    const container = document.getElementById("json-editor-container");
-    const options = {
-      mode: "tree",
-      modes: ["tree", "view", "form", "text", "code"],
-      onChange: () => {
-        const updatedModel = this.editor.get();
-        this.syncFromJson(updatedModel);
-      },
-    };
-    this.editor = new JSONEditor(container, options);
-    this.editor.set(this.model);
+    this.$nextTick(() => {
+      this.initJsonEditor();
+    });
   },
-
+  
   watch: {
     model: {
       handler(newVal) {
@@ -666,6 +754,12 @@ export default {
 .sisdai-field-card {
   background-color: rgba(255, 255, 255, 0.8);
   border: 1px solid #eee;
+  transition: all 0.3s ease;
+}
+
+.sisdai-field-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .sisdai-field-header {
@@ -687,6 +781,12 @@ export default {
 .sisdai-subfield-card {
   background-color: rgba(255, 255, 255, 0.6);
   border: 1px solid #eee;
+  transition: all 0.3s ease;
+}
+
+.sisdai-subfield-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .sisdai-subfield-header {
@@ -727,74 +827,5 @@ export default {
 
 .sisdai-checkbox {
   margin-top: 0.5rem;
-}
-
-@media (max-width: 1024px) {
-  .sisdai-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 600px) {
-  .model-creator {
-    padding: 10px;
-  }
-  
-  .sisdai-title {
-    font-size: 1.5rem;
-  }
-  
-  .sisdai-json-container {
-    height: 300px;
-  }
-}
-
-/* Animaciones */
-.sisdai-field-card,
-.sisdai-subfield-card {
-  transition: all 0.3s ease;
-}
-
-.sisdai-field-card:hover,
-.sisdai-subfield-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-/* Estilos para el editor JSON */
-:deep(.jsoneditor) {
-  border: none !important;
-}
-
-:deep(.jsoneditor-menu) {
-  background-color: var(--sisdae-primary-color) !important;
-  border-bottom: none !important;
-}
-
-:deep(.jsoneditor-menu a) {
-  color: white !important;
-}
-
-/* Estilos para las notificaciones */
-:deep(.q-notification) {
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-:deep(.q-notification__message) {
-  font-weight: 500;
-}
-
-/* Estilos para los diálogos */
-:deep(.q-dialog) {
-  border-radius: 8px;
-}
-
-:deep(.q-dialog__title) {
-  font-weight: 600;
-}
-
-:deep(.q-dialog__message) {
-  font-size: 1rem;
 }
 </style>

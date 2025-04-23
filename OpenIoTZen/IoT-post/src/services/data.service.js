@@ -1,9 +1,11 @@
 import { models } from '../models/data/index.js';
 import modelsModel from '../models/models.model.js';
 import { emitNewData, emitNewAlert } from '../WebSockets/webSocket.server.js';
+import { emitGraphDataUpdate } from '../WebSockets/graph.socket.js';
 import { jsons } from '../jsons/index.js';
 import DeviceModel from '../models/devices.model.js';
 import Filter from '../services/filters.service.js';
+import { Op } from 'sequelize';
 
 let loadModels;
 
@@ -45,16 +47,25 @@ const createData = async (data) => {
             throw new Error('Device not found');
         }
 
-        // Verificar alertas
-        // const alerts = await Filter.checkFilter(data);
-        // if (alerts.length > 0) {
-        //     emitNewAlert({ device_id, alerts });
-        //     return { message: 'Alerts created', alerts };
-        // }
+        // Verificar alertas con el sistema de filtros mejorado
+        try {
+            const alerts = await Filter.checkFilter(data);
+            if (alerts && alerts.length > 0) {
+                console.log('Alerts triggered:', alerts);
+                emitNewAlert({ device_id, alerts });
+                // No retornamos aquí para permitir que los datos se guarden también
+            }
+        } catch (alertError) {
+            console.error('Error checking filters:', alertError);
+            // Continuamos con la creación de datos aunque falle la verificación de alertas
+        }
 
         // Crear nuevo dato
         const newData = await dataModel.create(data); // Use the model to create data
         emitNewData({ device_id, data: newData });
+        
+        // Emitir actualización para gráficos en tiempo real
+        emitGraphDataUpdate({ device_id, model_id, newData });
 
         return newData;
     } catch (error) {
@@ -71,9 +82,10 @@ const getDatabyModelandDevice = async (model_id, device_id) => {
             throw new Error('Model not found');
         }
 
-        const dataModel = models[modelName];
+        // Acceder correctamente al modelo en loadModels
+        const dataModel = loadModels[modelName]?.default;
         if (!dataModel) {
-            throw new Error('Model not found');
+            throw new Error(`Model "${modelName}" not found in loaded models`);
         }
 
         const device = await DeviceModel.findByPk(device_id);
@@ -81,7 +93,12 @@ const getDatabyModelandDevice = async (model_id, device_id) => {
             throw new Error('Device not found');
         }
 
-        const data = await dataModel.findAll({ where: { device_id } });
+        // Obtener solo los atributos definidos en el modelo
+        const attributes = Object.keys(dataModel.rawAttributes);
+        const data = await dataModel.findAll({ 
+            attributes: attributes,
+            where: { device_id } 
+        });
         return data;
     } catch (error) {
         throw new Error(error.message);
@@ -95,12 +112,15 @@ const getDatabyModel = async (model_id) => {
             throw new Error('Model not found');
         }
 
-        const dataModel = models[modelName];
+        // Acceder correctamente al modelo en loadModels
+        const dataModel = loadModels[modelName]?.default;
         if (!dataModel) {
-            throw new Error('Model not found');
+            throw new Error(`Model "${modelName}" not found in loaded models`);
         }
 
-        const data = await dataModel.findAll();
+        // Obtener solo los atributos definidos en el modelo
+        const attributes = Object.keys(dataModel.rawAttributes);
+        const data = await dataModel.findAll({ attributes: attributes });
         return data;
     } catch (error) {
         throw new Error(error.message);
@@ -109,26 +129,63 @@ const getDatabyModel = async (model_id) => {
 
 const getDatabyDevice = async (device_id) => {
     try {
+        // Verificar que los modelos estén cargados
+        if (!loadModels) {
+            throw new Error('Models are not yet loaded');
+        }
+
+        // Verificar que el dispositivo exista
         const device = await DeviceModel.findByPk(device_id);
         if (!device) {
             throw new Error('Device not found');
         }
 
         let fullData = [];
-        for (const modelName in models) {
-            const dataModel = models[modelName];
-            const data = await dataModel.findAll({ where: { device_id } });
-            if (data.length > 0) {
-                fullData = fullData.concat(data);
+        // Iterar sobre los modelos cargados correctamente
+        for (const modelName in loadModels) {
+            try {
+                const dataModel = loadModels[modelName]?.default; // Acceder al export default
+                if (dataModel && typeof dataModel.findAll === 'function') {
+                    // Verificar que el modelo tenga rawAttributes antes de intentar acceder
+                    if (!dataModel.rawAttributes) {
+                        console.warn(`El modelo ${modelName} no tiene rawAttributes definidos`);
+                        continue;
+                    }
+                    
+                    // Obtener solo los atributos definidos en el modelo para evitar errores de columnas inexistentes
+                    const attributes = Object.keys(dataModel.rawAttributes);
+                    
+                    // Verificar si el modelo tiene el campo device_id antes de hacer la consulta
+                    if (!attributes.includes('device_id')) {
+                        console.warn(`El modelo ${modelName} no tiene el campo device_id, omitiendo`);
+                        continue;
+                    }
+                    
+                    try {
+                        const data = await dataModel.findAll({ 
+                            attributes: attributes,
+                            where: { device_id } 
+                        });
+                        
+                        if (data && data.length > 0) {
+                            fullData = fullData.concat(data);
+                        }
+                    } catch (queryError) {
+                        console.error(`Error en la consulta al modelo ${modelName}:`, queryError.message);
+                        // Continuar con el siguiente modelo en caso de error en la consulta
+                    }
+                }
+            } catch (modelError) {
+                console.error(`Error al procesar el modelo ${modelName}:`, modelError.message);
+                // Continuar con el siguiente modelo en caso de error
             }
         }
 
-        if (fullData.length === 0) {
-            throw new Error('Data not found');
-        }
-
+        // Si no se encontraron datos, devolver un array vacío en lugar de lanzar un error
+        // Esto evita el error 500 y permite que el frontend maneje el caso de no datos
         return fullData;
     } catch (error) {
+        console.error('Error en getDatabyDevice:', error);
         throw new Error(error.message);
     }
 };
@@ -140,9 +197,10 @@ const getDatabyDateRange = async (model_id, device_id, start, end) => {
             throw new Error('Model not found');
         }
 
-        const dataModel = models[modelName];
+        // Acceder correctamente al modelo en loadModels
+        const dataModel = loadModels[modelName]?.default;
         if (!dataModel) {
-            throw new Error('Model not found');
+            throw new Error(`Model "${modelName}" not found in loaded models`);
         }
 
         const device = await DeviceModel.findByPk(device_id);
@@ -150,7 +208,15 @@ const getDatabyDateRange = async (model_id, device_id, start, end) => {
             throw new Error('Device not found');
         }
 
-        const data = await dataModel.findAll({ where: { device_id, createdAt: { [Op.between]: [start, end] } } });
+        // Obtener solo los atributos definidos en el modelo
+        const attributes = Object.keys(dataModel.rawAttributes);
+        const data = await dataModel.findAll({ 
+            attributes: attributes,
+            where: { 
+                device_id, 
+                createdAt: { [Op.between]: [start, end] } 
+            } 
+        });
         return data;
     } catch (error) {
         throw new Error(error.message);
@@ -261,9 +327,10 @@ const getLatestData = async (model_id, device_id) => {
             throw new Error('Model not found');
         }
 
-        const dataModel = models[modelName];
+        // Acceder correctamente al modelo en loadModels
+        const dataModel = loadModels[modelName]?.default;
         if (!dataModel) {
-            throw new Error('Model not found');
+            throw new Error(`Model "${modelName}" not found in loaded models`);
         }
 
         const device = await DeviceModel.findByPk(device_id);
@@ -271,7 +338,14 @@ const getLatestData = async (model_id, device_id) => {
             throw new Error('Device not found');
         }
 
-        const data = await dataModel.findAll({ where: { device_id }, order: [['createdAt', 'DESC']], limit: 1 });
+        // Obtener solo los atributos definidos en el modelo
+        const attributes = Object.keys(dataModel.rawAttributes);
+        const data = await dataModel.findAll({ 
+            attributes: attributes,
+            where: { device_id }, 
+            order: [['createdAt', 'DESC']], 
+            limit: 1 
+        });
         return data;
     } catch (error) {
         throw new Error(error.message);
@@ -287,4 +361,4 @@ const getModelName = async (model_id) => {
     return model.name;
 };
 
-export default { createData, getDatabyModelandDevice, getDatabyModel, getDatabyDevice, getDatabyDateRange, getGraphableData, getJsonForPost, getBooleanFields };
+export default { createData, getDatabyModelandDevice, getDatabyModel, getDatabyDevice, getDatabyDateRange, getGraphableData, getJsonForPost, getBooleanFields, getLatestData };

@@ -78,4 +78,12 @@ const deleteDevice = async (id) => {
     }
 }
 
-export default { getDevices, getDevicebyId, createDevice, updateDevice, patchDevice, deleteDevice };
+const getAllDevices = async () => {
+    try {
+        return await getDevices();
+    } catch (error) {
+        throw new Error(error.message);
+    }
+}
+
+export default { getDevices, getAllDevices, getDevicebyId, createDevice, updateDevice, patchDevice, deleteDevice };

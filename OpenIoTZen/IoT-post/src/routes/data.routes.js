@@ -12,5 +12,7 @@ router.get("/getByRange", dataController.getDatabyDateRange);
 router.get("/getGraphable/:id", dataController.getGraphableData);
 router.post("/getJson", dataController.getJsonForPost);
 router.get("/getBooleanFields/:id", dataController.getBooleanFields);
+router.get("/getModelName/:id", dataController.getModelName);
+router.post("/getWebSocketCode", dataController.getWebSocketCode);
 
 export default router;

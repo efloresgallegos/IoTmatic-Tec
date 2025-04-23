@@ -1,6 +1,6 @@
 .sisdai-grid {
   display: grid;
-  grid-template-rows: auto auto 1fr;
+  grid-template-rows: auto auto auto 1fr;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
   padding: 16px;
@@ -30,6 +30,15 @@
 .div3 {
   grid-column: 1 / -1;
   grid-row: 2;
+  padding: 0;
+  border-radius: 8px;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.div4 {
+  grid-column: 1 / -1;
+  grid-row: 3;
   padding: 12px;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -81,7 +90,7 @@
 @media (max-width: 768px) {
   .sisdai-grid {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto 1fr;
+    grid-template-rows: auto auto auto auto 1fr;
     padding: 8px;
   }
 
@@ -100,6 +109,11 @@
   .div3 {
     grid-column: 1;
     grid-row: 3;
+  }
+  
+  .div4 {
+    grid-column: 1;
+    grid-row: 4;
   }
 
   .devices-grid {

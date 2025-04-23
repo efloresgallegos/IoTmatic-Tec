@@ -165,6 +165,33 @@ const createDatabaseAndTables = async () => {
         `);
 
         console.log("Tables created successfully!");
+
+        // Crear usuario administrador por defecto
+        try {
+            // Verificar si ya existe un usuario admin
+            const adminExists = await dbClient.query(
+                `SELECT 1 FROM users WHERE username = 'admin'`
+            );
+
+            if (adminExists.rowCount === 0) {
+                // Importar bcrypt para encriptar la contraseña
+                const bcrypt = await import('bcrypt');
+                const salt = await bcrypt.default.genSalt(10);
+                const hashedPassword = await bcrypt.default.hash('admin123', salt);
+
+                // Crear usuario administrador
+                await dbClient.query(
+                    `INSERT INTO users (name, password, username) VALUES ($1, $2, $3)`,
+                    ['Administrador', hashedPassword, 'admin']
+                );
+                console.log('Usuario administrador creado con éxito!');
+            } else {
+                console.log('El usuario administrador ya existe.');
+            }
+        } catch (error) {
+            console.error('Error al crear usuario administrador:', error.message);
+        }
+
         await dbClient.end();
     } catch (err) {
         console.error("Error creating database and tables:", err.message);

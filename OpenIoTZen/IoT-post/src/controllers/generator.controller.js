@@ -51,10 +51,76 @@ const genJSModel = (name, fields) => {
         if (field.type === 'Object') {
             fieldType = 'Sequelize.JSON';
         }
-
-        return `${field.name}: { 
-            type: ${fieldType}${field.required ? ', allowNull: false' : ''}${field.ref ? `, references: { model: '${field.ref}', key: '${field.refColumn || `${field.ref}_id`}' }` : ''}
+        
+        // Construir las propiedades básicas del campo
+        let fieldDefinition = `${field.name}: { 
+            type: ${fieldType}${field.required ? ', allowNull: false' : ''}${field.ref ? `, references: { model: '${field.ref}', key: '${field.refColumn || `${field.ref}_id`}' }` : ''}`;
+        
+        // Agregar propiedades adicionales para campos de tipo Date
+        if (field.type === 'Date') {
+            if (field.dateFormat) {
+                fieldDefinition += `,
+            dateFormat: '${field.dateFormat}'`;
+            }
+            if (field.includeTime !== undefined) {
+                fieldDefinition += `,
+            includeTime: ${field.includeTime}`;
+            }
+            if (field.minDate) {
+                fieldDefinition += `,
+            minDate: '${field.minDate}'`;
+            }
+            if (field.maxDate) {
+                fieldDefinition += `,
+            maxDate: '${field.maxDate}'`;
+            }
+            if (field.defaultValue !== undefined) {
+                fieldDefinition += `,
+            defaultValue: '${field.defaultValue}'`;
+            }
+        }
+        
+        // Agregar propiedades adicionales para campos numéricos (Number, Integer, Float)
+        if (field.type === 'Number' || field.type === 'Integer' || field.type === 'Float') {
+            if (field.min !== undefined) {
+                fieldDefinition += `,
+            min: ${field.min}`;
+            }
+            if (field.max !== undefined) {
+                fieldDefinition += `,
+            max: ${field.max}`;
+            }
+            if (field.defaultValue !== undefined) {
+                fieldDefinition += `,
+            defaultValue: ${field.defaultValue}`;
+            }
+        }
+        
+        // Agregar propiedades adicionales para campos de tipo String o Text
+        if (field.type === 'String' || field.type === 'Text') {
+            if (field.pattern) {
+                fieldDefinition += `,
+            validate: { is: ${field.pattern} }`;
+            }
+            if (field.minLength !== undefined && field.minLength !== null) {
+                fieldDefinition += `,
+            minLength: ${field.minLength}`;
+            }
+            if (field.maxLength !== undefined && field.maxLength !== null) {
+                fieldDefinition += `,
+            maxLength: ${field.maxLength}`;
+            }
+            if (field.defaultValue !== undefined && field.defaultValue !== null) {
+                fieldDefinition += `,
+            defaultValue: "${field.defaultValue}"`;
+            }
+        }
+        
+        // Cerrar la definición del campo
+        fieldDefinition += `
         }`;
+        
+        return fieldDefinition;
     });
 
     return `
@@ -185,7 +251,16 @@ const createDataModel = async (name, fields) => {
                 ...(field.ref ? { references: { model: field.ref, key: field.refColumn || `${field.ref}_id` } } : {}),
                 ...(field.primaryKey ? { primaryKey: field.primaryKey } : {}),
                 ...(field.autoIncrement ? { autoIncrement: field.autoIncrement } : {}),
-                ...(field.type === 'Number' ? { validate: { isInt: true } } : {})
+                ...(field.type === 'Number' ? { validate: { isInt: true } } : {}),
+                // Agregar metadatos para campos de tipo Date si existen
+                ...(field.type === 'Date' && field.dateFormat ? { dateFormat: field.dateFormat } : {}),
+                ...(field.type === 'Date' && field.includeTime ? { includeTime: field.includeTime } : {}),
+                // Agregar validaciones para campos de tipo String o Text
+                ...(field.type === 'String' || field.type === 'Text' ? {
+                    ...(field.pattern ? { validate: { is: new RegExp(field.pattern) } } : {}),
+                    ...(field.minLength !== undefined && field.minLength !== null ? { validate: { len: [field.minLength, field.maxLength || Number.MAX_SAFE_INTEGER] } } : {}),
+                    ...(field.defaultValue !== undefined && field.defaultValue !== null ? { defaultValue: field.defaultValue } : {})
+                } : {})
             };
 
             return acc;
@@ -213,17 +288,113 @@ const createDataModel = async (name, fields) => {
     }
 };
 
-const generateJson = (name, fields) => {
-    const jsonFields = fields.map(field => {
-        return {
-            name: field.name,
-            type: field.type,
-            required: field.required,
-            ref: field.ref,
-            refColumn: field.refColumn
-        };
-    });
+// Función auxiliar para obtener la etiqueta en español del tipo de dato
+const getTypeLabel = (type) => {
+    switch(type) {
+        case 'String': return 'Texto';
+        case 'Number': return 'Número';
+        case 'Integer': return 'Entero';
+        case 'Float': return 'Decimal';
+        case 'Boolean': return 'Booleano';
+        case 'Date': return 'Fecha';
+        case 'Text': return 'Texto largo';
+        case 'UUID': return 'UUID';
+        case 'JSON': return 'JSON';
+        case 'Array': return 'Arreglo';
+        case 'Object': return 'Objeto';
+        default: return type;
+    }
+};
 
+const generateJson = (name, fields) => {
+    // No incluimos los campos base en el JSON para mantener compatibilidad con la estructura existente
+    // Solo incluimos los campos personalizados que el usuario ha definido
+    
+    const jsonFields = fields.map(field => {
+        // Convertir el tipo a formato de objeto con value y label para mantener compatibilidad
+        const typeObj = {
+            value: field.type,
+            label: getTypeLabel(field.type)
+        };
+        
+        // Objeto base con propiedades comunes
+        const fieldObj = {
+            name: field.name,
+            type: typeObj,
+            required: field.required || false,
+            ref: field.ref || null,
+            refColumn: field.refColumn || null
+        };
+        
+        // Agregar propiedades específicas para campos de tipo Date
+        if (field.type === 'Date') {
+            fieldObj.includeTime = field.includeTime || false;
+            fieldObj.dateFormat = field.dateFormat || 'ISO';
+            fieldObj.minDate = field.minDate || null;
+            fieldObj.maxDate = field.maxDate || null;
+            fieldObj.defaultValue = field.defaultValue !== undefined ? field.defaultValue : null;
+        }
+        
+        // Agregar propiedades específicas para campos numéricos
+        if (field.type === 'Number' || field.type === 'Integer' || field.type === 'Float') {
+            fieldObj.min = field.min !== undefined ? field.min : null;
+            fieldObj.max = field.max !== undefined ? field.max : null;
+            fieldObj.defaultValue = field.defaultValue !== undefined ? field.defaultValue : null;
+        }
+        
+        // Agregar propiedades específicas para campos de tipo String o Text
+        if (field.type === 'String' || field.type === 'Text') {
+            fieldObj.pattern = field.pattern || null;
+            fieldObj.minLength = field.minLength !== undefined ? field.minLength : null;
+            fieldObj.maxLength = field.maxLength !== undefined ? field.maxLength : null;
+            fieldObj.defaultValue = field.defaultValue !== undefined ? field.defaultValue : null;
+        }
+        
+        // Manejar campos de tipo Object con subcampos
+        if (field.type === 'Object' && Array.isArray(field.fields)) {
+            fieldObj.fields = field.fields.map(subField => {
+                const subTypeObj = {
+                    value: subField.type,
+                    label: getTypeLabel(subField.type)
+                };
+                
+                const subFieldObj = {
+                    name: subField.name,
+                    type: subTypeObj,
+                    required: subField.required || false
+                };
+                
+                // Agregar propiedades específicas para subcampos de tipo Date
+                if (subField.type === 'Date') {
+                    subFieldObj.includeTime = subField.includeTime || false;
+                    subFieldObj.dateFormat = subField.dateFormat || 'ISO';
+                    subFieldObj.minDate = subField.minDate || null;
+                    subFieldObj.maxDate = subField.maxDate || null;
+                    subFieldObj.defaultValue = subField.defaultValue || null;
+                }
+                
+                // Agregar propiedades específicas para subcampos numéricos
+                if (subField.type === 'Number' || subField.type === 'Integer' || subField.type === 'Float') {
+                    subFieldObj.min = subField.min !== undefined ? subField.min : null;
+                    subFieldObj.max = subField.max !== undefined ? subField.max : null;
+                    subFieldObj.defaultValue = subField.defaultValue !== undefined ? subField.defaultValue : null;
+                }
+                
+                // Agregar propiedades específicas para subcampos de tipo String o Text
+                if (subField.type === 'String' || subField.type === 'Text') {
+                    subFieldObj.pattern = subField.pattern || null;
+                    subFieldObj.minLength = subField.minLength !== undefined ? subField.minLength : null;
+                    subFieldObj.maxLength = subField.maxLength !== undefined ? subField.maxLength : null;
+                    subFieldObj.defaultValue = subField.defaultValue !== undefined ? subField.defaultValue : null;
+                }
+                
+                return subFieldObj;
+            });
+        }
+        
+        return fieldObj;
+    });
+    
     return {
         name,
         fields: jsonFields
@@ -231,51 +402,185 @@ const generateJson = (name, fields) => {
 };
 
 const createJson = async (name, fields) => {
-    const jsonModel = generateJson(name, fields);
+    try {
+        const jsonModel = generateJson(name, fields);
 
-    const dirPath = path.join(__dirname, '../Jsons');
-    const filePath = path.join(dirPath, `${name}.json`);
+        const dirPath = path.join(__dirname, '../jsons');
+        const filePath = path.join(dirPath, `${name}.json`);
 
-    if (!fs.existsSync(dirPath)) {
-        fs.mkdirSync(dirPath, { recursive: true });
+        if (!fs.existsSync(dirPath)) {
+            fs.mkdirSync(dirPath, { recursive: true });
+        }
+
+        fs.writeFileSync(filePath, JSON.stringify(jsonModel, null, 2), 'utf8');
+        console.log(`JSON del modelo ${name} generado exitosamente`);
+    } catch (error) {
+        console.error('Error al crear el archivo JSON:', error);
+        throw new Error(`Error al crear el archivo JSON: ${error.message}`);
     }
-
-    fs.writeFileSync(filePath, JSON.stringify(jsonModel, null, 2), 'utf8');
-    console.log(`JSON del modelo ${name} generado exitosamente`);
 };
 
 // Controlador final
 const finalController = async (req, res) => {
-    const { name, fields } = req.body;
+    let { name, fields } = req.body;
+    // Eliminar espacios en blanco y convertir a minúsculas
+    name = name.replace(/\s/g, '_').toLowerCase();
+
     try {
-        // Verificar si ya existe un modelo con el mismo nombre
+        // Validaciones comunes para ambos modelos (JS y JSON)
         if (!name || !fields) {
             return res.status(400).json({ message: 'Faltan datos para crear el modelo' });
         }
+        
+        // Validar nombre reservado
         if(name === 'index' || name === 'models' || name === 'users' || name === 'devices') {
             return res.status(400).json({ message: 'No puedes usar ese nombre para crear un modelo' });
         }
+        
+        // Validar que haya campos
         if (fields.length === 0) {
             return res.status(400).json({ message: 'El modelo debe tener al menos un campo' });
         }
+        
+        // Validar nombres de campos
         if (fields.some(field => field.name === '')) {
             return res.status(400).json({ message: 'Todos los campos deben tener un nombre' });
         }
-        if (fields.some(field => field.type === '')) {
+        
+        // Validar tipos de campos
+        if (fields.some(field => {
+            // Manejar el caso donde field.type puede ser un objeto o un string
+            const fieldType = typeof field.type === 'object' ? field.type.value : field.type;
+            return !fieldType;
+        })) {
             return res.status(400).json({ message: 'Todos los campos deben tener un tipo' });
         }
+        
+        // Normalizar los campos para asegurar que todos tengan el formato correcto
+        fields = fields.map(field => {
+            // Convertir field.type a string si es un objeto
+            const fieldType = typeof field.type === 'object' ? field.type.value : field.type;
+            
+            // Crear un objeto base para el campo
+            const normalizedField = {
+                name: field.name,
+                type: fieldType,
+                required: field.required || false
+            };
+            
+            // Agregar propiedades de referencia si existen
+            if (field.ref) {
+                normalizedField.ref = field.ref;
+                normalizedField.refColumn = field.refColumn || null;
+            }
+            
+            // Agregar propiedades específicas para campos de tipo Date
+            if (fieldType === 'Date') {
+                normalizedField.includeTime = field.includeTime || false;
+                normalizedField.dateFormat = field.dateFormat || 'ISO';
+                normalizedField.minDate = field.minDate || null;
+                normalizedField.maxDate = field.maxDate || null;
+                normalizedField.defaultValue = field.defaultValue !== undefined ? field.defaultValue : null;
+            }
+            
+            // Agregar propiedades específicas para campos numéricos
+            if (fieldType === 'Number' || fieldType === 'Integer' || fieldType === 'Float') {
+                normalizedField.min = field.min !== undefined ? field.min : null;
+                normalizedField.max = field.max !== undefined ? field.max : null;
+                normalizedField.defaultValue = field.defaultValue !== undefined ? field.defaultValue : null;
+            }
+            
+            // Agregar propiedades específicas para campos de tipo String o Text
+            if (fieldType === 'String' || fieldType === 'Text') {
+                normalizedField.pattern = field.pattern || null;
+                normalizedField.minLength = field.minLength !== undefined ? field.minLength : null;
+                normalizedField.maxLength = field.maxLength !== undefined ? field.maxLength : null;
+                normalizedField.defaultValue = field.defaultValue !== undefined ? field.defaultValue : null;
+            }
+            
+            // Manejar campos de tipo Object con subcampos
+            if (fieldType === 'Object' && Array.isArray(field.fields)) {
+                normalizedField.fields = field.fields.map(subField => {
+                    const subFieldType = typeof subField.type === 'object' ? subField.type.value : subField.type;
+                    
+                    const normalizedSubField = {
+                        name: subField.name,
+                        type: subFieldType,
+                        required: subField.required || false
+                    };
+                    
+                    // Agregar propiedades específicas para subcampos de tipo Date
+                    if (subFieldType === 'Date') {
+                        normalizedSubField.includeTime = subField.includeTime || false;
+                        normalizedSubField.dateFormat = subField.dateFormat || 'ISO';
+                        normalizedSubField.minDate = subField.minDate || null;
+                        normalizedSubField.maxDate = subField.maxDate || null;
+                        normalizedSubField.defaultValue = subField.defaultValue || null;
+                    }
+                    
+                    // Agregar propiedades específicas para subcampos numéricos
+                    if (subFieldType === 'Number' || subFieldType === 'Integer' || subFieldType === 'Float') {
+                        normalizedSubField.min = subField.min !== undefined ? subField.min : null;
+                        normalizedSubField.max = subField.max !== undefined ? subField.max : null;
+                        normalizedSubField.defaultValue = subField.defaultValue !== undefined ? subField.defaultValue : null;
+                    }
+                    
+                    // Agregar propiedades específicas para subcampos de tipo String o Text
+                    if (subFieldType === 'String' || subFieldType === 'Text') {
+                        normalizedSubField.pattern = subField.pattern || null;
+                        normalizedSubField.minLength = subField.minLength !== undefined ? subField.minLength : null;
+                        normalizedSubField.maxLength = subField.maxLength !== undefined ? subField.maxLength : null;
+                        normalizedSubField.defaultValue = subField.defaultValue !== undefined ? subField.defaultValue : null;
+                    }
+                    
+                    return normalizedSubField;
+                });
+            }
+            
+            return normalizedField;
+        });
+        
+        // Validar nombres de campos duplicados
+        const fieldNames = fields.map(field => field.name);
+        if (new Set(fieldNames).size !== fieldNames.length) {
+            return res.status(400).json({ message: 'No puede haber campos con nombres duplicados' });
+        }
+        
+        // Verificar si ya existe un modelo con el mismo nombre
         const existingModel = await Model.findOne({ where: { name } });
         if (existingModel) {
             return res.status(400).json({ message: 'Ya existe un modelo con ese nombre' });
         }
 
-        await createDataModel(name, fields);
-        await createJson(name, fields);
-        await Model.create({ name: name }); // Asegúrate de pasar 'modelName' en lugar de 'name'
-        res.json({ message: 'Modelo y tabla creados exitosamente' });
+        // Crear el modelo en la base de datos primero para evitar inconsistencias
+        const modelRecord = await Model.create({ name: name });
+        
+        try {
+            // Crear el modelo JS
+            await createDataModel(name, fields);
+            
+            // Crear el archivo JSON
+            await createJson(name, fields);
+            
+            res.json({ 
+                message: 'Modelo y tabla creados exitosamente',
+                model: {
+                    name: name,
+                    id: modelRecord.model_id
+                }
+            });
+        } catch (error) {
+            // Si hay un error después de crear el registro del modelo, intentar eliminarlo
+            try {
+                await modelRecord.destroy();
+            } catch (cleanupError) {
+                console.error('Error al limpiar el modelo después de un fallo:', cleanupError);
+            }
+            throw error; // Re-lanzar el error original para el manejo en el catch externo
+        }
     } catch (error) {
         console.error('Error al crear el modelo y la tabla:', error);
-        res.status(500).json({ message: 'Error al crear el modelo y la tabla' });
+        res.status(500).json({ message: `Error al crear el modelo y la tabla: ${error.message}` });
     }
 };
 

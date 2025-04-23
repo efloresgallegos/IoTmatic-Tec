@@ -10,10 +10,11 @@ export default {
     save: 'Guardar',
     close: 'Cerrar',
     add: 'Añadir',
-    create: 'Crear'
+    create: 'Crear',
+    errorMessage: 'Ha ocurrido un error'
   },
-  failed: 'La acción falló',
-  success: 'La acción fue exitosa',
+  failed: 'Acción fallida',
+  success: 'Acción exitosa',
   navBar: {
     home: 'Inicio',
     devices: 'Dispositivos',
@@ -26,7 +27,7 @@ export default {
     logo: 'Logo',
     about: 'Acerca de',
     users: 'Usuarios',
-    alerts: 'Alertas',
+    alerts: 'Alertas'
   },
   accessibilityButton: {
     tools: 'Herramientas de accesibilidad',
@@ -36,9 +37,54 @@ export default {
     textOnly: 'Mostrar solo texto',
     darkView: 'Vista Oscura',
     reset: 'Restablecer',
-    language: 'Idioma',
+    language: 'Idioma'
   },
   views: {
+    devices: {
+      realtime: {
+        title: 'Dispositivos conectados en tiempo real',
+        toggle: 'Monitoreo en tiempo real',
+        activated: 'Monitoreo en tiempo real activado',
+        deactivated: 'Monitoreo en tiempo real desactivado',
+        connectionError: 'Error de conexión en tiempo real',
+        noDevices: 'No hay dispositivos conectados actualmente',
+        disabled: 'Activa el monitoreo para ver dispositivos conectados',
+        noModel: 'Sin modelo asignado'
+      },
+      createDevice: {
+        title: 'Crear Nuevo Dispositivo',
+        namePlaceholder: 'Nombre',
+        selectType: 'Seleccionar Tipo',
+        descriptionPlaceholder: 'Descripción',
+        createButton: 'Crear dispositivo'
+      },
+      createType: {
+        createButton: 'Añadir Tipo',
+        title: 'Crear Nuevo Tipo',
+        namePlaceholder: 'Nombre'
+      },
+      filters: {
+        searchPlaceholder: 'Buscar dispositivos...',
+        filterByType: 'Filtrar por tipo',
+        filterByDate: 'Filtrar por fecha',
+        allTypes: 'Todos los tipos'
+      },
+      labels: {
+        name: 'Nombre',
+        type: 'Tipo',
+        description: 'Descripción'
+      },
+      aria: {
+        filterByType: 'Filtrar por tipo',
+        filterByDate: 'Filtrar por fecha'
+      },
+      deviceCard: {
+        name: 'Nombre: ',
+        type: 'Tipo: ',
+        description: 'Descripción: ',
+        action: 'Ir al dispositivo'
+      }
+    },
     home: {
       welcome: '¡Bienvenido a IoT Framework!',
       introduction:
@@ -49,7 +95,7 @@ export default {
         dataMonitoring: 'Monitoreo de Datos',
         jsonManagement: 'Gestión de JSON',
         dataVisualization: 'Visualización de Datos',
-        dataComparison: 'Comparación de Datos',
+        dataComparison: 'Comparación de Datos'
       },
       featuresDescriptions: {
         dataModels:
@@ -61,44 +107,9 @@ export default {
         dataVisualization:
           'Herramientas de visualización para graficar datos a lo largo del tiempo y comparar información de diferentes sensores en fechas específicas.',
         dataComparison:
-          'Capacidad para comparar datos de diferentes sensores en distintos momentos para identificar tendencias y patrones.',
+          'Capacidad para comparar datos de diferentes sensores en distintos momentos para identificar tendencias y patrones.'
       },
-      saveJson: 'Guardar JSON',
-    },
-    devices: {
-      createDevice: {
-        title: 'Crear Nuevo Dispositivo',
-        namePlaceholder: 'Nombre',
-        selectType: 'Seleccionar Tipo',
-        descriptionPlaceholder: 'Descripción',
-        createButton: 'Crear dispositivo',
-      },
-      createType: {
-        createButton: 'Añadir Tipo',
-        title: 'Crear Nuevo Tipo',
-        namePlaceholder: 'Nombre',
-      },
-      filters: {
-        searchPlaceholder: 'Buscar dispositivos...',
-        filterByType: 'Filtrar por tipo',
-        filterByDate: 'Filtrar por fecha',
-        allTypes: 'Todos los tipos',
-      },
-      labels: {
-        name: 'Nombre',
-        type: 'Tipo',
-        description: 'Descripción',
-      },
-      aria: {
-        filterByType: 'Filtrar por tipo',
-        filterByDate: 'Filtrar por fecha',
-      },
-      deviceCard: {
-        name: 'Nombre: ',
-        type: 'Tipo: ',
-        description: 'Descripción: ',
-        action: 'Ir al dispositivo',
-      },
+      saveJson: 'Guardar JSON'
     },
     modelCreator: {
       title: 'Generador de Modelos',
@@ -119,7 +130,38 @@ export default {
       deleteFieldButton: 'Eliminar Campo',
       deleteSubfieldButton: 'Eliminar Subcampo',
       previewTitle: 'Vista Previa del Modelo',
+      patternLabel: 'Patrón (regex)',
+      patternHint: 'Expresión regular para validar',
+      minLengthLabel: 'Longitud mínima',
+      minLengthHint: 'Mínimo número de caracteres',
+      maxLengthLabel: 'Longitud máxima',
+      maxLengthHint: 'Máximo número de caracteres',
+      defaultValueLabel: 'Valor predeterminado',
+      defaultValueHint: 'Valor por defecto',
+      minLabel: 'Valor mínimo',
+      minHint: 'Valor mínimo permitido',
+      maxLabel: 'Valor máximo',
+      maxHint: 'Valor máximo permitido',
+      includeTimeLabel: 'Incluir hora',
+      dateFormatLabel: 'Formato de fecha',
+      minDateLabel: 'Fecha mínima',
+      minDateHint: 'Fecha mínima permitida',
+      maxDateLabel: 'Fecha máxima',
+      maxDateHint: 'Fecha máxima permitida',
+      defaultDateLabel: 'Fecha predeterminada',
+      defaultDateHint: 'Valor por defecto',
       errorModelNameRequired: 'El nombre del modelo es obligatorio.',
+      errorNoFields: 'Debe agregar al menos un campo.',
+      errorEmptyFieldName: 'Todos los campos deben tener un nombre.',
+      errorDuplicateFieldNames: 'Los nombres de los campos no pueden estar duplicados.',
+      fieldDeleted: 'Campo eliminado.',
+      subfieldDeleted: 'Subcampo eliminado.',
+      confirmDeleteTitle: 'Confirmar eliminación',
+      confirmDeleteMessage: '¿Está seguro de que desea eliminar este elemento?',
+      jsonEditorError: 'Error en el editor JSON',
+      jsonEditorInitError: 'Error al inicializar el editor JSON',
+      invalidAiModel: 'El modelo sugerido por la IA no es válido',
+      syncError: 'Error al sincronizar el modelo',
       successModelGenerated: 'Modelo generado con éxito.',
       AIInteraction: {
         aiPromptTitle: 'Describe los cambios que deseas realizar',
@@ -129,16 +171,14 @@ export default {
         aiChangesDescription: 'A continuación se muestran los cambios propuestos por la IA.',
         applyChangesButton: 'Aplicar cambios',
         errorPromptRequired: 'Por favor ingresa un prompt.',
-        errorProcessingPrompt: 'Hubo un error al procesar el prompt.',
+        errorProcessingPrompt: 'Hubo un error al procesar el prompt.'
       },
       aiUpdateTitle: 'Actualizar Modelo con IA',
       aiUpdateSuccess: 'Modelo actualizado con éxito.',
       aiUpdateCancelled: 'Actualización del modelo cancelada.',
       currentModel: "Modelo Actual",
       aiSuggestedModel: "Modelo Sugerido por IA",
-      dialogWarning: "¿Desea reemplazar su modelo actual con la sugerencia de la IA? Esta acción no se puede deshacer.",
-
-
+      dialogWarning: "¿Desea reemplazar su modelo actual con la sugerencia de la IA? Esta acción no se puede deshacer."
     },
     users: {
       title: 'Añadir Usuario',
@@ -152,8 +192,8 @@ export default {
         username: 'Usuario',
         actions: 'Acciones',
         edit: 'Editar',
-        delete: 'Eliminar',
-      },
+        delete: 'Eliminar'
+      }
     },
     login: {
       welcome: 'Bienvenido a OpenIoTZen',
@@ -161,10 +201,17 @@ export default {
       enterUsername: 'Ingresa tu usuario',
       password: 'Contraseña',
       enterPassword: 'Ingresa tu contraseña',
-      login: 'Iniciar Sesión',
+      login: 'Iniciar sesión',
       success: 'Inicio de sesión exitoso',
-      selectLanguage: 'Selecciona un idioma',
+      selectLanguage: 'Seleccionar Idioma',
       loginSuccess: 'Inicio de sesión exitoso',
+      createDevice: {
+        createButton: 'Crear Dispositivo',
+        title: 'Añadir un Nuevo Dispositivo',
+        namePlaceholder: 'Ingresa el nombre del dispositivo',
+        typePlaceholder: 'Ingresa el tipo de dispositivo',
+        descriptionPlaceholder: 'Ingresa la descripción del dispositivo'
+      }
     },
     alertsAndFilters: {
       title: "Gestión de Alertas y Filtros",
@@ -174,16 +221,16 @@ export default {
         createFilter: "Crear Filtro"
       },
       alerts: {
-        title: "Visualización de Alertas",
+        title: "Resumen de Alertas",
         description: "Descripción",
         device: "Dispositivo",
         module: "Módulo",
         status: "Estado",
-        resolved: "Resuelta",
+        resolved: "Resuelto",
         pending: "Pendiente"
       },
       filters: {
-        title: "Gestionar Filtros",
+        title: "Administrar Filtros",
         device: "Dispositivo",
         module: "Módulo",
         field: "Campo",
@@ -192,16 +239,46 @@ export default {
       },
       createFilter: {
         title: "Crear Filtro",
-        selectDevice: "Selecciona un dispositivo",
-        selectModule: "Selecciona un módulo",
-        selectField: "Selecciona un campo",
+        selectDevice: "Seleccionar un dispositivo",
+        selectModule: "Seleccionar un módulo",
+        selectField: "Seleccionar un campo",
         condition: "Condición",
-        threshold: "Threshold",
-        addCondition: "Agregar Condición",
+        threshold: "Umbral",
+        addCondition: "Añadir Condición",
         conditionsList: "Condiciones:",
         createFilterButton: "Crear Filtro"
       },
       loading: "Cargando..."
-    },
+    }
   },
+  AIInteraction: {
+    chatTitle: 'Chat con IA',
+    toggleChat: 'Alternar chat con IA',
+    closeChat: 'Cerrar chat con IA',
+    templateLabel: 'Seleccionar una plantilla',
+    templates: {
+      general: 'General',
+      modelCreation: 'Creación de Modelos',
+      dataAnalysis: 'Análisis de Datos',
+      deviceConfig: 'Configuración de Dispositivos',
+      troubleshooting: 'Solución de Problemas'
+    },
+    feedbackHelpful: 'Esto fue útil',
+    feedbackUnhelpful: 'Esto no fue útil',
+    feedbackThanks: '¡Gracias por tu feedback!',
+    inputPlaceholder: 'Escribe un mensaje...',
+    sendButton: 'Enviar mensaje'
+  },
+  enhancedGraphics: {
+    loading: 'Cargando datos...',
+    noData: 'No hay datos disponibles para mostrar',
+    realtimeEnabled: 'Tiempo real activado',
+    enableRealtime: 'Activar tiempo real',
+    refreshData: 'Actualizar datos',
+    downloadPNG: 'Descargar PNG',
+    dataUpdated: 'Datos actualizados',
+    realtimeActivated: 'Actualizaciones en tiempo real activadas',
+    realtimeDeactivated: 'Actualizaciones en tiempo real desactivadas',
+    realtimeConnectionError: 'No se pudo conectar al servicio en tiempo real'
+  }
 }

@@ -40,7 +40,8 @@
 
 
 <script>
-import { api } from 'src/boot/axios';
+import { useAuthStore } from 'src/stores/auth-store';
+import { mapActions, mapState } from 'pinia';
 
 export default {
   data() {
@@ -49,21 +50,22 @@ export default {
       password: ''
     };
   },
+  computed: {
+    ...mapState(useAuthStore, ['isLoading', 'error'])
+  },
   methods: {
+    ...mapActions(useAuthStore, ['login', 'checkAuth']),
     async handleLogin() {
       try {
-        const response = await api.post('/users/login', {
+        await this.login({
           username: this.username,
           password: this.password
         });
-        console.log('Login successful:', response.data);
+        
         this.$q.notify({
           message: this.$t('views.login.loginSuccess'),
           color: 'positive'
         });
-        // Guardar datos en localStorage
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        localStorage.setItem('token', response.data.token);
 
         // Redirigir al inicio
         this.$router.push('/');
@@ -71,16 +73,15 @@ export default {
         console.error('Login error:', error);
 
         // Mostrar mensaje de error
-        this.$toast.open({
+        this.$q.notify({
           message: this.$t('views.login.loginError'),
-          type: 'error'
+          color: 'negative',
+          position: 'top'
         });
       }
     },
     checkLoggedIn() {
-      const user = localStorage.getItem('user');
-      const token = localStorage.getItem('token');
-      if (user && token) {
+      if (this.checkAuth()) {
         this.$router.push('/');
       }
     }

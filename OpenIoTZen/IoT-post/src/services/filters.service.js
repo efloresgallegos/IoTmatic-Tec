@@ -87,68 +87,150 @@ const checkFilter = async (data) => {
         }
 
         const alerts = [];
-        filters.forEach(filter => {
+        for (const filter of filters) {
             const conditions = Array.isArray(filter.conditions) ? filter.conditions : 
                               (filter.conditions ? [filter.conditions] : []);
             let isValid = true;
-            let description = `Alert for ${filter.name}: `;
+            let description = `Alert for ${filter.field}: `;
             const triggers = [];
 
-            conditions.forEach(condition => {
+            for (const condition of conditions) {
                 const { condition: operator, threshold } = condition;
                 const fieldValue = data[filter.field];
-
+                
                 // Validar que el campo exista en los datos
                 if (fieldValue === undefined) {
                     console.warn(`Field "${filter.field}" not found in data`);
-                    return;
-                }
-
-                // Convertir el threshold a número
-                const thresholdNumber = parseFloat(threshold);
-                if (isNaN(thresholdNumber)) {
-                    console.warn(`Invalid threshold value: ${threshold}`);
-                    return;
+                    continue;
                 }
 
                 let conditionMet = false;
-                switch (operator) {
-                    case '=':
-                        conditionMet = fieldValue === thresholdNumber;
+                let displayValue = fieldValue;
+                let displayThreshold = threshold;
+                
+                // Evaluar la condición según el tipo de filtro
+                switch (filter.filter_type) {
+                    case 'numeric':
+                        // Asegurar que los valores sean numéricos
+                        const numericValue = parseFloat(fieldValue);
+                        const numericThreshold = parseFloat(threshold);
+                        
+                        if (isNaN(numericValue) || isNaN(numericThreshold)) {
+                            console.warn(`Invalid numeric values: field=${fieldValue}, threshold=${threshold}`);
+                            continue;
+                        }
+                        
+                        switch (operator) {
+                            case '=':
+                                conditionMet = numericValue === numericThreshold;
+                                break;
+                            case '!=':
+                                conditionMet = numericValue !== numericThreshold;
+                                break;
+                            case '>':
+                                conditionMet = numericValue > numericThreshold;
+                                break;
+                            case '<':
+                                conditionMet = numericValue < numericThreshold;
+                                break;
+                            case '>=':
+                                conditionMet = numericValue >= numericThreshold;
+                                break;
+                            case '<=':
+                                conditionMet = numericValue <= numericThreshold;
+                                break;
+                            default:
+                                conditionMet = false;
+                        }
+                        displayValue = numericValue;
+                        displayThreshold = numericThreshold;
                         break;
-                    case '>':
-                        conditionMet = fieldValue > thresholdNumber;
+                        
+                    case 'boolean':
+                        // Convertir a booleano si es necesario
+                        const boolValue = typeof fieldValue === 'boolean' ? fieldValue : 
+                                         (fieldValue === 'true' || fieldValue === true || fieldValue === 1);
+                        const boolThreshold = typeof threshold === 'boolean' ? threshold : 
+                                            (threshold === 'true' || threshold === true || threshold === 1);
+                        
+                        switch (operator) {
+                            case '=':
+                                conditionMet = boolValue === boolThreshold;
+                                break;
+                            case '!=':
+                                conditionMet = boolValue !== boolThreshold;
+                                break;
+                            default:
+                                conditionMet = false;
+                        }
+                        displayValue = boolValue;
+                        displayThreshold = boolThreshold;
                         break;
-                    case '<':
-                        conditionMet = fieldValue < thresholdNumber;
+                        
+                    case 'string':
+                        // Asegurar que los valores sean strings
+                        const strValue = String(fieldValue);
+                        const strThreshold = String(threshold);
+                        
+                        switch (operator) {
+                            case '=':
+                                conditionMet = strValue === strThreshold;
+                                break;
+                            case '!=':
+                                conditionMet = strValue !== strThreshold;
+                                break;
+                            case 'contains':
+                                conditionMet = strValue.includes(strThreshold);
+                                break;
+                            case 'starts_with':
+                                conditionMet = strValue.startsWith(strThreshold);
+                                break;
+                            case 'ends_with':
+                                conditionMet = strValue.endsWith(strThreshold);
+                                break;
+                            default:
+                                conditionMet = false;
+                        }
+                        displayValue = `"${strValue}"`;
+                        displayThreshold = `"${strThreshold}"`;
                         break;
-                    case '>=':
-                        conditionMet = fieldValue >= thresholdNumber;
-                        break;
-                    case '<=':
-                        conditionMet = fieldValue <= thresholdNumber;
-                        break;
+                        
                     default:
-                        conditionMet = false;
+                        console.warn(`Unsupported filter type: ${filter.filter_type}`);
+                        continue;
                 }
 
                 if (conditionMet) {
-                    triggers.push(`${filter.field} is ${operator} ${thresholdNumber} (current value: ${fieldValue})`);
+                    // Crear un mensaje descriptivo según el tipo de operador
+                    let operatorText = operator;
+                    switch (operator) {
+                        case '=': operatorText = 'igual a'; break;
+                        case '!=': operatorText = 'diferente de'; break;
+                        case '>': operatorText = 'mayor que'; break;
+                        case '<': operatorText = 'menor que'; break;
+                        case '>=': operatorText = 'mayor o igual a'; break;
+                        case '<=': operatorText = 'menor o igual a'; break;
+                        case 'contains': operatorText = 'contiene'; break;
+                        case 'starts_with': operatorText = 'comienza con'; break;
+                        case 'ends_with': operatorText = 'termina con'; break;
+                    }
+                    
+                    triggers.push(`${filter.field} es ${operatorText} ${displayThreshold} (valor actual: ${displayValue})`);
                 }
                 isValid = isValid && conditionMet;
-            });
+            }
 
             if (isValid && triggers.length > 0) {
-                description += triggers.join(' and ');
-                alertsService.createAlert({
+                description += triggers.join(' y ');
+                await alertsService.createAlert({
                     description,
-                    filter_id: filter.id,
+                    filter_id: filter.filter_id,
                     model_id,
                     device_id,
                 });
                 alerts.push({ filter, description });
             }
-        });
+        }
 
         return alerts;
     } catch (error) {
