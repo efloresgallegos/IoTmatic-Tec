@@ -16,20 +16,33 @@ function setupWebSocketServer(wss) {
     // Extraer token de múltiples fuentes (encabezados, query params, protocolo)
     let token = null;
     
-    // 1. Verificar en la URL como parámetro query
+    // Inicialmente asumimos que no es un dispositivo IoT
+    ws.isIoTDevice = false;
+    
+    // Analizar la URL para parámetros de consulta
     const parsedUrl = url.parse(req.url || '');
     const queryParams = querystring.parse(parsedUrl.query || '');
+    
+    // 1. Verificar en la URL como parámetro query
     if (queryParams.token) {
       token = queryParams.token;
       console.log('Token extraído de parámetros de URL');
     }
     
     // 2. Verificar en los headers de autorización
-    if (!token) {
+    if (!token && req.headers['authorization']) {
       const authHeader = req.headers['authorization'];
-      if (authHeader && authHeader.startsWith('Bearer ')) {
+      
+      // Detectar si es un dispositivo IoT o frontend basado en el formato del header
+      if (authHeader.startsWith('Bearer ')) {
         token = authHeader.slice(7);
-        console.log('Token extraído de header Authorization');
+        ws.isIoTDevice = false; // Es frontend porque usa "Bearer "
+        console.log('Token extraído de header Authorization con prefijo Bearer (frontend)');
+      } else {
+        // Si no tiene prefijo Bearer, es un dispositivo IoT
+        token = authHeader;
+        ws.isIoTDevice = true; // Es IoT porque no usa "Bearer "
+        console.log('Token extraído de header Authorization sin prefijo Bearer (dispositivo IoT)');
       }
     }
     
@@ -40,7 +53,9 @@ function setupWebSocketServer(wss) {
       for (const protocol of protocols) {
         if (protocol !== 'jwt' && protocol.length > 10) {
           token = protocol;
-          console.log('Token extraído de sec-websocket-protocol');
+          // Asumimos que es un dispositivo IoT si usa el protocolo WebSocket para autenticación
+          ws.isIoTDevice = true;
+          console.log('Token extraído de sec-websocket-protocol (posible dispositivo IoT)');
           break;
         }
       }
@@ -49,15 +64,26 @@ function setupWebSocketServer(wss) {
     // 4. Verificar en el mensaje inicial (se procesará luego cuando el cliente envíe un mensaje auth)
     ws.pendingAuthentication = !token;
     
-    if (!token && !ws.pendingAuthentication) {
-      // Rechazar conexión sin token, pero permitir autenticación posterior
+    if (!token) {
+      // Para dispositivos IoT, rechazamos la conexión si no hay token inmediato
+      if (ws.isIoTDevice) {
+        console.log('Conexión IoT rechazada: No se proporcionó token de autenticación');
+        ws.send(JSON.stringify({
+          event: 'auth_error',
+          data: { message: 'Dispositivo IoT requiere token de autenticación inmediato' }
+        }));
+        ws.close(1008, 'Dispositivo IoT requiere token de autenticación inmediato');
+        return;
+      }
+      
+      // Para clientes normales, permitimos autenticación posterior
       console.log('Advertencia: No se proporcionó token de autenticación inmediato');
       ws.send(JSON.stringify({
         event: 'auth_required',
         data: { message: 'Se requiere autenticación. Envíe un mensaje con event: "auth" y data: {token: "su-token"}' }
       }));
       ws.pendingAuthentication = true;
-    } else if (token) {
+    } else {
       // Procesar autenticación con el token disponible
       authenticateClient(ws, token, req);
     }
@@ -80,8 +106,22 @@ function setupWebSocketServer(wss) {
         if (ws.pendingAuthentication) {
           if (parsedMessage.event === 'auth') {
             if (parsedMessage.data && parsedMessage.data.token) {
-              // Procesar la autenticación con el token recibido
-              authenticateClient(ws, parsedMessage.data.token, req);
+              // Si el mensaje incluye un campo iot_device explícito
+              if (parsedMessage.data.iot_device) {
+                ws.isIoTDevice = true;
+              }
+              
+              // Si el token incluye "Bearer ", es del frontend y no es un dispositivo IoT
+              if (parsedMessage.data.token.startsWith('Bearer ')) {
+                ws.isIoTDevice = false;
+                // Procesar la autenticación con el token recibido
+                authenticateClient(ws, parsedMessage.data.token.slice(7), req);
+              } else {
+                // Sin "Bearer", asumimos que es un dispositivo IoT
+                ws.isIoTDevice = true;
+                // Procesar la autenticación con el token recibido
+                authenticateClient(ws, parsedMessage.data.token, req);
+              }
               return;
             } else {
               ws.send(JSON.stringify({
@@ -100,21 +140,36 @@ function setupWebSocketServer(wss) {
           }
         }
         
-        // Si es un mensaje de suscripción y ya está suscrito, informar que ya está suscrito
+        // Para dispositivos IoT, permitir suscripciones explícitas pero informar que ya están suscritos
         if (parsedMessage.event === 'subscribe') {
-          ws.send(JSON.stringify({
-            event: 'subscription_info',
-            data: { message: 'Ya estás suscrito automáticamente con los datos del token' }
-          }));
+          if (ws.isIoTDevice) {
+            console.log('Dispositivo IoT ya suscrito automáticamente, reforzando suscripción');
+            // Reforzar la suscripción automática para dispositivos IoT
+            if (ws.tokenData) {
+              const subscriptionData = {
+                device_id: ws.tokenData.device,
+                model_id: ws.tokenData.model,
+                user_id: ws.tokenData.user,
+                token: parsedMessage.data?.token || ws.originalToken
+              };
+              
+              processSubscriptionMessage(ws, {
+                event: 'subscribe',
+                data: subscriptionData
+              });
+            }
+          } else {
+            // Para clientes normales, procesamos la suscripción normalmente
+            processSubscriptionMessage(ws, parsedMessage);
+          }
           return;
         }
         
         // Para otros mensajes, verificar que el cliente esté suscrito (debería estarlo siempre)
         if (!ws.isSubscribed) {
-          // Este caso no debería ocurrir ya que la suscripción es automática
           ws.send(JSON.stringify({
             event: 'error',
-            data: { message: 'Error en la suscripción automática. Por favor, reconecta.' }
+            data: { message: 'No estás suscrito. Por favor, suscríbete primero.' }
           }));
           return;
         }
@@ -128,6 +183,8 @@ function setupWebSocketServer(wss) {
             subscribeToDeviceStatus(ws, parsedMessage.data);
             break;
           case 'unsubscribe':
+            unsubscribeFromAllEvents(ws);
+            break;
           case 'data':
             // Usar el nuevo sistema de suscripciones
             processSubscriptionMessage(ws, parsedMessage);
@@ -200,6 +257,9 @@ function setupWebSocketServer(wss) {
  * @param {Object} req - Objeto de solicitud HTTP original
  */
 function authenticateClient(ws, token, req) {
+  // Guardar el token original para uso futuro
+  ws.originalToken = token;
+  
   // Verificar token
   const tokenData = verifyToken(token);
   if (tokenData) {
@@ -209,74 +269,99 @@ function authenticateClient(ws, token, req) {
     // Eliminar estado de autenticación pendiente
     ws.pendingAuthentication = false;
     
-    // Realizar suscripción automática con los datos del token
-    const subscriptionData = {
-      device_id: tokenData.device,
-      model_id: tokenData.model,
-      user_id: tokenData.user,
-      token: token
-    };
+    // Verificar si es un token de tipo IoT basado en su contenido si aún no está determinado
+    if (!ws.isIoTDevice && tokenData.device && tokenData.role === 'device') {
+      console.log('Detectado token de dispositivo IoT por su contenido');
+      ws.isIoTDevice = true;
+    }
     
-    // Llamar a la función de suscripción directamente
-    processSubscriptionMessage(ws, {
-      event: 'subscribe',
-      data: subscriptionData
-    });
+    // Determinar el tipo de cliente basado en flags
+    const clientType = ws.isIoTDevice ? 'IoT Device' : 'Frontend User';
+    console.log(`Tipo de cliente: ${clientType}`);
     
-    // Marcar como suscrito
-    ws.isSubscribed = true;
-    console.log(`Suscripción automática realizada para usuario ${tokenData.user}, dispositivo ${tokenData.device}, modelo ${tokenData.model}`);
+    // Para dispositivos IoT, realizamos suscripción automática siempre
+    if (ws.isIoTDevice) {
+      const subscriptionData = {
+        device_id: tokenData.device,
+        model_id: tokenData.model,
+        user_id: tokenData.user,
+        token: token
+      };
+      
+      // Llamar a la función de suscripción directamente
+      processSubscriptionMessage(ws, {
+        event: 'subscribe',
+        data: subscriptionData
+      });
+      
+      // Marcar como suscrito
+      ws.isSubscribed = true;
+      console.log(`Suscripción automática realizada para dispositivo IoT ${tokenData.device}, modelo ${tokenData.model}`);
+    } else {
+      // Para usuarios frontend, solo informamos que están autenticados
+      console.log(`Usuario frontend autenticado: ${tokenData.user}`);
+      // No marcamos como suscrito, el frontend debe enviar un mensaje explícito de suscripción
+    }
     
     // Enviar confirmación de autenticación exitosa
     ws.send(JSON.stringify({
       event: 'auth_success',
-      data: { message: 'Autenticación exitosa', user_id: tokenData.user }
+      data: { 
+        message: 'Autenticación exitosa',
+        user_id: tokenData.user,
+        client_type: clientType,
+        auto_subscribed: ws.isIoTDevice
+      }
     }));
     
-    // Registrar la conexión en el servicio
-    const connection = connectionsService.registerConnection({
-      device_id: tokenData.device,
-      user_id: tokenData.user,
-      model_id: tokenData.model,
-      ip: req.socket.remoteAddress,
-      connected_since: new Date().toISOString()
-    });
-    
-    // Emitir evento de estado de dispositivo para notificar a otros clientes
-    if (connection) {
-      // Usar timeout para asegurar que otros clientes ya estén suscritos
-      setTimeout(() => {
-        emitDeviceStatusUpdate({
-          device_id: tokenData.device,
-          status: 'connected',
-          name: connection.name || `Dispositivo ${tokenData.device}`,
-          model: {
-            id: tokenData.model,
-            name: connection.model_name || `Modelo ${tokenData.model}`
-          },
-          connected_since: connection.connected_at
-        });
-      }, 500);
+    // Registrar la conexión en el servicio solo para dispositivos IoT
+    if (ws.isIoTDevice) {
+      const connection = connectionsService.registerConnection({
+        device_id: tokenData.device,
+        user_id: tokenData.user,
+        model_id: tokenData.model,
+        ip: req.socket.remoteAddress,
+        connected_since: new Date().toISOString()
+      });
+      
+      // Emitir evento de estado de dispositivo para notificar a otros clientes
+      if (connection) {
+        // Usar timeout para asegurar que otros clientes ya estén suscritos
+        setTimeout(() => {
+          emitDeviceStatusUpdate({
+            device_id: tokenData.device,
+            status: 'connected',
+            name: connection.name || `Dispositivo ${tokenData.device}`,
+            model: {
+              id: tokenData.model,
+              name: connection.model_name || `Modelo ${tokenData.model}`
+            },
+            connected_since: connection.connected_at
+          });
+        }, 500);
+      }
     }
     
-    // Enviar lista de dispositivos conectados al nuevo cliente
-    const connectedDevices = connectionsService.getConnections({ status: 'online' });
-    if (connectedDevices && connectedDevices.length > 0) {
-      ws.send(JSON.stringify({
-        event: 'device_status_initial',
-        data: {
-          devices: connectedDevices.map(conn => ({
-            device_id: conn.device_id,
-            status: 'connected',
-            name: conn.name || `Dispositivo ${conn.device_id}`,
-            model: {
-              id: conn.model_id,
-              name: conn.model_name || `Modelo ${conn.model_id}`
-            },
-            connected_since: conn.connected_at
-          }))
-        }
-      }));
+    // Enviar lista de dispositivos conectados al nuevo cliente (solo para frontend)
+    if (!ws.isIoTDevice) {
+      const connectedDevices = connectionsService.getConnections({ status: 'online' });
+      if (connectedDevices && connectedDevices.length > 0) {
+        ws.send(JSON.stringify({
+          event: 'device_status_initial',
+          data: {
+            devices: connectedDevices.map(conn => ({
+              device_id: conn.device_id,
+              status: 'connected',
+              name: conn.name || `Dispositivo ${conn.device_id}`,
+              model: {
+                id: conn.model_id,
+                name: conn.model_name || `Modelo ${conn.model_id}`
+              },
+              connected_since: conn.connected_at
+            }))
+          }
+        }));
+      }
     }
   } else {
     // Rechazar conexión con token inválido
