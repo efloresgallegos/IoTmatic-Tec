@@ -94,8 +94,8 @@ const menuItems = [
             }
         ]
     },
-    { name: 'navBar.settings', link: '#', icon: 'settings' },
-    { name: 'navBar.users', link: '/settings', icon: 'people' },
+    { name: 'navBar.settings', link: '/settings', icon: 'settings' },
+    { name: 'navBar.users', link: '/users', icon: 'people' },
     { name: 'navBar.about', link: '/about', icon: 'info' },
     { name: 'navBar.alerts', link: '/alerts', icon: 'warning' },    
     {

@@ -11,7 +11,8 @@ export default {
     close: 'Cerrar',
     add: 'Añadir',
     create: 'Crear',
-    errorMessage: 'Ha ocurrido un error'
+    errorMessage: 'Ha ocurrido un error',
+    search: 'Buscar'
   },
   failed: 'Acción fallida',
   success: 'Acción exitosa',
@@ -40,6 +41,52 @@ export default {
     language: 'Idioma'
   },
   views: {
+    settings: {
+      title: 'Configuración del Sistema',
+      connectedDevices: 'Dispositivos Conectados',
+      refreshDevices: 'Actualizar',
+      noDevicesFound: 'No se encontraron dispositivos conectados',
+      deviceDetails: 'Detalles del Dispositivo',
+      viewDetails: 'Ver detalles',
+      reconnect: 'Reconectar',
+      disconnect: 'Desconectar',
+      reconnecting: 'Reconectando dispositivo...',
+      disconnecting: 'Desconectando dispositivo...',
+      reconnectSuccess: 'Dispositivo reconectado exitosamente',
+      disconnectSuccess: 'Dispositivo desconectado exitosamente',
+      columns: {
+        id: 'ID',
+        name: 'Nombre',
+        type: 'Tipo',
+        ip: 'Dirección IP',
+        lastConnection: 'Última Conexión',
+        status: 'Estado',
+        actions: 'Acciones'
+      },
+      status: {
+        online: 'En línea',
+        offline: 'Desconectado'
+      },
+      deviceProps: {
+        id: 'ID',
+        name: 'Nombre',
+        type: 'Tipo',
+        ip: 'Dirección IP',
+        mac: 'Dirección MAC',
+        model: 'Modelo',
+        firmware: 'Firmware',
+        lastConnection: 'Última Conexión',
+        status: 'Estado',
+        uptime: 'Tiempo Activo',
+        protocol: 'Protocolo',
+        connectionType: 'Tipo de Conexión'
+      },
+      errors: {
+        fetchFailed: 'Error al obtener los dispositivos conectados',
+        reconnectFailed: 'Error al reconectar el dispositivo',
+        disconnectFailed: 'Error al desconectar el dispositivo'
+      }
+    },
     devices: {
       realtime: {
         title: 'Dispositivos conectados en tiempo real',

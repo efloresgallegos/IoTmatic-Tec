@@ -35,10 +35,7 @@
         />
       </div>
     </div>
-    <div class="div3 realtime-section">
-      <RealtimeDevicesList />
-    </div>
-    
+
     <div class="div4 devices-container">
       <div class="devices-grid">
         <DeviceCard
@@ -128,7 +125,6 @@
 import { ref, computed, onMounted } from "vue";
 import DeviceCard from "../components/dinamic-components/DeviceCard.vue";
 import Modal from "../components/dinamic-components/MiniModal.vue";
-import RealtimeDevicesList from "../components/dinamic-components/RealtimeDevicesList.vue";
 import { useI18n } from "vue-i18n";
 import { useDevicesStore } from "../stores/devices-store";
 import { storeToRefs } from "pinia";

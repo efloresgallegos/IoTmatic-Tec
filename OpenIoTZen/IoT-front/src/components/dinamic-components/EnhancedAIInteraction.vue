@@ -4,7 +4,7 @@
     <div class="ai-toggle-button" @click="toggleVisibility" :aria-label="$t('AIInteraction.toggleChat')">
       <img src="../../assets/AIIcon.png" alt="AI Icon" class="ai-icon" />
     </div>
-    
+
     <!-- Contenido del chat -->
     <div v-if="isVisible" class="ai-chat-content">
       <!-- Encabezado -->
@@ -12,7 +12,7 @@
         <h3>{{ $t('AIInteraction.chatTitle') }}</h3>
         <button class="close-button" @click="toggleVisibility" :aria-label="$t('AIInteraction.closeChat')">&times;</button>
       </div>
-      
+
       <!-- Selector de plantillas -->
       <div class="template-selector">
         <label for="template-select">{{ $t('AIInteraction.templateLabel') }}</label>
@@ -24,17 +24,17 @@
           <option value="troubleshooting">{{ $t('AIInteraction.templates.troubleshooting') }}</option>
         </select>
       </div>
-      
+
       <!-- Cuerpo del chat -->
       <div class="ai-chat-body" ref="chatContainer">
         <transition-group name="fade" tag="div">
-          <div v-for="(message, index) in messages" :key="index" 
+          <div v-for="(message, index) in messages" :key="index"
                :class="['chat-message', message.user ? 'user' : 'ai']">
             <div class="message-content">
               <div class="message-text" v-html="formatMessage(message.text)"></div>
               <div class="message-footer">
                 <small class="timestamp">{{ message.timestamp }}</small>
-                
+
                 <!-- Botones de retroalimentación para mensajes de IA -->
                 <div v-if="!message.user && !message.feedbackGiven" class="feedback-buttons">
                   <button @click="provideFeedback(message, true)" class="feedback-btn positive" :aria-label="$t('AIInteraction.feedbackHelpful')">
@@ -51,7 +51,7 @@
             </div>
           </div>
         </transition-group>
-        
+
         <!-- Indicador de escritura -->
         <div v-if="isTyping" class="typing-indicator">
           <span></span>
@@ -59,35 +59,35 @@
           <span></span>
         </div>
       </div>
-      
+
       <!-- Sugerencias rápidas -->
       <div v-if="suggestions.length > 0" class="suggestions-container">
-        <div 
-          v-for="(suggestion, index) in suggestions" 
+        <div
+          v-for="(suggestion, index) in suggestions"
           :key="index"
           class="suggestion-chip"
           @click="useSuggestion(suggestion)">
           {{ suggestion }}
         </div>
       </div>
-      
+
       <!-- Entrada de texto -->
       <div class="input-container">
-        <textarea 
-          v-model="aiPrompt" 
-          :placeholder="$t('AIInteraction.inputPlaceholder')" 
+        <textarea
+          v-model="aiPrompt"
+          :placeholder="$t('AIInteraction.inputPlaceholder')"
           class="input"
           rows="1"
           ref="promptInput"
           @input="autoResizeTextarea"
           @keydown.enter.prevent="sendPromptToBackend"></textarea>
-        
-        <q-btn 
+
+        <q-btn
           @click="sendPromptToBackend"
-          round 
-          flat 
-          color="primary" 
-          :disable="!aiPrompt.trim() || isTyping" 
+          round
+          flat
+          color="primary"
+          :disable="!aiPrompt.trim() || isTyping"
           class="send-btn"
           :aria-label="$t('AIInteraction.sendButton')">
           <q-icon name="send" />
@@ -144,7 +144,7 @@ export default {
   mounted() {
     // Inicializar sugerencias basadas en la plantilla seleccionada
     this.updateSuggestions();
-    
+
     // Escuchar eventos de teclado para navegación del historial
     document.addEventListener('keydown', this.handleKeyDown);
   },
@@ -153,23 +153,23 @@ export default {
   },
   methods: {
     ...mapActions(useModelStore, ['updateModelFromAI']),
-    
+
     async sendPromptToBackend() {
       if (!this.aiPrompt.trim() || this.isTyping) return;
 
       const timestamp = moment().format("HH:mm");
       const promptId = `prompt_${Date.now()}`;
-      const userMessage = { 
+      const userMessage = {
         id: promptId,
-        text: this.aiPrompt, 
-        user: true, 
-        timestamp 
+        text: this.aiPrompt,
+        user: true,
+        timestamp
       };
-      
+
       // Guardar en historial
       this.promptHistory.push(this.aiPrompt);
       this.historyIndex = this.promptHistory.length;
-      
+
       this.messages.push(userMessage);
       this.aiPrompt = "";
       this.scrollToBottom();
@@ -177,8 +177,8 @@ export default {
 
       try {
         // Enviar el modelo actual junto con el prompt para contexto
-        const response = await aiService.sendToAI({ 
-          prompt: userMessage.text, 
+        const response = await aiService.sendToAI({
+          prompt: userMessage.text,
           AI: "GPT",
           currentModel: this.currentModel,
           template: this.selectedTemplate,
@@ -186,36 +186,36 @@ export default {
         });
 
         this.isTyping = false;
-        
+
         // Mostrar texto de respuesta
-        const aiTextMessage = { 
+        const aiTextMessage = {
           id: `response_${Date.now()}`,
           promptId: promptId,
-          text: response.data.text || response.data.error || "No se pudo procesar la respuesta", 
-          user: false, 
+          text: response.data.text || response.data.error || "No se pudo procesar la respuesta",
+          user: false,
           timestamp: moment().format("HH:mm"),
           feedbackGiven: false
         };
-        
+
         this.messages.push(aiTextMessage);
 
         // Actualizar el modelo en el store si la IA devuelve un JSON
         if (response.data.Json) {
           // Actualizar el modelo en el store
           this.updateModelFromAI(response.data.Json);
-          
+
           // Emitir evento para notificar al componente padre
           this.$emit('modelUpdated', response.data.Json);
         }
 
         this.scrollToBottom();
-        
+
         // Actualizar sugerencias basadas en la respuesta
         this.generateContextualSuggestions(response.data.text);
       } catch (error) {
         console.error("Error al enviar el mensaje:", error);
         this.isTyping = false;
-        
+
         // Mostrar mensaje de error en el chat
         this.messages.push({
           id: `error_${Date.now()}`,
@@ -224,11 +224,11 @@ export default {
           timestamp: moment().format("HH:mm"),
           isError: true
         });
-        
+
         this.scrollToBottom();
       }
     },
-    
+
     toggleVisibility() {
       this.isVisible = !this.isVisible;
       if (this.isVisible) {
@@ -238,31 +238,31 @@ export default {
         });
       }
     },
-    
+
     scrollToBottom() {
       this.$nextTick(() => {
         const container = this.$refs.chatContainer;
         if (container) container.scrollTop = container.scrollHeight;
       });
     },
-    
+
     formatMessage(text) {
       if (!text) return '';
-      
+
       // Convertir URLs en enlaces clicables
       const urlRegex = /(https?:\/\/[^\s]+)/g;
       let formattedText = text.replace(urlRegex, url => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`);
-      
+
       // Convertir saltos de línea en <br>
       formattedText = formattedText.replace(/\n/g, '<br>');
-      
+
       return formattedText;
     },
-    
+
     provideFeedback(message, isPositive) {
       // Marcar que se ha dado retroalimentación
       message.feedbackGiven = true;
-      
+
       // Enviar retroalimentación al backend
       aiService.sendFeedback({
         prompt: this.messages.find(m => m.id === message.promptId)?.text || '',
@@ -273,14 +273,14 @@ export default {
         console.error("Error al enviar retroalimentación:", error);
       });
     },
-    
+
     async updateSuggestions() {
       try {
         // Obtener sugerencias del servicio de IA basadas en la plantilla seleccionada
         const suggestions = await aiService.getSuggestions({
           template: this.selectedTemplate
         });
-        
+
         if (suggestions && suggestions.length > 0) {
           this.suggestions = suggestions;
           return;
@@ -288,7 +288,7 @@ export default {
       } catch (error) {
         console.error('Error al obtener sugerencias:', error);
       }
-      
+
       // Sugerencias predeterminadas si falla el servicio
       switch (this.selectedTemplate) {
         case 'modelCreation':
@@ -327,17 +327,17 @@ export default {
           ];
       }
     },
-    
+
     async generateContextualSuggestions(responseText) {
       if (!responseText) return;
-      
+
       try {
         // Generar sugerencias basadas en la respuesta de la IA
         const suggestions = await aiService.getSuggestions({
           template: this.selectedTemplate,
           context: responseText
         });
-        
+
         if (suggestions && suggestions.length > 0) {
           this.suggestions = suggestions;
           return;
@@ -345,7 +345,7 @@ export default {
       } catch (error) {
         console.error('Error al generar sugerencias contextuales:', error);
       }
-      
+
       // Palabras clave para generar sugerencias contextuales si falla el servicio
       const keywords = {
         'sensor': ['¿Qué sensores recomiendas?', '¿Cómo calibro este sensor?'],
@@ -355,10 +355,10 @@ export default {
         'datos': ['¿Cómo almaceno estos datos?', '¿Qué formato es mejor para transferir estos datos?'],
         'error': ['¿Cómo soluciono este error?', '¿Es un problema común?']
       };
-      
+
       const lowercaseResponse = responseText.toLowerCase();
       let contextualSuggestions = [];
-      
+
       // Buscar palabras clave en la respuesta
       Object.entries(keywords).forEach(([keyword, suggestions]) => {
         if (lowercaseResponse.includes(keyword) && suggestions.length > 0) {
@@ -367,7 +367,7 @@ export default {
           contextualSuggestions.push(randomSuggestion);
         }
       });
-      
+
       // Limitar a 3 sugerencias y mezclar con algunas generales si es necesario
       if (contextualSuggestions.length > 3) {
         contextualSuggestions = contextualSuggestions.slice(0, 3);
@@ -378,39 +378,39 @@ export default {
           "¿Hay alternativas a considerar?",
           "¿Cómo implemento esta solución?"
         ];
-        
+
         while (contextualSuggestions.length < 3 && generalSuggestions.length > 0) {
           const randomIndex = Math.floor(Math.random() * generalSuggestions.length);
           contextualSuggestions.push(generalSuggestions.splice(randomIndex, 1)[0]);
         }
       }
-      
+
       this.suggestions = contextualSuggestions;
     },
-    
+
     useSuggestion(suggestion) {
       this.aiPrompt = suggestion;
       this.$nextTick(() => {
         this.$refs.promptInput?.focus();
       });
     },
-    
+
     autoResizeTextarea() {
       const textarea = this.$refs.promptInput;
       if (!textarea) return;
-      
+
       // Restablecer altura para medir correctamente
       textarea.style.height = 'auto';
-      
+
       // Establecer nueva altura basada en el contenido (con un máximo)
       const newHeight = Math.min(textarea.scrollHeight, 150);
       textarea.style.height = `${newHeight}px`;
     },
-    
+
     handleKeyDown(event) {
       // Solo procesar si el chat está visible y el input tiene el foco
       if (!this.isVisible || document.activeElement !== this.$refs.promptInput) return;
-      
+
       // Navegar por el historial con las flechas arriba/abajo
       if (event.key === 'ArrowUp' && this.historyIndex > 0) {
         this.historyIndex--;
@@ -441,14 +441,10 @@ export default {
   box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
   transform: translateX(100%);
   transition: transform 0.3s ease-in-out;
-  z-index: 2005;
+  z-index: 912999; /* Aumentado de 2005 a 9999 */
   display: flex;
   flex-direction: column;
   border-radius: 10px 0 0 10px;
-}
-
-.ai-chat-bar.open {
-  transform: translateX(0);
 }
 
 .ai-toggle-button {
@@ -466,6 +462,7 @@ export default {
   cursor: pointer;
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
   transition: all 0.2s ease;
+  z-index: 9998; /* Asegurar que el botón también tenga alto z-index */
 }
 
 .ai-toggle-button:hover {
@@ -740,13 +737,13 @@ export default {
     width: 100%;
     border-radius: 0;
   }
-  
+
   .ai-toggle-button {
     top: auto;
     bottom: 20px;
     left: 20px;
   }
-  
+
   .message-content {
     max-width: 90%;
   }

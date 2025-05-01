@@ -9,11 +9,11 @@
         @update:model-value="toggleRealtime"
       />
     </div>
-    
+
     <div v-if="realtimeEnabled" class="realtime-content">
       <div v-if="connectedDevices.length > 0" class="connected-devices-list">
-        <div 
-          v-for="device in connectedDevices" 
+        <div
+          v-for="device in connectedDevices"
           :key="device.device_id"
           class="connected-device-item"
         >
@@ -56,7 +56,7 @@ let unsubscribeDeviceStatus = null;
 // Formatear tiempo de conexión
 const formatTime = (timestamp) => {
   if (!timestamp) return '';
-  
+
   const date = new Date(timestamp);
   return date.toLocaleTimeString();
 };
@@ -83,17 +83,38 @@ const toggleRealtime = () => {
 };
 
 // Configurar monitoreo en tiempo real
-const setupRealtimeMonitoring = () => {
+const setupRealtimeMonitoring = async () => {
   // Limpiar suscripción anterior si existe
   cleanupRealtimeMonitoring();
-  
+
+  // Si no está conectado, intentar conectar primero
+  if (!realtimeService.connected) {
+    try {
+      console.log('Intentando conectar el servicio de tiempo real...');
+      await realtimeService.connect();
+    } catch (error) {
+      console.error('Error al conectar el servicio de tiempo real:', error);
+      $q.notify({
+        type: 'negative',
+        message: t('views.devices.realtime.connectionError'),
+        position: 'top',
+        timeout: 3000
+      });
+      realtimeEnabled.value = false;
+      return;
+    }
+  }
+
   // Suscribirse a actualizaciones de estado de dispositivos
   if (realtimeService.connected) {
     // Suscribirse a eventos de dispositivos conectados
     realtimeService.subscribeToDeviceStatus();
-    
+
     // Registrar manejador para actualizaciones de estado
     unsubscribeDeviceStatus = realtimeService.on('device_status_update', handleDeviceStatusUpdate);
+
+    // Cargar dispositivos ya conectados
+    connectedDevices.value = realtimeService.getConnectedDevices();
   } else {
     console.warn('Servicio de tiempo real no conectado');
     $q.notify({
@@ -102,6 +123,7 @@ const setupRealtimeMonitoring = () => {
       position: 'top',
       timeout: 3000
     });
+    realtimeEnabled.value = false;
   }
 };
 
@@ -110,7 +132,7 @@ const handleDeviceStatusUpdate = (data) => {
   if (data.status === 'connected') {
     // Verificar si el dispositivo ya está en la lista
     const existingIndex = connectedDevices.value.findIndex(d => d.device_id === data.device_id);
-    
+
     if (existingIndex >= 0) {
       // Actualizar dispositivo existente
       connectedDevices.value[existingIndex] = {
@@ -137,20 +159,41 @@ const cleanupRealtimeMonitoring = () => {
     unsubscribeDeviceStatus();
     unsubscribeDeviceStatus = null;
   }
-  
+
   // Limpiar lista de dispositivos conectados
   connectedDevices.value = [];
 };
 
-onMounted(() => {
+onMounted(async () => {
   // Verificar si el servicio de tiempo real está conectado
-  if (realtimeService.connected) {
-    console.log('Servicio de tiempo real conectado');
-  } else {
-    console.log('Intentando conectar servicio de tiempo real...');
-    realtimeService.connect().catch(error => {
+  console.log('Componente RealtimeDevicesList montado, estado de conexión:', realtimeService.connected);
+
+  if (!realtimeService.connected) {
+    try {
+      console.log('Intentando conectar el servicio de tiempo real desde RealtimeDevicesList...');
+      await realtimeService.connect();
+      console.log('Conexión WebSocket establecida correctamente');
+
+      // Habilitar automáticamente el monitoreo si la conexión fue exitosa
+      if (realtimeService.connected) {
+        console.log('Habilitando monitoreo automáticamente después de la conexión exitosa');
+        realtimeEnabled.value = true;
+        setupRealtimeMonitoring();
+      }
+    } catch (error) {
       console.error('Error al conectar servicio de tiempo real:', error);
-    });
+      $q.notify({
+        type: 'negative',
+        message: t('views.devices.realtime.connectionError'),
+        position: 'top',
+        timeout: 3000
+      });
+    }
+  } else {
+    // Si ya está conectado, habilitamos el monitoreo automáticamente
+    console.log('WebSocket ya conectado, habilitando monitoreo automáticamente');
+    realtimeEnabled.value = true;
+    setupRealtimeMonitoring();
   }
 });
 

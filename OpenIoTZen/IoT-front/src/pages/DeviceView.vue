@@ -2,7 +2,7 @@
   <q-page class="device-view-page">
     <div class="sisdai-container">
       <h1 class="sisdai-title text-center">Vista de Dispositivo</h1>
-      
+
       <div class="sisdai-grid">
         <!-- Panel izquierdo -->
         <div class="sisdai-panel">
@@ -10,31 +10,31 @@
             <q-card-section>
               <div class="sisdai-section-title">Generar JSON para POST</div>
               <p class="sisdai-description">Obtén la estructura JSON necesaria para enviar datos a este dispositivo mediante una solicitud POST. Este JSON incluye todos los campos requeridos según el modelo de datos seleccionado.</p>
-              
-              <q-select 
-                v-model="selectedModel" 
-                :options="generalModels" 
-                option-value="model_id" 
+
+              <q-select
+                v-model="selectedModel"
+                :options="generalModels"
+                option-value="model_id"
                 option-label="name"
-                label="Selecciona un módulo" 
-                dense 
-                outlined 
+                label="Selecciona un módulo"
+                dense
+                outlined
                 class="sisdai-select"
-                :disable="loadingModels" 
+                :disable="loadingModels"
               />
-              <q-btn 
-                label="Obtener JSON para POST" 
-                color="primary" 
-                class="sisdai-button q-mt-md full-width" 
+              <q-btn
+                label="Obtener JSON para POST"
+                color="primary"
+                class="sisdai-button q-mt-md full-width"
                 @click="handlePostRequest"
-                :disable="!selectedModel" 
+                :disable="!selectedModel"
                 :loading="isLoading"
               />
               <div class="q-mt-md">
                 <div v-if="jsonResponse" class="sisdai-json-container" ref="jsonEditor"></div>
                 <p v-else class="sisdai-text-secondary">No se ha generado ningún JSON. Selecciona un módulo y haz clic en "Obtener JSON para POST".</p>
               </div>
-              
+
               <div v-if="jsonResponse" class="q-mt-md">
                 <div class="sisdai-section-subtitle">Cómo usar este JSON</div>
                 <div class="sisdai-usage-steps">
@@ -60,7 +60,7 @@
                     </div>
                   </div>
                 </div>
-                
+
                 <div class="sisdai-code-container q-mt-md">
                   <pre><code>// Ejemplo de cómo enviar datos usando fetch
 fetch('/api/data', {
@@ -84,22 +84,22 @@ fetch('/api/data', {
           <q-card class="sisdai-card q-mt-md">
             <q-card-section>
               <div class="sisdai-section-title">Datos más recientes</div>
-              <q-select 
-                v-model="selectedModelForLatestData" 
-                :options="generalModels" 
+              <q-select
+                v-model="selectedModelForLatestData"
+                :options="generalModels"
                 option-value="model_id"
-                option-label="name" 
-                label="Selecciona un módulo" 
-                dense 
-                outlined 
+                option-label="name"
+                label="Selecciona un módulo"
+                dense
+                outlined
                 class="sisdai-select"
               />
-              <q-btn 
-                label="Ver datos más recientes" 
-                color="primary" 
+              <q-btn
+                label="Ver datos más recientes"
+                color="primary"
                 class="sisdai-button q-mt-md full-width"
-                @click="handleGetLatestData" 
-                :disable="!selectedModelForLatestData" 
+                @click="handleGetLatestData"
+                :disable="!selectedModelForLatestData"
               />
               <div class="q-mt-md">
                 <div v-if="latestDataResponse" class="sisdai-json-container" ref="latestJsonEditor"></div>
@@ -111,37 +111,57 @@ fetch('/api/data', {
           <!-- Sección para código de conexión WebSocket -->
           <q-card class="sisdai-card q-mt-md">
             <q-card-section>
-              <div class="sisdai-section-title">Código para Conexión WebSocket</div>
-              <p class="sisdai-description">Genera código para conectar dispositivos IoT a través de WebSockets y enviar datos según el modelo seleccionado.</p>
-              
-              <q-select 
-                v-model="selectedModelForWebSocket" 
-                :options="generalModels" 
-                option-value="model_id"
-                option-label="name" 
-                label="Selecciona un módulo para conexión WebSocket" 
-                dense 
-                outlined 
-                class="sisdai-select"
-              />
-              
-              <div class="q-mb-md">
-                <q-select
-                  v-model="wsCodeType"
-                  :options="wsCodeTypes"
-                  option-value="value"
-                  option-label="label"
-                  label="Selecciona el tipo de conexión"
-                  dense
-                  outlined
-                  class="sisdai-select"
-                />
+              <div class="sisdai-section-title q-pb-md">
+                <q-icon name="code" class="q-mr-sm" />
+                Código para Conexión WebSocket
               </div>
+
+              <q-expansion-item
+                switch-toggle-side
+                expand-icon-class="text-primary"
+                header-class="bg-grey-2"
+                group="websocket-configs"
+                label="Configuración de conexión"
+                caption="Selecciona el módulo y tipo de conexión"
+                icon="settings"
+                default-opened
+              >
+                <q-card>
+                  <q-card-section>
+                    <div class="ws-config-container row q-col-gutter-md">
+                      <div class="col-12 col-md-6">
+                        <q-select
+                          v-model="selectedModelForWebSocket"
+                          :options="generalModels"
+                          option-value="model_id"
+                          option-label="name"
+                          label="Selecciona un módulo para conexión"
+                          dense
+                          outlined
+                          class="q-mb-sm"
+                        />
+                      </div>
+                      <div class="col-12 col-md-6">
+                        <q-select
+                          v-model="wsCodeType"
+                          :options="wsCodeTypes"
+                          option-value="value"
+                          option-label="label"
+                          label="Tipo de conexión"
+                          dense
+                          outlined
+                          class="q-mb-sm"
+                        />
+                      </div>
+                    </div>
+                  </q-card-section>
+                </q-card>
+              </q-expansion-item>
 
               <q-tabs
                 v-model="wsCodeLanguage"
                 dense
-                class="text-grey"
+                class="text-grey q-mt-md"
                 active-color="primary"
                 indicator-color="primary"
                 align="justify"
@@ -152,70 +172,99 @@ fetch('/api/data', {
                 <q-tab name="arduino" label="Arduino" />
               </q-tabs>
 
-              <q-tab-panels v-model="wsCodeLanguage" animated class="q-mt-md">
-                <q-tab-panel name="python">
-                  <div class="sisdai-code-container" style="max-height: 400px; overflow-y: auto;">
+              <q-tab-panels v-model="wsCodeLanguage" animated class="q-mt-sm" style="max-height: 350px;">
+                <q-tab-panel name="python" class="q-pa-none">
+                  <div class="code-container">
+                    <div class="code-actions">
+                      <q-btn
+                        flat
+                        round
+                        size="sm"
+                        icon="content_copy"
+                        @click="copyCode(pythonWebSocketCode)"
+                        :disable="!selectedModelForWebSocket"
+                        color="grey"
+                      >
+                        <q-tooltip>Copiar código</q-tooltip>
+                      </q-btn>
+                    </div>
                     <pre><code>{{ pythonWebSocketCode }}</code></pre>
                   </div>
-                  <q-btn 
-                    label="Copiar Código Python" 
-                    color="primary" 
-                    class="sisdai-button q-mt-md full-width" 
-                    @click="copyCode(pythonWebSocketCode)"
-                    :disable="!selectedModelForWebSocket" 
-                  />
-                </q-tab-panel>
-                
-                <q-tab-panel name="javascript">
-                  <div class="sisdai-code-container" style="max-height: 400px; overflow-y: auto;">
-                    <pre><code>{{ javascriptWebSocketCode }}</code></pre>
-                  </div>
-                  <q-btn 
-                    label="Copiar Código JavaScript" 
-                    color="primary" 
-                    class="sisdai-button q-mt-md full-width" 
-                    @click="copyCode(javascriptWebSocketCode)"
-                    :disable="!selectedModelForWebSocket" 
-                  />
                 </q-tab-panel>
 
-                <q-tab-panel name="arduino">
-                  <div class="sisdai-code-container" style="max-height: 400px; overflow-y: auto;">
+                <q-tab-panel name="javascript" class="q-pa-none">
+                  <div class="code-container">
+                    <div class="code-actions">
+                      <q-btn
+                        flat
+                        round
+                        size="sm"
+                        icon="content_copy"
+                        @click="copyCode(javascriptWebSocketCode)"
+                        :disable="!selectedModelForWebSocket"
+                        color="grey"
+                      >
+                        <q-tooltip>Copiar código</q-tooltip>
+                      </q-btn>
+                    </div>
+                    <pre><code>{{ javascriptWebSocketCode }}</code></pre>
+                  </div>
+                </q-tab-panel>
+
+                <q-tab-panel name="arduino" class="q-pa-none">
+                  <div class="code-container">
+                    <div class="code-actions">
+                      <q-btn
+                        flat
+                        round
+                        size="sm"
+                        icon="content_copy"
+                        @click="copyCode(arduinoCode)"
+                        :disable="!selectedModelForWebSocket"
+                        color="grey"
+                      >
+                        <q-tooltip>Copiar código</q-tooltip>
+                      </q-btn>
+                    </div>
                     <pre><code>{{ arduinoCode }}</code></pre>
                   </div>
-                  <q-btn 
-                    label="Copiar Código Arduino" 
-                    color="primary" 
-                    class="sisdai-button q-mt-md full-width" 
-                    @click="copyCode(arduinoCode)"
-                    :disable="!selectedModelForWebSocket" 
-                  />
                 </q-tab-panel>
               </q-tab-panels>
-              
-              <div class="q-mt-md">
-                <div class="sisdai-section-subtitle">Instrucciones de uso</div>
-                <div class="sisdai-usage-steps">
-                  <div class="sisdai-usage-step">
-                    <div class="sisdai-step-number">1</div>
-                    <div class="sisdai-step-content">
-                      <strong>Selecciona un módulo</strong> para determinar la estructura de datos que enviará tu dispositivo IoT.
+
+              <q-expansion-item
+                switch-toggle-side
+                expand-icon-class="text-info"
+                header-class="bg-grey-2 q-mt-md"
+                group="websocket-configs"
+                label="Instrucciones de uso"
+                caption="Cómo usar este código en tu dispositivo"
+                icon="help_outline"
+              >
+                <q-card>
+                  <q-card-section>
+                    <div class="sisdai-usage-steps">
+                      <div class="sisdai-usage-step">
+                        <div class="sisdai-step-number">1</div>
+                        <div class="sisdai-step-content">
+                          <strong>Selecciona un módulo</strong> para determinar la estructura de datos.
+                        </div>
+                      </div>
+                      <div class="sisdai-usage-step">
+                        <div class="sisdai-step-number">2</div>
+                        <div class="sisdai-step-content">
+                          <strong>Copia el código</strong> en el lenguaje que prefieras.
+                        </div>
+                      </div>
+                      <div class="sisdai-usage-step">
+                        <div class="sisdai-step-number">3</div>
+                        <div class="sisdai-step-content">
+                          <strong>Ejecuta el código en tu dispositivo IoT</strong> para comenzar a enviar datos.
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div class="sisdai-usage-step">
-                    <div class="sisdai-step-number">2</div>
-                    <div class="sisdai-step-content">
-                      <strong>Copia el código</strong> en el lenguaje que prefieras (Python o JavaScript).
-                    </div>
-                  </div>
-                  <div class="sisdai-usage-step">
-                    <div class="sisdai-step-number">3</div>
-                    <div class="sisdai-step-content">
-                      <strong>Ejecuta el código en tu dispositivo IoT</strong> para establecer la conexión WebSocket y comenzar a enviar datos.
-                    </div>
-                  </div>
-                </div>
-              </div>
+                  </q-card-section>
+                </q-card>
+              </q-expansion-item>
             </q-card-section>
           </q-card>
 
@@ -229,70 +278,70 @@ fetch('/api/data', {
             <q-card-section>
               <div class="sisdai-section-title">Graficación y Datos por Rango de Fechas</div>
               <div class="sisdai-form-grid">
-                <q-select 
-                  v-model="selectedGraphModule" 
-                  :options="generalModels" 
+                <q-select
+                  v-model="selectedGraphModule"
+                  :options="generalModels"
                   option-value="model_id"
-                  option-label="name" 
-                  label="Selecciona un módulo para graficar" 
-                  dense 
-                  outlined 
+                  option-label="name"
+                  label="Selecciona un módulo para graficar"
+                  dense
+                  outlined
                   class="sisdai-select"
                   @update:model-value="handleModelSelection"
                 />
-                <q-select 
-                  v-model="chartType" 
-                  :options="chartTypes" 
-                  option-value="value" 
+                <q-select
+                  v-model="chartType"
+                  :options="chartTypes"
+                  option-value="value"
                   option-label="label"
-                  label="Selecciona tipo de gráfica" 
-                  dense 
-                  outlined 
+                  label="Selecciona tipo de gráfica"
+                  dense
+                  outlined
                   class="sisdai-select"
                 />
-                <q-input 
-                  v-model="dateRange.startDate" 
-                  type="date" 
-                  label="Fecha de inicio" 
-                  dense 
-                  outlined 
+                <q-input
+                  v-model="dateRange.startDate"
+                  type="date"
+                  label="Fecha de inicio"
+                  dense
+                  outlined
                   class="sisdai-input"
                 />
-                <q-input 
-                  v-model="dateRange.endDate" 
-                  type="date" 
-                  label="Fecha de fin" 
-                  dense 
-                  outlined 
+                <q-input
+                  v-model="dateRange.endDate"
+                  type="date"
+                  label="Fecha de fin"
+                  dense
+                  outlined
                   class="sisdai-input"
                 />
-                <q-select 
-                  v-model="groupBy" 
-                  :options="groupByOptions" 
-                  option-value="value" 
+                <q-select
+                  v-model="groupBy"
+                  :options="groupByOptions"
+                  option-value="value"
                   option-label="label"
-                  label="Agrupar por fecha" 
-                  dense 
-                  outlined 
+                  label="Agrupar por fecha"
+                  dense
+                  outlined
                   class="sisdai-select"
                 />
-                <q-btn 
-                  label="Agregar 'Gráfica'" 
-                  color="primary" 
-                  class="sisdai-button full-width q-mt-md" 
+                <q-btn
+                  label="Agregar 'Gráfica'"
+                  color="primary"
+                  class="sisdai-button full-width q-mt-md"
                   @click="handleAddGraph"
-                  :disable="!selectedGraphModule || !chartType || !dateRange.startDate || !dateRange.endDate || !groupBy" 
+                  :disable="!selectedGraphModule || !chartType || !dateRange.startDate || !dateRange.endDate || !groupBy"
                 />
               </div>
 
               <div v-if="fields.length > 0" class="sisdai-fields-section q-mt-md">
                 <div class="sisdai-section-title">Selecciona campos a graficar:</div>
                 <div class="sisdai-fields-grid">
-                  <q-checkbox 
-                    v-for="(field, index) in fields" 
+                  <q-checkbox
+                    v-for="(field, index) in fields"
                     :key="index"
-                    v-model="selectedFields" 
-                    :val="field" 
+                    v-model="selectedFields"
+                    :val="field"
                     :label="field"
                     class="sisdai-checkbox"
                   />
@@ -307,29 +356,29 @@ fetch('/api/data', {
               <div class="sisdai-section-title">'Gráfica's</div>
               <div v-for="(graphConfig, index) in graphs" :key="index" class="sisdai-graph-container q-mt-md">
                 <div class="sisdai-graph-title">{{ getModuleName(graphConfig.module) }}</div>
-                <DynamicGraphicsComponent 
-                  :tipoGrafica="graphConfig.chartType" 
+                <DynamicGraphicsComponent
+                  :tipoGrafica="graphConfig.chartType"
                   :datos="graphConfig.chartData"
-                  :variables="graphConfig.variables" 
+                  :variables="graphConfig.variables"
                   :nombre_color="graphConfig.nombreColor"
-                  :nombre_barra="graphConfig.nombreBarra" 
+                  :nombre_barra="graphConfig.nombreBarra"
                   :titulo_eje_x="graphConfig.tituloEjeX"
-                  :titulo_eje_y="graphConfig.tituloEjeY" 
+                  :titulo_eje_y="graphConfig.tituloEjeY"
                 />
                 <div class="sisdai-graph-actions q-mt-md">
-                  <q-btn 
-                    label="Quitar 'Gráfica'" 
-                    color="negative" 
-                    class="sisdai-button" 
+                  <q-btn
+                    label="Quitar 'Gráfica'"
+                    color="negative"
+                    class="sisdai-button"
                     @click="handleRemoveGraph(index)"
-                    :disable="isDownloading" 
+                    :disable="isDownloading"
                   />
-                  <q-btn 
-                    label="Descargar PNG" 
-                    color="positive" 
+                  <q-btn
+                    label="Descargar PNG"
+                    color="positive"
                     class="sisdai-button q-ml-sm"
-                    @click="handleDownloadGraph(graphConfig, index, 'png')" 
-                    :disable="isDownloading" 
+                    @click="handleDownloadGraph(graphConfig, index, 'png')"
+                    :disable="isDownloading"
                   />
                 </div>
               </div>
@@ -433,7 +482,7 @@ export default {
   methods: {
     ...mapActions(useModelStore, ['fetchModels']),
     ...mapActions(useDevicesStore, ['getDeviceData']),
-    
+
     async fetchDeviceData() {
       try {
         // Obtener el ID del dispositivo de los parámetros de la ruta
@@ -441,13 +490,13 @@ export default {
         if (!deviceId) {
           throw new Error('ID de dispositivo no encontrado');
         }
-        
+
         // Llamar al método del store para obtener los datos del dispositivo
         const response = await this.getDeviceData(deviceId);
         if (response) {
           // Actualizar los datos del dispositivo en el componente
           this.deviceData = response;
-          
+
           // El dispositivo se ha cargado correctamente
         }
       } catch (error) {
@@ -458,198 +507,52 @@ export default {
         });
       }
     },
-    
 
-    
-    startDataUpload() {
-      if (!this.selectedModelForDataUpload || !this.dataUploadInterval || !this.dataUploadIntervalUnit) {
+    async generateWebSocketCode(modelId) {
+      try {
+        const deviceId = parseInt(this.$route.params.id);
+        if (!deviceId || !modelId) {
+          throw new Error('ID de dispositivo o modelo no encontrado');
+        }
+        // Obtener la estructura JSON del modelo para usar en el código WebSocket
+        const userId = this.authStore?.user?.id || 1; // Valor por defecto si no hay usuario
+
+        // Mostrar indicador de carga
+        this.isLoading = true;
+
+        // Llamar al endpoint del backend para obtener el código WebSocket
+        // Usamos la versión mejorada del endpoint con tipo de conexión
+        const response = await apiService.post('data/getWebSocketCode', {
+          device_id: deviceId,
+          model_id: modelId.model_id,
+          user_id: userId,
+          connectionType: this.wsCodeType.value  // Añadir tipo de conexión seleccionado
+        });
+
+        if (response.data) {
+          // Actualizar los códigos generados
+          this.pythonWebSocketCode = response.data.pythonCode || 'No se pudo generar el código Python';
+          this.javascriptWebSocketCode = response.data.javascriptCode || 'No se pudo generar el código JavaScript';
+          this.arduinoCode = response.data.arduinoCode || 'No se pudo generar el código Arduino';
+        } else {
+          throw new Error('Respuesta inválida del servidor');
+        }
+      } catch (error) {
+        console.error('Error al obtener el código WebSocket:', error);
+        this.pythonWebSocketCode = 'Error al obtener código del servidor. Contacte al administrador.';
+        this.javascriptWebSocketCode = 'Error al obtener código del servidor. Contacte al administrador.';
+        this.arduinoCode = 'Error al obtener código del servidor. Contacte al administrador.';
+
         this.q.notify({
-          type: 'warning',
-          message: 'Por favor completa todos los campos para iniciar el envío programado'
+          type: 'negative',
+          message: 'Error al generar código WebSocket'
         });
-        return;
+      } finally {
+        // Ocultar indicador de carga
+        this.isLoading = false;
       }
-      
-      // Calcular el intervalo en milisegundos
-      let intervalMs = this.dataUploadInterval * 1000; // Base en segundos
-      if (this.dataUploadIntervalUnit.value === 'minutes') {
-        intervalMs *= 60;
-      } else if (this.dataUploadIntervalUnit.value === 'hours') {
-        intervalMs *= 3600;
-      }
-      
-      // Iniciar el temporizador
-      this.dataUploadActive = true;
-      this.dataUploadTimer = setInterval(() => {
-        this.sendDataToServer();
-      }, intervalMs);
-      
-      // Actualizar próximo tiempo de envío
-      this.updateNextUploadTime(intervalMs);
-      
-      // Registrar en el historial
-      this.dataUploadHistory.unshift({
-        timestamp: new Date(),
-        success: true,
-        message: 'Envío programado iniciado'
-      });
-      
-      this.$q.notify({
-        type: 'positive',
-        message: 'Envío programado iniciado correctamente'
-      });
     },
-    
-    stopDataUpload() {
-      if (this.dataUploadTimer) {
-        clearInterval(this.dataUploadTimer);
-        this.dataUploadTimer = null;
-      }
-      
-      this.dataUploadActive = false;
-      this.nextUploadTime = 'No programado';
-      
-      // Registrar en el historial
-      this.dataUploadHistory.unshift({
-        timestamp: new Date(),
-        success: true,
-        message: 'Envío programado detenido'
-      });
-      
-      this.$q.notify({
-        type: 'info',
-        message: 'Envío programado detenido'
-      });
-    },
-    
-    updateNextUploadTime(intervalMs) {
-      const nextTime = new Date(Date.now() + intervalMs);
-      this.nextUploadTime = nextTime.toLocaleTimeString();
-    },
-    
-    sendDataToServer() {
-      // Implementación del envío de datos al servidor
-      const deviceId = parseInt(this.$route.params.id);
-      const modelId = this.selectedModelForDataUpload;
-      
-      // Aquí iría la lógica para generar y enviar datos de prueba
-      // Por ahora simulamos el envío y registramos en el historial
-      const success = Math.random() > 0.2; // Simulamos éxito con 80% de probabilidad
-      
-      console.log(`Enviando datos para dispositivo ${deviceId} con modelo ${modelId}`);
-      
-      // En una implementación real, aquí se enviarían los datos al servidor
-      // apiService.post('/data', { deviceId, modelId, data: {...} });
-      
-      this.dataUploadHistory.unshift({
-        timestamp: new Date(),
-        success: success,
-        message: success ? `Datos enviados correctamente para modelo ${modelId}` : `Error al enviar datos para dispositivo ${deviceId}`
-      });
-      
-      // Limitar el historial a 10 entradas
-      if (this.dataUploadHistory.length > 10) {
-        this.dataUploadHistory.pop();
-      }
-      
-      // Actualizar próximo tiempo de envío
-      let intervalMs = this.dataUploadInterval * 1000;
-      if (this.dataUploadIntervalUnit.value === 'minutes') {
-        intervalMs *= 60;
-      } else if (this.dataUploadIntervalUnit.value === 'hours') {
-        intervalMs *= 3600;
-      }
-      this.updateNextUploadTime(intervalMs);
-    },
-    
-    handleModelSelection() {
-      if (!this.selectedGraphModule) return;
-      
-      // Obtener los campos disponibles para el modelo seleccionado
-      this.fields = [];
-      this.selectedFields = [];
-      
-      // Simulamos la carga de campos (en producción, esto vendría del API)
-      setTimeout(() => {
-        // Ejemplo de campos que podrían venir del modelo seleccionado
-        this.fields = ['temperatura', 'humedad', 'presion', 'velocidad', 'nivel'];
-      }, 500);
-    },
-    
-    handleAddGraph() {
-      if (!this.selectedGraphModule || !this.chartType || !this.dateRange.startDate || 
-          !this.dateRange.endDate || !this.groupBy || this.selectedFields.length === 0) {
-        this.q.notify({
-          type: 'warning',
-          message: 'Por favor completa todos los campos para agregar una gráfica'
-        });
-        return;
-      }
-      
-      // Generar datos de ejemplo para la gráfica
-      const chartData = this.generateSampleChartData();
-      
-      // Configurar la gráfica
-      const graphConfig = {
-        module: this.selectedGraphModule,
-        chartType: this.chartType,
-        chartData: chartData,
-        variables: this.selectedFields,
-        nombreColor: 'Valores',
-        nombreBarra: 'Fecha',
-        tituloEjeX: 'Fecha',
-        tituloEjeY: 'Valor'
-      };
-      
-      // Agregar la gráfica a la lista
-      this.graphs.push(graphConfig);
-      
-      this.q.notify({
-        type: 'positive',
-        message: 'Gráfica agregada correctamente'
-      });
-    },
-    
-    generateSampleChartData() {
-      // Generar datos de ejemplo para la gráfica basados en los campos seleccionados
-      const startDate = new Date(this.dateRange.startDate);
-      const endDate = new Date(this.dateRange.endDate);
-      const dayDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
-      
-      // Generar datos para cada día en el rango
-      const chartData = [];
-      for (let i = 0; i <= dayDiff; i++) {
-        const currentDate = new Date(startDate);
-        currentDate.setDate(startDate.getDate() + i);
-        
-        const dataPoint = {
-          fecha: currentDate.toISOString().split('T')[0]
-        };
-        
-        // Generar valores aleatorios para cada campo seleccionado
-        this.selectedFields.forEach(field => {
-          // Valores aleatorios diferentes según el campo
-          if (field === 'temperatura') {
-            dataPoint[field] = Math.floor(Math.random() * 30) + 10; // 10-40
-          } else if (field === 'humedad') {
-            dataPoint[field] = Math.floor(Math.random() * 60) + 20; // 20-80
-          } else if (field === 'presion') {
-            dataPoint[field] = Math.floor(Math.random() * 200) + 900; // 900-1100
-          } else if (field === 'velocidad') {
-            dataPoint[field] = Math.floor(Math.random() * 50) + 5; // 5-55
-          } else if (field === 'nivel') {
-            dataPoint[field] = Math.floor(Math.random() * 100); // 0-100
-          } else {
-            dataPoint[field] = Math.floor(Math.random() * 100); // 0-100 para otros campos
-          }
-        });
-        
-        chartData.push(dataPoint);
-      }
-      
-      return chartData;
-    },
-    
+
     async handlePostRequest() {
       this.isLoading = true;
       try {
@@ -664,14 +567,14 @@ export default {
         const modelId = typeof this.selectedModel === 'object' ? this.selectedModel.model_id : this.selectedModel;
         const response = await apiService.post('/data/getJson', { model_id: modelId, device_id: this.$route.params.id, user_id: this.user.id  });
         this.jsonResponse = response.data;
-        
+
         // Verificar si la respuesta tiene la estructura esperada
         if (response.data && response.data.data) {
           this.jsonResponse = response.data.data;
         } else {
           this.jsonResponse = response.data;
         }
-        
+
         this.$nextTick(() => {
           this.initJsonEditor();
         });
@@ -685,54 +588,13 @@ export default {
         this.isLoading = false;
       }
     },
-    async generateWebSocketCode(modelId) {
-    try {
-      const deviceId = parseInt(this.$route.params.id);
-      if (!deviceId || !modelId) {
-        throw new Error('ID de dispositivo o modelo no encontrado');
-      }
-      // Obtener la estructura JSON del modelo para usar en el código WebSocket
-      const userId = this.authStore?.user?.id || 1; // Valor por defecto si no hay usuario
-      
-      // Mostrar indicador de carga
-      this.isLoading = true;
-      
-      // Llamar al endpoint del backend para obtener el código WebSocket
-      const response = await apiService.post('data/getWebSocketCode', {
-        device_id: deviceId,
-        model_id: modelId.model_id,
-        user_id: userId
-      });
-      
-      if (response.data) {
-        // Actualizar los códigos generados
-        this.pythonWebSocketCode = response.data.pythonCode || 'No se pudo generar el código Python';
-        this.javascriptWebSocketCode = response.data.javascriptCode || 'No se pudo generar el código JavaScript';
-        this.arduinoCode = response.data.arduinoCode || 'No se pudo generar el código Arduino';
-      } else {
-        throw new Error('Respuesta inválida del servidor');
-      }
-    } catch (error) {
-      console.error('Error al obtener el código WebSocket:', error);
-      this.pythonWebSocketCode = 'Error al obtener código del servidor. Contacte al administrador.';
-      this.javascriptWebSocketCode = 'Error al obtener código del servidor. Contacte al administrador.';
-      
-      this.q.notify({
-        type: 'negative',
-        message: 'Error al generar código WebSocket'
-      });
-    } finally {
-      // Ocultar indicador de carga
-      this.isLoading = false;
-    }
-  },
 
     async handleGetLatestData() {
       try {
         // Asegurarse de que estamos pasando el ID del modelo, no el objeto completo
         const modelId = typeof this.selectedModelForLatestData === 'object' ? this.selectedModelForLatestData.model_id : this.selectedModelForLatestData;
         const deviceId = parseInt(this.$route.params.id);
-        
+
         // Usar el método actualizado que incluye el ID del dispositivo
         const response = await apiService.get(`/data/getLatest?model=${modelId}&device=${deviceId}`);
         this.latestDataResponse = response.data;
@@ -885,13 +747,7 @@ export default {
         this.javascriptWebSocketCode = 'Selecciona un módulo para generar el código';
       }
     },
-    wsCodeType(newVal) {
-      // Actualizar el código cuando cambia el tipo de conexión
-      if(newVal === 'python') {
-        this.generatePythonWebSocketCode();
-      } else if(newVal === 'javascript') {
-        this.generateJavascriptWebSocketCode();
-      }
+    wsCodeType() {
       if (this.selectedModelForWebSocket) {
         this.generateWebSocketCode(this.selectedModelForWebSocket);
       }
@@ -916,9 +772,6 @@ export default {
     this.cleanupResources();
   },
 
-
-
-
   handleDownloadGraph(graphConfig, index, format) {
     this.isDownloading = true;
     // Implementación de descarga de gráfica
@@ -930,9 +783,6 @@ export default {
       });
     }, 1000);
   },
-
-  // Método para generar código WebSocket
-  
 
   // Método para copiar código al portapapeles
   copyCode(code) {
@@ -951,7 +801,7 @@ export default {
         });
       });
   },
-  
+
   // Método para obtener el nombre del módulo
   getModuleName(modelId) {
     if (!modelId || !this.generalModels) return 'Módulo';
@@ -1116,7 +966,7 @@ export default {
   gap: 8px;
 }
 
-.sisdai-form-grid {  
+.sisdai-form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
@@ -1181,7 +1031,7 @@ export default {
   .sisdai-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .sisdai-form-grid {
     grid-template-columns: 1fr;
   }
@@ -1191,14 +1041,98 @@ export default {
   .device-view-page {
     padding: 10px;
   }
-  
+
   .sisdai-title {
     font-size: 1.5rem;
   }
-  
+
   .sisdai-json-container {
     height: 200px;
   }
+}
+
+/* Estilos para el contenedor de código */
+.code-container {
+  position: relative;
+  background-color: #f8f8f8;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  min-height: 100px;
+  max-height: 350px;
+  overflow: auto;
+}
+
+.code-container pre {
+  margin: 0;
+  padding: 10px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.code-actions {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  z-index: 5;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 4px;
+  padding: 2px;
+}
+
+/* Estilos específicos para tabs de código */
+.q-tab-panels {
+  border: 1px solid #e0e0e0;
+  border-radius: 0 0 8px 8px;
+  background-color: #fff;
+}
+
+.q-tabs {
+  background-color: #f5f5f5;
+  border-radius: 8px 8px 0 0;
+}
+
+.q-tab {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+/* Mejora para el elemento de expansión */
+.q-expansion-item {
+  margin-bottom: 10px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Añadir estilos para el estado de carga de los modelos */
+.loading-models {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+}
+
+.loading-models .q-spinner {
+  color: var(--sisdae-primary-color);
+}
+
+.sisdai-section-subtitle {
+  font-size: 1rem;
+  color: var(--sisdae-secondary-color);
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.sisdai-code-container {
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  padding: 1rem;
+  overflow-x: auto;
+  font-family: monospace;
+  font-size: 0.9rem;
+  border: 1px solid #ddd;
 }
 
 /* Añadir estilos para los estados de carga */

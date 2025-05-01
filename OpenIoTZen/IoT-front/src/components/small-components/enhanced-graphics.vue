@@ -5,7 +5,7 @@
       <q-spinner color="primary" size="3em" />
       <div class="loading-text">{{ $t('enhancedGraphics.loading') }}</div>
     </div>
-    
+
     <!-- Componente de gráfico dinámico -->
     <component
       v-if="!loading && chartData.length > 0"
@@ -19,23 +19,14 @@
       :titulo_eje_y="tituloEjeY"
       :colores="colores"
     />
-    
+
     <!-- Mensaje cuando no hay datos -->
     <div v-if="!loading && chartData.length === 0" class="no-data-message">
       {{ $t('enhancedGraphics.noData') }}
     </div>
-    
+
     <!-- Controles del gráfico -->
     <div v-if="!loading && chartData.length > 0" class="chart-controls">
-      <q-btn
-        v-if="enableRealtime"
-        :color="realtimeEnabled ? 'positive' : 'grey'"
-        :icon="realtimeEnabled ? 'sync' : 'sync_disabled'"
-        :label="realtimeEnabled ? $t('enhancedGraphics.realtimeEnabled') : $t('enhancedGraphics.enableRealtime')"
-        @click="toggleRealtime"
-        size="sm"
-        class="control-btn"
-      />
       <q-btn
         icon="refresh"
         :label="$t('enhancedGraphics.refreshData')"
@@ -62,7 +53,6 @@ import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { SisdaiBarras, SisdaiDona, SisdaiAreasApiladas, SisdaiCajasBigotes, SisdaiGraficas } from '@centrogeomx/sisdai-graficas';
 
-import realtimeService from '../../boot/ApiServices/realtime.service';
 import graphService from '../../services/graph.service';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -108,7 +98,7 @@ export default {
       required: true,
       validator: (value) => ['day', 'month', 'year'].includes(value)
     },
-    
+
     // Personalización del gráfico
     tituloEjeX: {
       type: String,
@@ -128,14 +118,10 @@ export default {
     },
     colores: {
       type: Array,
-      default: () => ['#FF5733', '#33C4FF', '#FFB833', '#33FF57', '#FF33A8']
+      default: () => ['#FF5733', '#33C4FF', '#FFB833', '#FF33A8', '#33FF57']
     },
-    
+
     // Opciones adicionales
-    enableRealtime: {
-      type: Boolean,
-      default: true
-    },
     autoRefresh: {
       type: Boolean,
       default: false
@@ -145,7 +131,7 @@ export default {
       default: 60000 // 1 minuto por defecto
     }
   },
-  
+
   setup(props, { emit }) {
     const $q = useQuasar();
     const { t } = useI18n();
@@ -153,10 +139,8 @@ export default {
     const chartData = ref([]);
     const chartId = ref(`chart-${uuidv4()}`);
     const graphContainer = ref(null);
-    const realtimeEnabled = ref(props.autoRefresh);
     let refreshTimer = null;
-    let realtimeUnsubscribe = null;
-    
+
     // Componente de gráfico a utilizar
     const componenteGrafica = computed(() => {
       switch (props.chartType) {
@@ -174,12 +158,12 @@ export default {
           return 'SisdaiBarras';
       }
     });
-    
+
     // Variables a mostrar en el gráfico
     const variables = computed(() => {
       return props.fields;
     });
-    
+
     // Cargar datos del gráfico
     const loadChartData = async () => {
       loading.value = true;
@@ -193,7 +177,7 @@ export default {
           fields: props.fields,
           chart_type: props.chartType
         });
-        
+
         chartData.value = response.data;
         emit('data-loaded', chartData.value);
       } catch (error) {
@@ -209,7 +193,7 @@ export default {
         loading.value = false;
       }
     };
-    
+
     // Actualizar datos
     const refreshData = async () => {
       await loadChartData();
@@ -220,126 +204,31 @@ export default {
         timeout: 2000
       });
     };
-    
-    // Activar/desactivar tiempo real
-    const toggleRealtime = () => {
-      realtimeEnabled.value = !realtimeEnabled.value;
-      
-      if (realtimeEnabled.value) {
-        setupRealtimeUpdates();
-        $q.notify({
-          type: 'positive',
-          message: t('enhancedGraphics.realtimeActivated'),
-          position: 'top',
-          timeout: 2000
-        });
-      } else {
-        cleanupRealtimeUpdates();
-        $q.notify({
-          type: 'info',
-          message: t('enhancedGraphics.realtimeDeactivated'),
-          position: 'top',
-          timeout: 2000
-        });
-      }
-    };
-    
-    // Configurar actualizaciones en tiempo real
-    const setupRealtimeUpdates = () => {
-      // Limpiar suscripción anterior si existe
-      cleanupRealtimeUpdates();
-      
-      // Suscribirse a actualizaciones
-      if (realtimeService.connected) {
-        // Usar el servicio de gráficos para suscribirse a actualizaciones en tiempo real
-        realtimeUnsubscribe = graphService.subscribeToRealtimeUpdates({
-          device_id: props.deviceId,
-          model_id: props.modelId
-        }, handleRealtimeUpdate);
-      } else {
-        console.warn('Servicio de tiempo real no conectado');
-        $q.notify({
-          type: 'warning',
-          message: t('enhancedGraphics.realtimeConnectionError'),
-          position: 'top',
-          timeout: 3000
-        });
-      }
-      
-      // Configurar temporizador de actualización automática
-      if (props.autoRefresh && !refreshTimer) {
-        refreshTimer = setInterval(refreshData, props.refreshInterval);
-      }
-    };
-    
-    // Limpiar actualizaciones en tiempo real
-    const cleanupRealtimeUpdates = () => {
-      // Cancelar suscripción a eventos
-      if (realtimeUnsubscribe) {
-        realtimeUnsubscribe();
-        realtimeUnsubscribe = null;
-      }
-      
-      // Limpiar temporizador
-      if (refreshTimer) {
-        clearInterval(refreshTimer);
-        refreshTimer = null;
-      }
-    };
-    
-    // Manejar actualización en tiempo real
-    const handleRealtimeUpdate = (data) => {
-      // Verificar que la actualización corresponda a nuestro modelo y dispositivo
-      if (data.model_id == props.modelId && 
-          (!props.deviceId || data.device_id == props.deviceId)) {
-        
-        // Verificar si hay campos relevantes para este gráfico
-        const hasRelevantFields = props.fields.some(field => 
-          data.data[field] !== undefined
-        );
-        
-        if (hasRelevantFields) {
-          // Actualizar datos (en un caso real, habría que integrar los nuevos datos)
-          // Para simplificar, solo notificamos y sugerimos actualizar
-          $q.notify({
-            type: 'info',
-            message: 'Nuevos datos disponibles. Haga clic en Actualizar para verlos.',
-            position: 'top',
-            timeout: 3000,
-            actions: [{
-              label: 'Actualizar',
-              color: 'white',
-              handler: () => refreshData()
-            }]
-          });
-        }
-      }
-    };
-    
+
     // Descargar gráfico como imagen
     const downloadChart = (format = 'png') => {
       try {
         if (!graphContainer.value) return;
-        
+
         const svgElement = graphContainer.value.querySelector('svg');
         if (!svgElement) {
           throw new Error('No se encontró el elemento SVG');
         }
-        
+
         const serializer = new XMLSerializer();
         const svgString = serializer.serializeToString(svgElement);
         const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
         const url = URL.createObjectURL(blob);
-        
+
         const link = document.createElement('a');
         link.href = url;
         link.download = `grafico-${chartId.value}.${format}`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
+
         URL.revokeObjectURL(url);
-        
+
         $q.notify({
           type: 'positive',
           message: `Gráfica descargada en formato ${format}`,
@@ -356,34 +245,33 @@ export default {
         });
       }
     };
-    
+
     // Ciclo de vida del componente
     onMounted(async () => {
       await loadChartData();
-      
-      // Configurar actualizaciones en tiempo real si están habilitadas
-      if (props.enableRealtime && realtimeEnabled.value) {
-        setupRealtimeUpdates();
+
+      // Configurar temporizador de actualización automática si está habilitado
+      if (props.autoRefresh && props.refreshInterval > 0) {
+        refreshTimer = setInterval(refreshData, props.refreshInterval);
       }
     });
-    
+
     onBeforeUnmount(() => {
-      cleanupRealtimeUpdates();
+      // Limpiar temporizador
+      if (refreshTimer) {
+        clearInterval(refreshTimer);
+        refreshTimer = null;
+      }
     });
-    
+
     // Observar cambios en las propiedades para recargar datos
     watch(
       [() => props.modelId, () => props.deviceId, () => props.startDate, () => props.endDate, () => props.groupBy, () => props.fields, () => props.chartType],
       async () => {
         await loadChartData();
-        
-        // Actualizar suscripción en tiempo real si está habilitada
-        if (realtimeEnabled.value) {
-          setupRealtimeUpdates();
-        }
       }
     );
-    
+
     return {
       loading,
       chartData,
@@ -391,11 +279,8 @@ export default {
       graphContainer,
       componenteGrafica,
       variables,
-      realtimeEnabled,
       refreshData,
-      toggleRealtime,
       downloadChart,
-      // Eliminamos las propiedades duplicadas que ya vienen de props
     };
   }
 };
@@ -425,8 +310,8 @@ export default {
 
 .loading-text {
   margin-top: 1rem;
-  font-size: 1rem;
-  color: var(--q-primary);
+  color: #333;
+  font-weight: 500;
 }
 
 .no-data-message {
@@ -434,31 +319,22 @@ export default {
   justify-content: center;
   align-items: center;
   height: 200px;
-  font-size: 1.2rem;
+  width: 100%;
   color: #666;
   font-style: italic;
+  text-align: center;
+  border: 1px dashed #ddd;
+  border-radius: 4px;
 }
 
 .chart-controls {
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   gap: 0.5rem;
-  margin-top: 1rem;
+  margin-top: 0.5rem;
 }
 
 .control-btn {
-  font-size: 0.8rem;
-}
-
-@media (max-width: 600px) {
-  .chart-controls {
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .control-btn {
-    width: 100%;
-    margin-bottom: 0.5rem;
-  }
+  min-width: 110px;
 }
 </style>

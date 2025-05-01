@@ -21,6 +21,7 @@ import generatorRoutes from './routes/generator.routes.js';
 import graphRoutes from './routes/graph.routes.js';
 import aiRoutes from './routes/ai.routes.js';
 import dataRoutes from './routes/data.routes.js';
+import connectionsRoutes from './routes/connections.routes.js';
 
 const app = express();
 
@@ -47,9 +48,10 @@ const routes = [
   { path: '/device-models', route: deviceModelsRoutes },
   { path: '/types', route: typesRoutes },
   { path: '/generator', route: generatorRoutes },
-    { path: '/graph', route: graphRoutes },
+  { path: '/graph', route: graphRoutes },
   { path: '/ai', route: aiRoutes},
-  { path: '/data', route: dataRoutes}
+  { path: '/data', route: dataRoutes},
+  { path: '/connections', route: connectionsRoutes}
 ];
 
 routes.forEach((route) => {

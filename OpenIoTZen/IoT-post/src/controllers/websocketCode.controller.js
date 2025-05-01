@@ -100,6 +100,8 @@ import json
 import time
 import random
 import threading
+import sys
+import ssl
 
 # Configuración de la conexión WebSocket
 ws_url = "${serverUrl}"
@@ -154,7 +156,7 @@ def generate_data():
   }
 
   // Agregar funciones comunes para todos los tipos de conexión
-  pythonCode += `\n# Función para manejar mensajes recibidos\ndef on_message(ws, message):\n    try:\n        data = json.loads(message)\n        print(f"Mensaje recibido: {data}")\n        \n        # Verificar tipo de evento\n        if 'event' in data:\n            if data['event'] == 'subscription_confirmed':\n                print(f"Suscripción confirmada: {data['data']}")\n            elif data['event'] == 'data_received':\n                print(f"Datos recibidos por el servidor: {data['data']}")\n            elif data['event'] == 'data_event':\n                print(f"Nuevo evento de datos: {data['data']}")\n            elif data['event'] == 'error':\n                print(f"Error del servidor: {data['data']}")\n    except Exception as e:\n        print(f"Error al procesar mensaje: {e}")\n\n# Función para manejar errores\ndef on_error(ws, error):\n    print(f"Error: {error}")\n    stop_periodic_data()\n\n# Función para manejar cierre de conexión\ndef on_close(ws, close_status_code, close_msg):\n    print("Conexión cerrada")\n    stop_periodic_data()\n\n# Función para manejar apertura de conexión\ndef on_open(ws):\n    print("Conexión establecida")\n    \n    # Suscribirse a eventos del dispositivo y modelo\n    subscribe_message = {\n        "event": "subscribe",\n        "data": {\n            "device_id": "${deviceId}",\n            "model_id": ${modelId},\n            "user_id": "${userId}",\n            "token": JWT_TOKEN\n        }\n    }\n    ws.send(json.dumps(subscribe_message))\n    print("Solicitud de suscripción enviada")\n    \n    # Iniciar envío de datos según el modo seleccionado\n`;
+  pythonCode += `\n# Función para manejar mensajes recibidos\ndef on_message(ws, message):\n    try:\n        data = json.loads(message)\n        print(f"Mensaje recibido: {data}")\n        \n        # Verificar tipo de evento\n        if 'event' in data:\n            if data['event'] == 'subscription_confirmed':\n                print(f"Suscripción confirmada: {data['data']}")\n            elif data['event'] == 'data_received':\n                print(f"Datos recibidos por el servidor: {data['data']}")\n            elif data['event'] == 'data_event':\n                print(f"Nuevo evento de datos: {data['data']}")\n            elif data['event'] == 'error':\n                print(f"Error del servidor: {data['data']}")\n    except Exception as e:\n        print(f"Error al procesar mensaje: {e}")\n\n# Función para manejar errores\ndef on_error(ws, error):\n    print(f"Error: {error}")\n    stop_periodic_data()\n\n# Función para manejar cierre de conexión\ndef on_close(ws, close_status_code, close_msg):\n    print("Conexión cerrada")\n    stop_periodic_data()\n\n# Función para manejar apertura de conexión\ndef on_open(ws):\n    print("Conexión establecida")\n    # La autenticación ya se ha realizado con el token JWT en la cabecera\n    # Y la suscripción es automática al conectarse con el token JWT\n    print("Autenticación y suscripción automáticas completadas")\n    \n    # Iniciar envío de datos según el modo seleccionado\n`;
 
   // Agregar código específico para iniciar el envío según el tipo de conexión
   if (connectionType === 'periodic') {
@@ -166,7 +168,7 @@ def generate_data():
   }
 
   // Finalizar el código Python
-  pythonCode += `\n# Función para enviar datos manualmente\ndef send_data(data):\n    if not ws.sock or not ws.sock.connected:\n        print("WebSocket no conectado")\n        return False\n    \n    # Asegurarse de que los datos incluyan los campos requeridos\n    if isinstance(data, dict):\n        data.update({\n            "model_id": ${modelId},\n            "device_id": "${deviceId}",\n            "user_id": "${userId}",\n            "token": JWT_TOKEN\n        })\n    \n    # Crear mensaje de datos\n    data_message = {\n        "event": "data",\n        "data": data\n    }\n    \n    # Enviar datos\n    ws.send(json.dumps(data_message))\n    print("Datos enviados al servidor")\n    return True\n\n# Crear conexión WebSocket con encabezados de autenticación\nheaders = {"Authorization": f"Bearer {JWT_TOKEN}"}\nws = websocket.WebSocketApp(ws_url,\n                          header=headers,\n                          on_open=on_open,\n                          on_message=on_message,\n                          on_error=on_error,\n                          on_close=on_close)\n\n# Iniciar conexión en un bucle para reconectar automáticamente\ntry:\n    while True:\n        try:\n            ws.run_forever()\n            print("Intentando reconectar en 5 segundos...")\n            time.sleep(5)\n        except KeyboardInterrupt:\n            break\nfinally:\n    # Asegurarse de detener el envío periódico de datos al salir\n    stop_periodic_data()\n`;
+  pythonCode += `\n# Función para enviar datos manualmente\ndef send_data(data):\n    if not ws.sock or not ws.sock.connected:\n        print("WebSocket no conectado")\n        return False\n    \n    # Asegurarse de que los datos incluyan los campos requeridos\n    if isinstance(data, dict):\n        data.update({\n            "model_id": ${modelId},\n            "device_id": "${deviceId}",\n            "user_id": "${userId}",\n            "token": JWT_TOKEN\n        })\n    \n    # Crear mensaje de datos\n    data_message = {\n        "event": "data",\n        "data": data\n    }\n    \n    # Enviar datos\n    ws.send(json.dumps(data_message))\n    print("Datos enviados al servidor")\n    return True\n\n# Establecer la conexión WebSocket con el token JWT como protocolo\nif __name__ == "__main__":\n    websocket.enableTrace(True)  # Activar para depurar la conexión\n    \n    # Usar el token JWT como protocolo para la autenticación\n    # Esta es la forma más confiable para asegurar autenticación\n    ws = websocket.WebSocketApp(\n        ws_url,\n        header=[f"Authorization: Bearer {JWT_TOKEN}"],\n        on_open=on_open,\n        on_message=on_message,\n        on_error=on_error,\n        on_close=on_close,\n        subprotocols=[f"Bearer {JWT_TOKEN}"]  # Incluir token como subprotocolo para mayor compatibilidad\n    )\n    \n    # Iniciar conexión en bucle para reconectar automáticamente\n    try:\n        print(f"Conectando a {ws_url} con token JWT...")\n        while True:\n            try:\n                ws.run_forever()\n                print("Conexión perdida. Intentando reconectar en 5 segundos...")\n                time.sleep(5)\n            except KeyboardInterrupt:\n                print("Programa terminado por el usuario")\n                break\n            except Exception as e:\n                print(f"Error: {e}")\n                time.sleep(5)\n    finally:\n        # Asegurarse de detener el envío de datos al salir\n        stop_periodic_data()\n`;
 
   return pythonCode;
 }
@@ -176,7 +178,23 @@ def generate_data():
  */
 function generateJavaScriptCode(deviceId, modelId, userId, jwtToken, connectionType, serverUrl, modelFields) {
   // Estructura base del código JavaScript
-  let jsCode = `// Configuración de la conexión WebSocket\nconst wsUrl = "${serverUrl}";\n\n// Token JWT para autenticación\nconst JWT_TOKEN = "${jwtToken}";\n\n// Variables para controlar el envío de datos\nlet ws = null;\nlet isRunning = false;\nlet dataInterval = null;\n\n// Función para generar datos según el modelo seleccionado\nfunction generateData() {\n  return {\n    model_id: ${modelId},\n    device_id: "${deviceId}",\n    user_id: "${userId}",`;
+  let jsCode = `// Configuración de la conexión WebSocket
+const wsUrl = "${serverUrl}";
+
+// Token JWT para autenticación
+const JWT_TOKEN = "${jwtToken}";
+
+// Variables para controlar el envío de datos
+let ws = null;
+let isRunning = false;
+let dataInterval = null;
+
+// Función para generar datos según el modelo seleccionado
+function generateData() {
+  return {
+    model_id: ${modelId},
+    device_id: "${deviceId}",
+    user_id: "${userId}",`;
 
   // Agregar campos basados en el modelo
   modelFields.forEach(field => {
@@ -202,52 +220,315 @@ function generateJavaScriptCode(deviceId, modelId, userId, jwtToken, connectionT
     jsCode += `\n    ${field.name}: ${defaultValue}, // Reemplazar con valores reales`;
   });
 
-  jsCode += `\n    token: JWT_TOKEN\n  };\n}\n\n`;
+  jsCode += `\n    token: JWT_TOKEN
+  };
+}
+
+`;
 
   // Agregar código específico según el tipo de conexión
   if (connectionType === 'periodic') {
-    jsCode += `// Función para enviar datos periódicamente\nfunction startPeriodicData() {\n  if (dataInterval) {\n    clearInterval(dataInterval);\n  }\n  \n  isRunning = true;\n  dataInterval = setInterval(() => {\n    if (ws && ws.readyState === WebSocket.OPEN) {\n      // Generar datos\n      const data = generateData();\n      \n      // Crear mensaje de datos\n      const dataMessage = {\n        event: "data",\n        data: data\n      };\n      \n      // Enviar datos\n      ws.send(JSON.stringify(dataMessage));\n      console.log("Datos enviados al servidor");\n    }\n  }, 10000); // Enviar cada 10 segundos\n  \n  console.log("Iniciado envío periódico de datos");\n}\n\nfunction stopPeriodicData() {\n  isRunning = false;\n  if (dataInterval) {\n    clearInterval(dataInterval);\n    dataInterval = null;\n  }\n  console.log("Detenido envío periódico de datos");\n}\n`;
+    jsCode += `// Función para enviar datos periódicamente
+function startPeriodicData() {
+  if (dataInterval) {
+    clearInterval(dataInterval);
+  }
+  
+  isRunning = true;
+  dataInterval = setInterval(() => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      // Generar datos
+      const data = generateData();
+      
+      // Crear mensaje de datos
+      const dataMessage = {
+        event: "data",
+        data: data
+      };
+      
+      // Enviar datos
+      ws.send(JSON.stringify(dataMessage));
+      console.log("Datos enviados al servidor");
+    }
+  }, 10000); // Enviar cada 10 segundos
+  
+  console.log("Iniciado envío periódico de datos");
+}
+
+function stopPeriodicData() {
+  isRunning = false;
+  if (dataInterval) {
+    clearInterval(dataInterval);
+    dataInterval = null;
+  }
+  console.log("Detenido envío periódico de datos");
+}
+`;
   } else if (connectionType === 'event') {
-    jsCode += `// Función para simular eventos y enviar datos\nfunction startEventSimulation() {\n  if (dataInterval) {\n    clearInterval(dataInterval);\n  }\n  \n  isRunning = true;\n  simulateEvent();\n  \n  console.log("Iniciada simulación de eventos");\n}\n\nfunction simulateEvent() {\n  if (!isRunning) return;\n  \n  // Simular un evento aleatorio\n  const eventTypes = ["temperature_alert", "humidity_change", "pressure_drop", "level_critical"];\n  const eventType = eventTypes[Math.floor(Math.random() * eventTypes.length)];\n  \n  // Generar datos basados en el evento\n  const data = generateData();\n  data.event_type = eventType;\n  \n  // Crear mensaje de datos\n  const dataMessage = {\n    event: "data_event",\n    data: data\n  };\n  \n  // Enviar datos solo si hay un evento\n  if (ws && ws.readyState === WebSocket.OPEN) {\n    ws.send(JSON.stringify(dataMessage));\n    console.log(`Evento ${eventType} enviado al servidor`);\n  }\n  \n  // Programar el próximo evento en un tiempo aleatorio (entre 5 y 30 segundos)\n  const nextEventTime = Math.floor(Math.random() * 25000) + 5000;\n  setTimeout(simulateEvent, nextEventTime);\n}\n\nfunction stopEventSimulation() {\n  isRunning = false;\n  console.log("Detenida simulación de eventos");\n}\n`;
+    jsCode += `// Función para simular eventos y enviar datos
+function startEventSimulation() {
+  if (dataInterval) {
+    clearInterval(dataInterval);
+  }
+  
+  isRunning = true;
+  simulateEvent();
+  
+  console.log("Iniciada simulación de eventos");
+}
+
+function simulateEvent() {
+  if (!isRunning) return;
+  
+  // Simular un evento aleatorio
+  const eventTypes = ["temperature_alert", "humidity_change", "pressure_drop", "level_critical"];
+  const eventType = eventTypes[Math.floor(Math.random() * eventTypes.length)];
+  
+  // Generar datos basados en el evento
+  const data = generateData();
+  data.event_type = eventType;
+  
+  // Crear mensaje de datos
+  const dataMessage = {
+    event: "data_event",
+    data: data
+  };
+  
+  // Enviar datos solo si hay un evento
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify(dataMessage));
+    console.log(\`Evento \${eventType} enviado al servidor\`);
+  }
+  
+  // Programar el próximo evento en un tiempo aleatorio (entre 5 y 30 segundos)
+  const nextEventTime = Math.floor(Math.random() * 25000) + 5000;
+  setTimeout(simulateEvent, nextEventTime);
+}
+
+function stopEventSimulation() {
+  isRunning = false;
+  console.log("Detenida simulación de eventos");
+}
+`;
   } else if (connectionType === 'batch') {
-    jsCode += `// Variables para el manejo de lotes\nlet batchData = [];\nconst batchSize = 5;\n\n// Función para acumular datos en lotes y enviarlos\nfunction startBatchCollection() {\n  if (dataInterval) {\n    clearInterval(dataInterval);\n  }\n  \n  isRunning = true;\n  dataInterval = setInterval(() => {\n    // Generar y acumular datos\n    if (batchData.length < batchSize) {\n      batchData.push(generateData());\n      console.log(`Datos acumulados: ${batchData.length}/${batchSize}`);\n    }\n    \n    // Enviar el lote cuando alcance el tamaño deseado\n    if (batchData.length >= batchSize && ws && ws.readyState === WebSocket.OPEN) {\n      const batchMessage = {\n        event: "batch_data",\n        data: {\n          batch: batchData,\n          timestamp: Date.now(),\n          device_id: "${deviceId}",\n          model_id: ${modelId},\n          user_id: "${userId}",\n          token: JWT_TOKEN\n        }\n      };\n      \n      ws.send(JSON.stringify(batchMessage));\n      console.log(`Lote de ${batchData.length} datos enviado al servidor`);\n      batchData = []; // Reiniciar el lote\n    }\n  }, 5000); // Recolectar datos cada 5 segundos\n  \n  console.log("Iniciada recolección de datos en lotes");\n}\n\nfunction stopBatchCollection() {\n  isRunning = false;\n  if (dataInterval) {\n    clearInterval(dataInterval);\n    dataInterval = null;\n  }\n  batchData = [];\n  console.log("Detenida recolección de datos en lotes");\n}\n`;
+    jsCode += `// Variables para el manejo de lotes
+let batchData = [];
+const batchSize = 5;
+
+// Función para acumular datos en lotes y enviarlos
+function startBatchCollection() {
+  if (dataInterval) {
+    clearInterval(dataInterval);
+  }
+  
+  isRunning = true;
+  dataInterval = setInterval(() => {
+    // Generar y acumular datos
+    if (batchData.length < batchSize) {
+      batchData.push(generateData());
+      console.log(\`Datos acumulados: \${batchData.length}/\${batchSize}\`);
+    }
+    
+    // Enviar el lote cuando alcance el tamaño deseado
+    if (batchData.length >= batchSize && ws && ws.readyState === WebSocket.OPEN) {
+      const batchMessage = {
+        event: "batch_data",
+        data: {
+          batch: batchData,
+          timestamp: Date.now(),
+          device_id: "${deviceId}",
+          model_id: ${modelId},
+          user_id: "${userId}",
+          token: JWT_TOKEN
+        }
+      };
+      
+      ws.send(JSON.stringify(batchMessage));
+      console.log(\`Lote de \${batchData.length} datos enviado al servidor\`);
+      batchData = []; // Reiniciar el lote
+    }
+  }, 5000); // Recolectar datos cada 5 segundos
+  
+  console.log("Iniciada recolección de datos en lotes");
+}
+
+function stopBatchCollection() {
+  isRunning = false;
+  if (dataInterval) {
+    clearInterval(dataInterval);
+    dataInterval = null;
+  }
+  batchData = [];
+  console.log("Detenida recolección de datos en lotes");
+}
+`;
   }
 
   // Agregar funciones comunes para todos los tipos de conexión
-  jsCode += `\n// Función para manejar mensajes recibidos\nfunction handleMessage(event) {\n  try {\n    const data = JSON.parse(event.data);\n    console.log("Mensaje recibido:", data);\n    \n    // Verificar tipo de evento\n    if (data.event) {\n      if (data.event === 'subscription_confirmed') {\n        console.log("Suscripción confirmada:", data.data);\n      } else if (data.event === 'data_received') {\n        console.log("Datos recibidos por el servidor:", data.data);\n      } else if (data.event === 'data_event') {\n        console.log("Nuevo evento de datos:", data.data);\n      } else if (data.event === 'error') {\n        console.error("Error del servidor:", data.data);\n      }\n    }\n  } catch (error) {\n    console.error("Error al procesar mensaje:", error);\n  }\n}\n\n// Función para iniciar la conexión WebSocket\nfunction connectWebSocket() {\n  // Cerrar conexión existente si hay alguna\n  if (ws) {\n    ws.close();\n  }\n  \n  // Crear nueva conexión WebSocket\n  ws = new WebSocket(wsUrl);\n  \n  // Configurar manejadores de eventos\n  ws.onopen = function() {\n    console.log("Conexión establecida");\n    \n    // Suscribirse a eventos del dispositivo y modelo\n    const subscribeMessage = {\n      event: "subscribe",\n      data: {\n        device_id: "${deviceId}",\n        model_id: ${modelId},\n        user_id: "${userId}",\n        token: JWT_TOKEN\n      }\n    };\n    ws.send(JSON.stringify(subscribeMessage));\n    console.log("Solicitud de suscripción enviada");\n    \n    // Iniciar envío de datos según el modo seleccionado\n`;
+  jsCode += `
+// Función para manejar mensajes recibidos
+function handleMessage(event) {
+  try {
+    const data = JSON.parse(event.data);
+    console.log("Mensaje recibido:", data);
+    
+    // Verificar tipo de evento
+    if (data.event) {
+      if (data.event === 'subscription_confirmed') {
+        console.log("Suscripción confirmada:", data.data);
+      } else if (data.event === 'data_received') {
+        console.log("Datos recibidos por el servidor:", data.data);
+      } else if (data.event === 'data_event') {
+        console.log("Nuevo evento de datos:", data.data);
+      } else if (data.event === 'error') {
+        console.error("Error del servidor:", data.data);
+      }
+    }
+  } catch (error) {
+    console.error("Error al procesar mensaje:", error);
+  }
+}
+
+// Función para iniciar la conexión WebSocket
+function connectWebSocket() {
+  // Cerrar conexión existente si hay alguna
+  if (ws) {
+    ws.close();
+  }
+  
+  try {
+    // Crear nueva conexión WebSocket con autenticación
+    console.log("Conectando a WebSocket con token JWT...");
+    
+    // Método 1: Usar el token como subprotocolo
+    const protocols = [\`Bearer \${JWT_TOKEN}\`];
+    ws = new WebSocket(wsUrl, protocols);
+    
+    // Alternativamente, configurar encabezado de autorización (solo funciona en algunos navegadores/entornos)
+    // Este método es una alternativa y puede no funcionar en todos los navegadores
+    if (ws.setRequestHeader) {
+      ws.setRequestHeader('Authorization', \`Bearer \${JWT_TOKEN}\`);
+    }
+  } catch (error) {
+    console.error("Error al crear conexión WebSocket:", error);
+    // Reintento automático después de un tiempo
+    setTimeout(connectWebSocket, 5000);
+    return;
+  }
+  
+  // Configurar manejadores de eventos
+  ws.onopen = function() {
+    console.log("Conexión WebSocket establecida");
+    console.log("La autenticación y suscripción son automáticas con el token JWT");
+    
+    // Iniciar envío de datos según el modo seleccionado
+`;
 
   // Agregar código específico para iniciar el envío según el tipo de conexión
   if (connectionType === 'periodic') {
-    jsCode += `    // Iniciar envío periódico de datos\n    startPeriodicData();\n`;
+    jsCode += `    // Iniciar envío periódico de datos
+    startPeriodicData();
+`;
   } else if (connectionType === 'event') {
-    jsCode += `    // Iniciar simulación de eventos\n    startEventSimulation();\n`;
+    jsCode += `    // Iniciar simulación de eventos
+    startEventSimulation();
+`;
   } else if (connectionType === 'batch') {
-    jsCode += `    // Iniciar recolección y envío de lotes\n    startBatchCollection();\n`;
+    jsCode += `    // Iniciar recolección y envío de lotes
+    startBatchCollection();
+`;
   }
 
-  jsCode += `  };\n  \n  ws.onmessage = handleMessage;\n  \n  ws.onerror = function(error) {\n    console.error("Error en la conexión:", error);\n  };\n  \n  ws.onclose = function(event) {\n    console.log("Conexión cerrada");\n    \n    // Detener el envío de datos\n`;
+  jsCode += `  };
+  
+  ws.onmessage = handleMessage;
+  
+  ws.onerror = function(error) {
+    console.error("Error en la conexión WebSocket:", error);
+  };
+  
+  ws.onclose = function(event) {
+    console.log("Conexión WebSocket cerrada:", event.code, event.reason);
+    
+    // Detener el envío de datos
+`;
 
   // Agregar código específico para detener el envío según el tipo de conexión
   if (connectionType === 'periodic') {
-    jsCode += `    stopPeriodicData();\n`;
+    jsCode += `    stopPeriodicData();
+`;
   } else if (connectionType === 'event') {
-    jsCode += `    stopEventSimulation();\n`;
+    jsCode += `    stopEventSimulation();
+`;
   } else if (connectionType === 'batch') {
-    jsCode += `    stopBatchCollection();\n`;
+    jsCode += `    stopBatchCollection();
+`;
   }
 
-  jsCode += `    // Intentar reconectar después de un tiempo\n    setTimeout(connectWebSocket, 5000);\n  };\n}\n\n// Función para enviar datos manualmente\nfunction sendData(data) {\n  if (!ws || ws.readyState !== WebSocket.OPEN) {\n    console.error("WebSocket no conectado");\n    return false;\n  }\n  \n  // Asegurarse de que los datos incluyan los campos requeridos\n  if (typeof data === 'object') {\n    data = {\n      ...data,\n      model_id: ${modelId},\n      device_id: "${deviceId}",\n      user_id: "${userId}",\n      token: JWT_TOKEN\n    };\n  }\n  \n  // Crear mensaje de datos\n  const dataMessage = {\n    event: "data",\n    data: data\n  };\n  \n  // Enviar datos\n  ws.send(JSON.stringify(dataMessage));\n  console.log("Datos enviados al servidor");\n  return true;\n}\n\n// Iniciar la conexión WebSocket\nconnectWebSocket();\n\n// Manejar cierre de la página\nwindow.addEventListener('beforeunload', function() {\n  // Detener el envío de datos\n`;
+  jsCode += `    // Intentar reconectar después de un tiempo
+    console.log("Intentando reconectar en 5 segundos...");
+    setTimeout(connectWebSocket, 5000);
+  };
+}
+
+// Función para enviar datos manualmente
+function sendData(data) {
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    console.error("WebSocket no conectado");
+    return false;
+  }
+  
+  // Asegurarse de que los datos incluyan los campos requeridos
+  if (typeof data === 'object') {
+    data = {
+      ...data,
+      model_id: ${modelId},
+      device_id: "${deviceId}",
+      user_id: "${userId}",
+      token: JWT_TOKEN
+    };
+  }
+  
+  // Crear mensaje de datos
+  const dataMessage = {
+    event: "data",
+    data: data
+  };
+  
+  // Enviar datos
+  ws.send(JSON.stringify(dataMessage));
+  console.log("Datos enviados al servidor");
+  return true;
+}
+
+// Iniciar la conexión WebSocket
+connectWebSocket();
+
+// Manejar cierre de la página
+window.addEventListener('beforeunload', function() {
+  console.log("Página cerrada, limpiando recursos...");
+  
+  // Detener el envío de datos
+`;
 
   // Agregar código específico para detener el envío según el tipo de conexión
   if (connectionType === 'periodic') {
-    jsCode += `  stopPeriodicData();\n`;
+    jsCode += `  stopPeriodicData();
+`;
   } else if (connectionType === 'event') {
-    jsCode += `  stopEventSimulation();\n`;
+    jsCode += `  stopEventSimulation();
+`;
   } else if (connectionType === 'batch') {
-    jsCode += `  stopBatchCollection();\n`;
+    jsCode += `  stopBatchCollection();
+`;
   }
 
-  jsCode += `  // Cerrar conexión WebSocket\n  if (ws) {\n    ws.close();\n  }\n});\n`;
+  jsCode += `  // Cerrar conexión WebSocket
+  if (ws) {
+    ws.close();
+  }
+});
+`;
 
   return jsCode;
 }

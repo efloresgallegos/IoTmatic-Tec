@@ -107,7 +107,7 @@ const sendToGPT = async (userPrompt, systemPrompt) => {
         { role: "user", content: userPrompt },
       ],
       temperature: 0.7,
-      max_tokens: 500,
+      max_tokens: 1800,
     });
 
     const response = completion?.choices?.[0]?.message?.content;

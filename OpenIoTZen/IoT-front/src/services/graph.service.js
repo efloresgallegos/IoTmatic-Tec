@@ -4,7 +4,6 @@
  */
 
 import apiService from '../boot/ApiServices/api.service';
-import realtimeService from '../boot/ApiServices/realtime.service';
 
 const graphService = {
   /**
@@ -78,24 +77,6 @@ const graphService = {
       console.error('Error al limpiar caché de gráficos:', error);
       throw error;
     }
-  },
-
-  /**
-   * Configura suscripción a actualizaciones en tiempo real para un gráfico
-   * @param {Object} params - Parámetros de suscripción
-   * @param {number|string} [params.device_id] - ID del dispositivo (opcional)
-   * @param {number|string} params.model_id - ID del modelo
-   * @param {Function} callback - Función a ejecutar cuando se reciban actualizaciones
-   * @returns {Function} - Función para cancelar la suscripción
-   */
-  subscribeToRealtimeUpdates(params, callback) {
-    // Suscribirse a actualizaciones de WebSocket
-    realtimeService.subscribeToGraphUpdates(params);
-    
-    // Registrar manejador para actualizaciones
-    const unsubscribe = realtimeService.on('graph_data_update', callback);
-    
-    return unsubscribe;
   }
 };
 

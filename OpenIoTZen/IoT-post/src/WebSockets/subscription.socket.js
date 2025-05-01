@@ -3,7 +3,7 @@
  * Este módulo permite a los clientes suscribirse a eventos específicos por dispositivo, modelo y usuario
  */
 
-import { emitToRoom } from './webSocket.server.js';
+import { emitToRoom, addToRoom } from './webSocket.server.js';
 import jwt from 'jwt-simple';
 import 'dotenv/config';
 
@@ -48,23 +48,55 @@ const verifyToken = (token) => {
  * @param {Object} ws - WebSocket del cliente
  * @param {Object} data - Datos de suscripción
  * @param {string} data.token - Token JWT para autenticación
- * @param {string} [data.device_id] - ID del dispositivo (opcional)
- * @param {string} [data.model_id] - ID del modelo (opcional)
- * @param {string} [data.user_id] - ID del usuario (opcional)
+ * @param {string} data.device_id - ID del dispositivo (obligatorio)
+ * @param {string} data.model_id - ID del modelo (obligatorio)
+ * @param {string} data.user_id - ID del usuario (obligatorio)
  */
 const subscribeToEvents = (ws, data) => {
   try {
     const { token, device_id, model_id, user_id } = data;
     
-    // Verificar token
-    const tokenData = verifyToken(token);
+    // Verificar que se proporcionaron todos los campos obligatorios
+    if (!device_id || !model_id || !user_id) {
+      // Si tenemos datos del token almacenados, podemos completar los campos faltantes
+      if (ws.tokenData) {
+        if (!device_id) data.device_id = ws.tokenData.device;
+        if (!model_id) data.model_id = ws.tokenData.model;
+        if (!user_id) data.user_id = ws.tokenData.user;
+      } else {
+        ws.send(JSON.stringify({
+          event: 'subscription_error',
+          data: { message: 'Se requieren device_id, model_id y user_id para la suscripción' }
+        }));
+        return;
+      }
+    }
+    
+    // Verificar token si no está ya en los datos de la conexión
+    let tokenData = ws.tokenData;
+    if (!tokenData && token) {
+      tokenData = verifyToken(token);
+      if (!tokenData) {
+        ws.send(JSON.stringify({
+          event: 'subscription_error',
+          data: { message: 'Token inválido o expirado' }
+        }));
+        return;
+      }
+    }
+    
     if (!tokenData) {
       ws.send(JSON.stringify({
         event: 'subscription_error',
-        data: { message: 'Token inválido o expirado' }
+        data: { message: 'No hay datos de autenticación válidos' }
       }));
       return;
     }
+    
+    // Usar los IDs que tenemos disponibles, priorizar los pasados explícitamente en la solicitud
+    const deviceId = data.device_id || tokenData.device;
+    const modelId = data.model_id || tokenData.model;
+    const userId = data.user_id || tokenData.user;
     
     // Almacenar información de la suscripción
     if (!subscriptions.has(ws)) {
@@ -74,41 +106,42 @@ const subscribeToEvents = (ws, data) => {
     const clientSubscriptions = subscriptions.get(ws);
     
     // Suscribir a canales específicos según los parámetros proporcionados
-    if (device_id) {
-      const roomId = `device_${device_id}`;
-      clientSubscriptions.add(roomId);
-      addToRoom(roomId, ws);
-      console.log(`Cliente suscrito a eventos del dispositivo ${device_id}`);
-    }
+    const deviceRoomId = `device_${deviceId}`;
+    clientSubscriptions.add(deviceRoomId);
+    addToRoom(deviceRoomId, ws);
+    console.log(`Cliente suscrito a eventos del dispositivo ${deviceId}`);
     
-    if (model_id) {
-      const roomId = `model_${model_id}`;
-      clientSubscriptions.add(roomId);
-      addToRoom(roomId, ws);
-      console.log(`Cliente suscrito a eventos del modelo ${model_id}`);
-    }
+    const modelRoomId = `model_${modelId}`;
+    clientSubscriptions.add(modelRoomId);
+    addToRoom(modelRoomId, ws);
+    console.log(`Cliente suscrito a eventos del modelo ${modelId}`);
     
-    if (user_id) {
-      const roomId = `user_${user_id}`;
-      clientSubscriptions.add(roomId);
-      addToRoom(roomId, ws);
-      console.log(`Cliente suscrito a eventos del usuario ${user_id}`);
-    }
+    const userRoomId = `user_${userId}`;
+    clientSubscriptions.add(userRoomId);
+    addToRoom(userRoomId, ws);
+    console.log(`Cliente suscrito a eventos del usuario ${userId}`);
     
-    // Si se proporcionan tanto dispositivo como modelo, suscribir a la combinación
-    if (device_id && model_id) {
-      const roomId = `device_${device_id}_model_${model_id}`;
-      clientSubscriptions.add(roomId);
-      addToRoom(roomId, ws);
-      console.log(`Cliente suscrito a eventos del dispositivo ${device_id} y modelo ${model_id}`);
-    }
+    // Suscribir a la combinación de dispositivo y modelo
+    const deviceModelRoomId = `device_${deviceId}_model_${modelId}`;
+    clientSubscriptions.add(deviceModelRoomId);
+    addToRoom(deviceModelRoomId, ws);
+    console.log(`Cliente suscrito a eventos del dispositivo ${deviceId} y modelo ${modelId}`);
+    
+    // Suscribir a la combinación completa de dispositivo, modelo y usuario
+    const fullRoomId = `device_${deviceId}_model_${modelId}_user_${userId}`;
+    clientSubscriptions.add(fullRoomId);
+    addToRoom(fullRoomId, ws);
+    console.log(`Cliente suscrito a eventos del dispositivo ${deviceId}, modelo ${modelId} y usuario ${userId}`);
     
     // Confirmar suscripción
     ws.send(JSON.stringify({
       event: 'subscription_confirmed',
       data: {
         status: 'success',
-        subscriptions: Array.from(clientSubscriptions)
+        subscriptions: Array.from(clientSubscriptions),
+        device_id: deviceId,
+        model_id: modelId,
+        user_id: userId
       }
     }));
   } catch (error) {
@@ -118,23 +151,7 @@ const subscribeToEvents = (ws, data) => {
       data: { message: 'Error al procesar la suscripción' }
     }));
   }
-};
-
-/**
- * Añade un cliente a una sala específica
- * @param {string} roomId - ID de la sala
- * @param {Object} ws - WebSocket del cliente
- */
-const addToRoom = (roomId, ws) => {
-  // Esta función debe ser implementada en webSocket.server.js
-  // Aquí solo se simula la funcionalidad
-  if (typeof emitToRoom === 'function') {
-    // Si emitToRoom está disponible, usarla
-    // Nota: emitToRoom debería manejar la adición a salas internamente
-  } else {
-    console.warn('La función emitToRoom no está disponible');
-  }
-};
+}
 
 /**
  * Elimina todas las suscripciones de un cliente

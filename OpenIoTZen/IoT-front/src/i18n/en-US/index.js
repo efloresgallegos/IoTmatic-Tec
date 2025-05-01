@@ -40,6 +40,52 @@ export default {
     language: 'Language'
   },
   views: {
+    settings: {
+      title: 'System Configuration',
+      connectedDevices: 'Connected Devices',
+      refreshDevices: 'Refresh',
+      noDevicesFound: 'No connected devices found',
+      deviceDetails: 'Device Details',
+      viewDetails: 'View details',
+      reconnect: 'Reconnect',
+      disconnect: 'Disconnect',
+      reconnecting: 'Reconnecting device...',
+      disconnecting: 'Disconnecting device...',
+      reconnectSuccess: 'Device reconnected successfully',
+      disconnectSuccess: 'Device disconnected successfully',
+      columns: {
+        id: 'ID',
+        name: 'Name',
+        type: 'Type',
+        ip: 'IP Address',
+        lastConnection: 'Last Connection',
+        status: 'Status',
+        actions: 'Actions'
+      },
+      status: {
+        online: 'Online',
+        offline: 'Offline'
+      },
+      deviceProps: {
+        id: 'ID',
+        name: 'Name',
+        type: 'Type',
+        ip: 'IP Address',
+        mac: 'MAC Address',
+        model: 'Model',
+        firmware: 'Firmware',
+        lastConnection: 'Last Connection',
+        status: 'Status',
+        uptime: 'Uptime',
+        protocol: 'Protocol',
+        connectionType: 'Connection Type'
+      },
+      errors: {
+        fetchFailed: 'Error fetching connected devices',
+        reconnectFailed: 'Error reconnecting device',
+        disconnectFailed: 'Error disconnecting device'
+      }
+    },
     devices: {
       realtime: {
         title: 'Real-time Connected Devices',

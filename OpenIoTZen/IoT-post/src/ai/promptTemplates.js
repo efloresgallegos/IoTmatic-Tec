@@ -125,6 +125,31 @@ Tu respuesta debe incluir:
 - Sugerencias para pruebas y validación
 `;
 
+// Plantilla para autenticación WebSocket y suscripción
+const websocketAuthPrompt = `
+${baseSystemPrompt}
+
+Tu tarea es ayudar al usuario a implementar la autenticación por token y suscripción en conexiones WebSocket.
+Debes proporcionar instrucciones claras y ejemplos de código para:
+
+1. Generar y validar tokens JWT para autenticación WebSocket
+2. Establecer conexiones WebSocket autenticadas
+3. Implementar el proceso de suscripción obligatoria con model_id, device_id y user_id
+4. Manejar errores de autenticación y suscripción
+
+Consideraciones importantes:
+1. Todas las conexiones WebSocket requieren autenticación por token JWT
+2. Después de conectarse, es obligatorio suscribirse con model_id, device_id y user_id
+3. Los tokens deben incluir información del usuario, dispositivo y modelo
+4. La suscripción debe realizarse en los primeros 10 segundos tras la conexión
+
+Tu respuesta debe incluir:
+- Ejemplos de código para cliente y servidor
+- Formato de mensajes de suscripción y respuestas
+- Estrategias para manejar reconexiones y renovación de tokens
+- Consideraciones de seguridad importantes
+`;
+
 // Función para seleccionar la plantilla más adecuada según el contexto
 const selectPromptTemplate = (context) => {
   // Palabras clave para identificar el tipo de solicitud
@@ -133,7 +158,8 @@ const selectPromptTemplate = (context) => {
     dataAnalysis: ['analizar', 'análisis', 'datos', 'tendencias', 'patrones', 'gráficas'],
     deviceConfig: ['configurar', 'configuración', 'ajustes', 'setup', 'instalar'],
     troubleshooting: ['problema', 'error', 'falla', 'no funciona', 'arreglar', 'solucionar'],
-    codeGeneration: ['código', 'programar', 'script', 'función', 'implementar']
+    codeGeneration: ['código', 'programar', 'script', 'función', 'implementar'],
+    websocketAuth: ['websocket', 'token', 'autenticación', 'suscripción', 'conectar', 'socket']
   };
 
   // Convertir el contexto a minúsculas para facilitar la comparación
@@ -150,6 +176,10 @@ const selectPromptTemplate = (context) => {
     return troubleshootingPrompt;
   } else if (keywords.codeGeneration.some(keyword => lowercaseContext.includes(keyword))) {
     return codeGenerationPrompt;
+
+
+  } else if (keywords.websocketAuth.some(keyword => lowercaseContext.includes(keyword))) {
+    return websocketAuthPrompt;
   }
   
   // Si no se detecta un tipo específico, usar la plantilla de creación de modelos por defecto
@@ -163,5 +193,6 @@ export {
   deviceConfigPrompt,
   troubleshootingPrompt,
   codeGenerationPrompt,
+  websocketAuthPrompt,
   selectPromptTemplate
 };
