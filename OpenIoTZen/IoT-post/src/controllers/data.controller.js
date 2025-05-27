@@ -187,11 +187,7 @@ import random
 import threading
 import logging
 import sys
-import re
 import ssl
-import uuid
-import platform
-import subprocess
 from datetime import datetime
 
 # Configuración de logging
@@ -227,91 +223,15 @@ CONFIG = {
 data_thread = None
 running = False
 ws = None
-mac_address = "desconocida"
-
-# Función para obtener la dirección MAC del dispositivo
-def get_mac_address():
-    """
-    Intenta obtener la dirección MAC del dispositivo utilizando diferentes métodos
-    según el sistema operativo.
-    
-    Returns:
-        str: La dirección MAC del dispositivo o 'desconocida' si no se puede obtener
-    """
-    try:
-        # Método 1: Usando uuid (funciona en muchos sistemas)
-        mac = ':'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff) for elements in range(0, 48, 8)][::-1])
-        if mac and mac != '00:00:00:00:00:00':
-            return mac
-            
-        # Método 2: Usando comandos del sistema según la plataforma
-        system = platform.system().lower()
-        
-        if system == 'linux':
-            # En Linux, intentar con ip o ifconfig
-            try:
-                output = subprocess.check_output('ip link show', shell=True).decode('utf-8')
-                for line in output.split('\n'):
-                    if 'link/ether' in line:
-                        mac = line.split('link/ether')[1].split()[0].strip()
-                        if mac and mac != '00:00:00:00:00:00':
-                            return mac
-            except:
-                try:
-                    output = subprocess.check_output('ifconfig', shell=True).decode('utf-8')
-                    for line in output.split('\n'):
-                        if 'ether' in line:
-                            mac = line.split('ether')[1].split()[0].strip()
-                            if mac and mac != '00:00:00:00:00:00':
-                                return mac
-                except:
-                    pass
-                    
-        elif system == 'darwin':  # macOS
-            try:
-                output = subprocess.check_output('ifconfig en0', shell=True).decode('utf-8')
-                for line in output.split('\n'):
-                    if 'ether' in line:
-                        mac = line.split('ether')[1].strip()
-                        if mac and mac != '00:00:00:00:00:00':
-                            return mac
-            except:
-                pass
-                
-        elif system == 'windows':
-            try:
-                output = subprocess.check_output('getmac /v /fo csv /nh', shell=True).decode('utf-8')
-                for line in output.split('\n'):
-                    if ',' in line:
-                        parts = line.split(',')
-                        if len(parts) >= 2:
-                            mac = parts[1].strip('"')
-                            if mac and mac != '00:00:00:00:00:00':
-                                return mac
-            except:
-                pass
-    except Exception as e:
-        logger.error(f"Error al obtener dirección MAC: {e}")
-    
-    # Si todos los métodos fallan, devolver valor por defecto
-    return "desconocida"
-
-
 
 # Estructura de datos basada en el modelo seleccionado
 def generate_data():
     """
     Genera un conjunto de datos completo basado en el modelo definido.
-    Incluye timestamp para seguimiento temporal de los datos, dirección MAC y versión de firmware.
+    Incluye timestamp para seguimiento temporal de los datos.
     """
     # Obtener timestamp actual
     timestamp = datetime.now().isoformat()
-    
-    # Obtener dirección MAC si aún no se ha obtenido
-    global mac_address
-    if mac_address == "desconocida":
-        mac_address = get_mac_address()
-        logger.info(f"Dirección MAC obtenida: {mac_address}")
     
     # Crear estructura base
     data = {
@@ -319,7 +239,6 @@ def generate_data():
         "device_id": "${device_id}",
         "user_id": "${user_id}",
         "timestamp": timestamp,
-        "mac_address": mac_address,
         "firmware_version": CONFIG["firmware_version"],
 ${fieldTemplates},
         "token": JWT_TOKEN
@@ -544,14 +463,15 @@ def send_data(data):
         # Si no se proporcionan datos, generarlos
         if data is None:
             data = generate_data()
-        # Si se proporcionan datos, asegurarse de que incluyan los campos requeridos
+        # Si se proporcionan datos, asegurarse de que incluyan los campos requeridos y estén actualizados
         elif isinstance(data, dict):
             data.update({
                 "model_id": ${model_id},
                 "device_id": "${device_id}",
                 "user_id": "${user_id}",
                 "token": JWT_TOKEN,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
+                "firmware_version": CONFIG["firmware_version"]
             })
         
         # Crear mensaje de datos
@@ -674,38 +594,8 @@ const CONFIG = {
   firmwareVersion: "1.0.0" // Personalizar con la versión actual del firmware
 };
 
-// Función para obtener la dirección MAC del dispositivo
-function getMacAddress() {
-  try {
-    // Obtener interfaces de red
-    const interfaces = os.networkInterfaces();
-    
-    // Buscar la dirección MAC en las interfaces disponibles
-    for (const name of Object.keys(interfaces)) {
-      for (const iface of interfaces[name]) {
-        // Buscar interfaces IPv4 no internas
-        if (iface.family === 'IPv4' && !iface.internal) {
-          // En algunos sistemas, la dirección MAC está disponible como iface.mac
-          if (iface.mac && iface.mac !== '00:00:00:00:00:00') {
-            return iface.mac;
-          }
-        }
-      }
-    }
-    
-    // Si no se encuentra, intentar con otro método dependiendo del entorno
-    // Este código se ejecutará en Node.js, pero se proporciona como referencia
-    
-    return "desconocida"; // Valor por defecto si no se puede determinar
-  } catch (error) {
-    console.error("Error al obtener dirección MAC:", error);
-    return "desconocida";
-  }
-}
 
-// Obtener dirección MAC
-const macAddress = getMacAddress();
-console.log("Dirección MAC del dispositivo:", macAddress);
+
 
 // Estructura de datos basada en el modelo seleccionado
 function generateData() {
@@ -713,7 +603,6 @@ function generateData() {
     "model_id": ${model_id},
     "device_id": "${device_id}",
     "user_id": "${user_id}",
-    "mac_address": macAddress,
     "firmware_version": CONFIG.firmwareVersion,
 ${fieldTemplates},
     "token": JWT_TOKEN
@@ -881,45 +770,6 @@ JWT_TOKEN = "${token}"
 FIRMWARE_VERSION = "1.0.0"  # Personalizar con la versión actual del firmware
 
 # Función para obtener la dirección MAC del dispositivo
-def get_mac_address():
-    try:
-        # Método 1: Usando uuid (funciona en muchos sistemas)
-        mac = ':'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff) for elements in range(0, 48, 8)][::-1])
-        if mac and mac != '00:00:00:00:00:00':
-            return mac
-            
-        # Método 2: Usando comandos del sistema según la plataforma
-        system = platform.system().lower()
-        
-        if system == 'linux':
-            # En Linux, intentar con ip o ifconfig
-            try:
-                output = subprocess.check_output('ip link show', shell=True).decode('utf-8')
-                for line in output.split('\n'):
-                    if 'link/ether' in line:
-                        mac = line.split('link/ether')[1].split()[0].strip()
-                        if mac and mac != '00:00:00:00:00:00':
-                            return mac
-            except:
-                try:
-                    output = subprocess.check_output('ifconfig', shell=True).decode('utf-8')
-                    for line in output.split('\n'):
-                        if 'ether' in line:
-                            mac = line.split('ether')[1].split()[0].strip()
-                            if mac and mac != '00:00:00:00:00:00':
-                                return mac
-                except:
-                    pass
-        
-        # Si todos los métodos fallan, devolver valor por defecto
-        return "desconocida"
-    except Exception as e:
-        print(f"Error al obtener dirección MAC: {e}")
-        return "desconocida"
-
-# Obtener dirección MAC
-mac_address = get_mac_address()
-print(f"Dirección MAC del dispositivo: {mac_address}")
 
 # Estructura de datos basada en el modelo seleccionado
 def generate_data():
@@ -927,7 +777,6 @@ def generate_data():
         "model_id": ${model_id},
         "device_id": "${device_id}",
         "user_id": "${user_id}",
-        "mac_address": mac_address,
         "firmware_version": FIRMWARE_VERSION,
         ${fieldTemplates},
         "token": JWT_TOKEN

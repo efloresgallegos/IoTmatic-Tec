@@ -1,6 +1,12 @@
-# Quasar App (iot-front)
+# IoT-front (Frontend)
 
-A Quasar Project
+Interfaz de usuario para el sistema IoTmatic-Tec, desarrollada con Quasar Framework y Vue.js.
+
+## Requisitos Previos
+
+- Node.js (v14 o superior)
+- npm (v6 o superior)
+- Git
 
 ## Install the dependencies
 ```bash
