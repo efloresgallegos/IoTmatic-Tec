@@ -134,17 +134,42 @@ const sendToDeepSeek = async (userPrompt, systemPrompt) => {
     const completion = await DeepSeekAPI.chat.completions.create({
       model: "deepseek-chat",
       messages: [
-        { role: "system", content: systemPrompt },
+        { 
+          role: "system", 
+          content: systemPrompt + "\nIMPORTANTE: Tu respuesta debe ser un JSON válido con la siguiente estructura:\n{\n  \"text\": \"tu explicación aquí\",\n  \"Json\": {\n    \"name\": \"nombre del modelo\",\n    \"fields\": [\n      {\n        \"name\": \"nombre del campo\",\n        \"type\": \"tipo del campo\",\n        \"required\": true/false,\n        \"fields\": []\n      }\n    ]\n  }\n}\n\nReglas para la generación del modelo:\n1. Mantén el modelo conciso y enfocado (máximo 8-10 campos principales)\n2. Agrupa información relacionada en campos de tipo Object\n3. Usa solo los tipos de datos básicos: String, Number, Boolean, Date, Object\n4. Marca como required solo los campos verdaderamente esenciales\n5. Evita campos redundantes o que puedan derivarse de otros\n6. Prioriza la simplicidad y la claridad sobre la exhaustividad" 
+        },
         { role: "user", content: userPrompt },
       ],
-      temperature: 0.7,
-      max_tokens: 500,
+      temperature: 0.5,
+      max_tokens: 3000,
+      response_format: { type: "json_object" }
     });
 
     const response = completion?.choices?.[0]?.message?.content;
     if (!response) throw new Error("Formato de respuesta de DeepSeek inválido.");
 
-    return parseAIResponse(response);
+    try {
+      const parsedResponse = JSON.parse(response);
+      
+      // Validar y ajustar el número de campos si es necesario
+      if (parsedResponse.Json && parsedResponse.Json.fields) {
+        if (parsedResponse.Json.fields.length > 10) {
+          parsedResponse.Json.fields = parsedResponse.Json.fields.slice(0, 10);
+          parsedResponse.text += "\n\nNota: Se han limitado los campos a los 10 más importantes para mantener el modelo conciso.";
+        }
+      }
+
+      return {
+        text: parsedResponse.text || "Modelo generado exitosamente",
+        Json: parsedResponse.Json || {}
+      };
+    } catch (parseError) {
+      console.error("Error al parsear la respuesta de DeepSeek:", parseError);
+      return {
+        text: "Error al procesar la respuesta de la IA. Por favor, intenta de nuevo.",
+        Json: {}
+      };
+    }
   } catch (error) {
     console.error("Error en la API de DeepSeek:", error);
     return { 

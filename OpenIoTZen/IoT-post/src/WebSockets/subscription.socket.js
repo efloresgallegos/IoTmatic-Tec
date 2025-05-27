@@ -6,6 +6,7 @@
 import { emitToRoom, addToRoom } from './webSocket.server.js';
 import jwt from 'jwt-simple';
 import 'dotenv/config';
+import dataService from '../services/data.service.js';
 
 // Mapa para almacenar las suscripciones activas
 const subscriptions = new Map();
@@ -173,7 +174,7 @@ const unsubscribeFromAllEvents = (ws) => {
  * @param {string} data.token - Token JWT para autenticación
  * @param {Object} data.payload - Datos del evento
  */
-const emitDataEvent = (data) => {
+const emitDataEvent = async (data) => {
   try {
     const { device_id, model_id, user_id, token, ...payload } = data;
     
@@ -198,6 +199,23 @@ const emitDataEvent = (data) => {
       timestamp: new Date().toISOString(),
       data: payload
     };
+
+    // Preparar datos para la base de datos
+    // Excluir campos que no deben ir a la base de datos y que podrían causar problemas
+    const { timestamp, firmware_version, token: _, createdAt, updatedAt, ...cleanPayload } = payload;
+    const deviceData = {
+      ...cleanPayload,
+      device_id: Number(device_id),
+      model_id: Number(model_id),
+      user_id: Number(user_id)
+    };
+    
+    // Crear registro en la base de datos
+    try {
+      await dataService.createData(deviceData);
+    } catch (error) {
+      console.error('Error al crear registro en la base de datos:', error);
+    }
     
     // Emitir a todos los canales relevantes
     if (device_id) {

@@ -689,7 +689,8 @@ export default {
       'removeSubField',
       'updateFieldType',
       'saveModel',
-      'updateModelFromAI'
+      'updateModelFromAI',
+      'updateCurrentModelId'
     ]),
 
     // Método para actualizar la vista previa
@@ -938,22 +939,41 @@ export default {
       }
 
       try {
-        // Agregar la descripción al modelo antes de guardar
-        const modelToSave = {
-          ...this.currentModel,
-          description: this.modelDescription
+        // Preparar los datos para enviar al backend
+        const modelData = {
+          name: this.modelName,
+          fields: this.fields.map(field => ({
+            name: field.name,
+            type: field.type,
+            required: field.required || false,
+            fields: field.type === 'Object' ? field.fields.map(subField => ({
+              name: subField.name,
+              type: subField.type,
+              required: subField.required || false,
+              defaultValue: subField.defaultValue
+            })) : [],
+            defaultValue: field.defaultValue
+          }))
         };
 
-        await this.saveModel(modelToSave);
+        // Realizar la petición POST al endpoint de generación
+        const response = await this.$api.post('/generator', modelData);
 
-        this.$q.notify({
-          type: 'positive',
-          message: this.$t('views.modelCreator.successModelGenerated'),
-          position: 'top',
-          timeout: 3000
-        });
+        if (response.data) {
+          this.$q.notify({
+            type: 'positive',
+            message: response.data.message || this.$t('views.modelCreator.successModelGenerated'),
+            position: 'top',
+            timeout: 3000
+          });
 
-        this.resetForm();
+          // Actualizar el store con el ID del modelo creado
+          if (response.data.model && response.data.model.id) {
+            this.updateCurrentModelId(response.data.model.id);
+          }
+
+          this.resetForm();
+        }
       } catch (error) {
         console.error("Error generating model:", error);
         // Mostrar mensaje de error específico si está disponible

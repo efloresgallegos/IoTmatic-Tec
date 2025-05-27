@@ -1,6 +1,6 @@
 <template>
-  <div class="ai-chat-bar" :class="{ open: isVisible }">
-    <div class="ai-toggle-button" @click="toggleVisibility">
+  <div class="ai-chat-bar" :class="{ open: isVisible }" style="bottom: 120px; height: calc(100% - 120px);">
+    <div class="ai-toggle-button" @click="toggleVisibility" style="bottom: 140px;">
       <img src="../../assets/AIIcon.png" alt="AI Icon" class="ai-icon" />
     </div>
     
@@ -77,17 +77,24 @@ export default {
 
       try {
         // Enviar el modelo actual junto con el prompt para contexto
-        // Incluir información sobre el formato de campo invernaderoId
         const response = await apiService.post("/ai/sendToAI", { 
           prompt: userMessage.text, 
-          AI: "GPT",
+          AI: "DeepSeek",
           currentModel: this.currentModel,
-          supportedFieldTypes: {
-            invernaderoId: {
-              type: "String",
-              required: true,
-              defaultValue: null,
-              fields: []
+          context: {
+            modelType: "IoT",
+            supportedFieldTypes: {
+              invernaderoId: {
+                type: "String",
+                required: true,
+                defaultValue: null,
+                fields: []
+              }
+            },
+            modelContext: {
+              name: this.currentModel.name,
+              description: this.currentModel.description,
+              fields: this.currentModel.fields
             }
           }
         });
@@ -112,7 +119,7 @@ export default {
         this.scrollToBottom();
       } catch (error) {
         console.error("Error al enviar el mensaje:", error);
-        // Opcional: Mostrar mensaje de error en el chat
+        // Mostrar mensaje de error en el chat
         this.messages.push({
           text: this.$t('common.errorMessage'),
           user: false,
@@ -135,4 +142,35 @@ export default {
 
 <style scoped>
 @import "../../css/dinamic-components/AIInteraction.css";
+
+.ai-chat-bar {
+  position: fixed;
+  right: 0;
+  width: 350px;
+  background-color: #fff;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+  z-index: 999999;
+  transition: transform 0.3s ease;
+  transform: translateX(100%);
+}
+
+.ai-chat-bar.open {
+  transform: translateX(0);
+}
+
+.ai-toggle-button {
+  position: fixed;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  background-color: #1976d2;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  z-index: 999999;
+  transition: transform 0.3s ease;
+}
 </style>

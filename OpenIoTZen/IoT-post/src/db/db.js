@@ -94,6 +94,7 @@ const createDatabaseAndTables = async () => {
                 filter_id SERIAL PRIMARY KEY,
                 conditions JSONB NOT NULL,
                 field VARCHAR(50) NOT NULL,
+                filter_type VARCHAR(20) NOT NULL DEFAULT 'numeric',
                 device_id INT,
                 model_id INT,
                 "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

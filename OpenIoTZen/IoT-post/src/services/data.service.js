@@ -24,7 +24,7 @@ const createData = async (data) => {
         if (!loadModels) {
             throw new Error('Models are not yet loaded');
         }
-
+        console.log(data); 
         const { model_id, device_id } = data;
 
         // Obtener el nombre del modelo
@@ -61,11 +61,20 @@ const createData = async (data) => {
         }
 
         // Crear nuevo dato
-        const newData = await dataModel.create(data); // Use the model to create data
-        emitNewData({ device_id, data: newData });
+        const { firmware_version, token, timestamp, ...dataToCreate } = data;
         
-        // Emitir actualización para gráficos en tiempo real
-        emitGraphDataUpdate({ device_id, model_id, newData });
+        // Añadir timestamps manualmente
+        const now = new Date();
+        const dataWithTimestamps = {
+            ...dataToCreate,
+            createdAt: now,
+            updatedAt: now
+        };
+        
+        console.log('Data to create:', JSON.stringify(dataWithTimestamps, null, 2));
+        const newData = await dataModel.create(dataWithTimestamps);
+
+        emitNewData({ device_id, data: newData });
 
         return newData;
     } catch (error) {

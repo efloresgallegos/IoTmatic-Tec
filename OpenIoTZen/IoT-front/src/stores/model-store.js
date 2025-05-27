@@ -31,6 +31,10 @@ export const useModelStore = defineStore('model', {
       this.currentModel.fields = fields
     },
 
+    updateCurrentModelId(id) {
+      this.lastCreatedModelId = id;
+    },
+
     addField() {
       this.currentModel.fields.push({
         name: '',
