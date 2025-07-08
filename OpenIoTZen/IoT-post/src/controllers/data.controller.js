@@ -243,8 +243,14 @@ def generate_data():
     # Obtener timestamp actual
     timestamp = datetime.now().isoformat()
     
+<<<<<<< HEAD
     # Crear estructura base del payload
     payload = {
+=======
+    # Crear estructura base
+    data = {
+        "model_id": ${model_id},
+>>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
         "device_id": "${device_id}",
         "model_id": ${model_id},
         "user_id": "${user_id}",
@@ -459,6 +465,19 @@ def send_data(data):
     try:
         if data is None:
             data = generate_data()
+<<<<<<< HEAD
+=======
+        # Si se proporcionan datos, asegurarse de que incluyan los campos requeridos y estén actualizados
+        elif isinstance(data, dict):
+            data.update({
+                "model_id": ${model_id},
+                "device_id": "${device_id}",
+                "user_id": "${user_id}",
+                "token": JWT_TOKEN,
+                "timestamp": datetime.now().isoformat(),
+                "firmware_version": CONFIG["firmware_version"]
+            })
+>>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
         
         data_message = {
             "event": "data",
@@ -567,6 +586,12 @@ const CONFIG = {
   debug: false // Modo debug para información adicional
 };
 
+<<<<<<< HEAD
+=======
+
+
+
+>>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
 // Estructura de datos basada en el modelo seleccionado
 function generateData() {
   // Crear estructura base del payload
@@ -581,8 +606,17 @@ ${fieldTemplates}
 
   // Crear mensaje completo
   return {
+<<<<<<< HEAD
     token: JWT_TOKEN,
     payload: payload
+=======
+    "model_id": ${model_id},
+    "device_id": "${device_id}",
+    "user_id": "${user_id}",
+    "firmware_version": CONFIG.firmwareVersion,
+${fieldTemplates},
+    "token": JWT_TOKEN
+>>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
   };
 }
 
@@ -722,11 +756,17 @@ ws_url = "ws://localhost:3000/ws"
 JWT_TOKEN = "${token}"
 
 # Configuración del dispositivo
+<<<<<<< HEAD
 CONFIG = {
     "firmware_version": "1.0.0",  # Personalizar con la versión actual del firmware
     "interval": 10,  # Intervalo de envío en segundos
     "debug": False  # Modo debug para información adicional
 }
+=======
+FIRMWARE_VERSION = "1.0.0"  # Personalizar con la versión actual del firmware
+
+# Función para obtener la dirección MAC del dispositivo
+>>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
 
 # Estructura de datos basada en el modelo seleccionado
 def generate_data():
@@ -735,9 +775,15 @@ def generate_data():
         "device_id": "${device_id}",
         "model_id": ${model_id},
         "user_id": "${user_id}",
+<<<<<<< HEAD
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "firmware_version": CONFIG["firmware_version"],
 ${fieldTemplates}
+=======
+        "firmware_version": FIRMWARE_VERSION,
+        ${fieldTemplates},
+        "token": JWT_TOKEN
+>>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
     }
 
     # Crear mensaje completo

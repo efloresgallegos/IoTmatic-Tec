@@ -95,11 +95,20 @@ const createDatabaseAndTables = async () => {
                 conditions JSONB NOT NULL,
                 field VARCHAR(50) NOT NULL,
                 filter_type VARCHAR(20) NOT NULL DEFAULT 'numeric',
+<<<<<<< HEAD
                 device_id INTEGER REFERENCES devices(device_id) ON DELETE CASCADE,
                 model_id INTEGER REFERENCES models(model_id) ON DELETE CASCADE,
                 "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 CONSTRAINT filter_type_check CHECK (filter_type IN ('numeric', 'boolean', 'string'))
+=======
+                device_id INT,
+                model_id INT,
+                "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (device_id) REFERENCES devices(device_id),
+                FOREIGN KEY (model_id) REFERENCES models(model_id)
+>>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
             )
         `);
 

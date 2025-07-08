@@ -481,7 +481,7 @@ export default {
   },
   methods: {
     ...mapActions(useModelStore, ['fetchModels']),
-    ...mapActions(useDevicesStore, ['getDeviceData']),
+    ...mapActions(useDevicesStore, ['getDeviceData', 'fetchDevices']),
 
     async fetchDeviceData() {
       try {
@@ -636,7 +636,33 @@ export default {
       });
 
       this.jsonEditorInstance.set(this.jsonResponse);
-      this.addCopyButton('jsonEditor', this.jsonEditorInstance);
+      
+      // Agregar botón de copiar directamente aquí
+      const copyButton = document.createElement('button');
+      copyButton.className = 'copy-button q-btn q-btn-item non-selectable no-outline q-btn--flat q-btn--rectangle text-primary q-btn--actionable q-focusable q-hoverable';
+      copyButton.innerHTML = '<span class="q-btn__content text-center">Copiar JSON</span>';
+      copyButton.style.position = 'absolute';
+      copyButton.style.top = '8px';
+      copyButton.style.right = '8px';
+      copyButton.onclick = () => {
+        const jsonContent = this.jsonEditorInstance.get();
+        navigator.clipboard.writeText(JSON.stringify(jsonContent, null, 2))
+          .then(() => {
+            this.q.notify({
+              message: 'JSON copiado al portapapeles',
+              color: 'positive'
+            });
+          })
+          .catch(err => {
+            console.error('Error al copiar:', err);
+            this.q.notify({
+              message: 'Error al copiar el JSON',
+              color: 'negative'
+            });
+          });
+      };
+      container.style.position = 'relative';
+      container.appendChild(copyButton);
     },
 
     initLatestJsonEditor() {
@@ -659,31 +685,6 @@ export default {
 
       this.latestJsonEditorInstance.set(this.latestDataResponse);
     },
-
-    // Método unificado para agregar botón de copiar
-    createCopyButton() {
-      const copyButton = document.createElement('button');
-        copyButton.className = 'copy-button';
-        copyButton.textContent = 'Copiar JSON';
-        copyButton.onclick = () => {
-          const jsonContent = this.jsonEditorInstance.get();
-          navigator.clipboard.writeText(JSON.stringify(jsonContent, null, 2))
-            .then(() => {
-              this.q.notify({
-                message: 'JSON copiado al portapapeles',
-                color: 'positive'
-              });
-            })
-            .catch(err => {
-              console.error('Error al copiar:', err);
-              this.q.notify({
-                message: 'Error al copiar el JSON',
-                color: 'negative'
-              });
-            });
-        };
-        this.$refs.jsonEditor.appendChild(copyButton);
-      },
 
     cleanupResources() {
       // Detener el envío programado si está activo
@@ -733,6 +734,7 @@ export default {
       });
     },
 
+<<<<<<< HEAD
     async handleModelSelection(modelId) {
       try {
         if (!modelId) {
@@ -749,6 +751,21 @@ export default {
           message: 'Error al obtener campos graficables'
         });
         this.fields = [];
+=======
+    async handleModelSelection() {
+      if (this.selectedGraphModule) {
+        try {
+          const response = await apiService.get(`/data/getGraphable/${this.selectedGraphModule.model_id}`);
+          this.fields = response.data;
+          this.selectedFields = []; // Resetear campos seleccionados
+        } catch (error) {
+          console.error('Error al obtener campos graficables:', error);
+          this.q.notify({
+            type: 'negative',
+            message: 'Error al obtener campos graficables'
+          });
+        }
+>>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
       }
     },
 
@@ -762,6 +779,7 @@ export default {
       }
 
       try {
+<<<<<<< HEAD
         const deviceId = parseInt(this.$route.params.id);
         const graphResponse = await apiService.get(`/api/data/getByRange?model_id=${this.selectedGraphModule}&device_id=${deviceId}&start_date=${this.dateRange.startDate}&end_date=${this.dateRange.endDate}&group_by=${this.groupBy}`);
 
@@ -785,6 +803,39 @@ export default {
           type: 'positive',
           message: 'Gráfica agregada exitosamente'
         });
+=======
+        const response = await apiService.post('/graph/data', {
+          model_id: this.selectedGraphModule.model_id,
+          device_id: this.deviceData.device_id,
+          start_date: this.dateRange.startDate,
+          end_date: this.dateRange.endDate,
+          group_by: this.groupBy,
+          fields: this.selectedFields
+        });
+
+        if (response.data && response.data.length > 0) {
+          this.graphs.push({
+            module: this.selectedGraphModule.model_id,
+            chartType: this.chartType,
+            chartData: response.data,
+            variables: this.selectedFields,
+            nombreColor: 'color',
+            nombreBarra: 'fecha',
+            tituloEjeX: 'Fecha',
+            tituloEjeY: 'Valor'
+          });
+
+          this.q.notify({
+            type: 'positive',
+            message: 'Gráfica añadida exitosamente'
+          });
+        } else {
+          this.q.notify({
+            type: 'warning',
+            message: 'No hay datos disponibles para el rango seleccionado'
+          });
+        }
+>>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
       } catch (error) {
         console.error('Error al obtener datos para la gráfica:', error);
         this.q.notify({

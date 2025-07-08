@@ -17,46 +17,42 @@ const genJSModel = (name, fields) => {
 
         switch (field.type) {
             case 'String':
-                fieldType = 'Sequelize.STRING';
+                fieldType = 'DataTypes.STRING';
                 break;
             case 'Integer':
-                fieldType = 'Sequelize.INTEGER';
+                fieldType = 'DataTypes.INTEGER';
                 break;
             case 'Number':
-                fieldType = 'Sequelize.FLOAT';
+                fieldType = 'DataTypes.INTEGER';
                 break;
             case 'Float':
-                fieldType = 'Sequelize.FLOAT';
+                fieldType = 'DataTypes.FLOAT';
                 break;
             case 'Boolean':
-                fieldType = 'Sequelize.BOOLEAN';
+                fieldType = 'DataTypes.BOOLEAN';
                 break;
             case 'Date':
-                fieldType = 'Sequelize.DATE';
+                fieldType = 'DataTypes.DATE';
                 break;
             case 'Text':
-                fieldType = 'Sequelize.TEXT';
+                fieldType = 'DataTypes.TEXT';
                 break;
             case 'UUID':
-                fieldType = 'Sequelize.UUID';
+                fieldType = 'DataTypes.UUID';
                 break;
             case 'JSON':
-                fieldType = 'Sequelize.JSON';
+                fieldType = 'DataTypes.JSON';
                 break;
             case 'Array':
-                fieldType = 'Sequelize.ARRAY(Sequelize.TEXT)';
+                fieldType = 'DataTypes.ARRAY(DataTypes.TEXT)';
                 break;
             default:
-                fieldType = 'Sequelize.JSON'; // Usar JSON por defecto si es un objeto
+                fieldType = 'DataTypes.JSON';
         }
 
-        // Manejo de campos anidados u objetos
-        if (field.type === 'Object') {
-            fieldType = 'Sequelize.JSON';
-        }
-        
         // Construir las propiedades básicas del campo
         let fieldDefinition = `${field.name}: { 
+<<<<<<< HEAD
             type: ${fieldType}`;
 
         // Agregar propiedades especiales para el campo ID
@@ -73,67 +69,26 @@ const genJSModel = (name, fields) => {
         if (field.ref) {
             fieldDefinition += `, references: { model: '${field.ref}', key: '${field.refColumn || `${field.ref}_id`}' }`;
         }
+=======
+            type: ${fieldType}${field.required ? ', allowNull: false' : ''}`;
+>>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
         
-        // Agregar propiedades adicionales para campos de tipo Date
-        if (field.type === 'Date') {
-            if (field.dateFormat) {
+        // Agregar configuración de clave primaria y autoincrement si corresponde
+        if (field.primaryKey) {
+            fieldDefinition += `,
+            primaryKey: true`;
+            if (field.autoIncrement) {
                 fieldDefinition += `,
-            dateFormat: '${field.dateFormat}'`;
-            }
-            if (field.includeTime !== undefined) {
-                fieldDefinition += `,
-            includeTime: ${field.includeTime}`;
-            }
-            if (field.minDate) {
-                fieldDefinition += `,
-            minDate: '${field.minDate}'`;
-            }
-            if (field.maxDate) {
-                fieldDefinition += `,
-            maxDate: '${field.maxDate}'`;
-            }
-            if (field.defaultValue !== undefined) {
-                fieldDefinition += `,
-            defaultValue: '${field.defaultValue}'`;
+            autoIncrement: true`;
             }
         }
-        
-        // Agregar propiedades adicionales para campos numéricos (Number, Integer, Float)
-        if (field.type === 'Number' || field.type === 'Integer' || field.type === 'Float') {
-            if (field.min !== undefined) {
-                fieldDefinition += `,
-            min: ${field.min}`;
-            }
-            if (field.max !== undefined) {
-                fieldDefinition += `,
-            max: ${field.max}`;
-            }
-            if (field.defaultValue !== undefined) {
-                fieldDefinition += `,
-            defaultValue: ${field.defaultValue}`;
-            }
+
+        // Agregar referencias si existen
+        if (field.ref) {
+            fieldDefinition += `,
+            references: { model: '${field.ref}', key: '${field.refColumn || `${field.ref}_id`}' }`;
         }
-        
-        // Agregar propiedades adicionales para campos de tipo String o Text
-        if (field.type === 'String' || field.type === 'Text') {
-            if (field.pattern) {
-                fieldDefinition += `,
-            validate: { is: ${field.pattern} }`;
-            }
-            if (field.minLength !== undefined && field.minLength !== null) {
-                fieldDefinition += `,
-            minLength: ${field.minLength}`;
-            }
-            if (field.maxLength !== undefined && field.maxLength !== null) {
-                fieldDefinition += `,
-            maxLength: ${field.maxLength}`;
-            }
-            if (field.defaultValue !== undefined && field.defaultValue !== null) {
-                fieldDefinition += `,
-            defaultValue: "${field.defaultValue}"`;
-            }
-        }
-        
+
         // Cerrar la definición del campo
         fieldDefinition += `
         }`;
@@ -141,22 +96,47 @@ const genJSModel = (name, fields) => {
         return fieldDefinition;
     });
 
-    return `
-import User from '../users.model.js';
+    return `import { DataTypes } from 'sequelize';
+import { sequelize } from '../../db/database.js';
 import Device from '../devices.model.js';
 import Model from '../models.model.js';
-import { Sequelize, DataTypes } from 'sequelize';
-import { sequelize } from '../../db/database.js'; // Ajusta la ruta a tu configuración de Sequelize
+import User from '../users.model.js';
 
 const ${name} = sequelize.define('${name}', {
-    ${jsFields.join(',\n    ')}
+    ${jsFields.join(',\n    ')},
+    createdAt: {
+        type: DataTypes.DATE,
+        allowNull: false
+    },
+    updatedAt: {
+        type: DataTypes.DATE,
+        allowNull: false
+    }
 }, {
-    timestamps: true,
+    timestamps: false,
     tableName: '${name}',
     hooks: {
+        beforeCreate: (instance) => {
+            // Excluir cualquier campo que termine en _id del payload
+            Object.keys(instance.dataValues).forEach(key => {
+                if (key.endsWith('_id') && key !== 'device_id' && key !== 'model_id' && key !== 'user_id') {
+                    delete instance.dataValues[key];
+                }
+            });
+            
+            // Establecer timestamps manualmente
+            const now = new Date();
+            instance.setDataValue('createdAt', now);
+            instance.setDataValue('updatedAt', now);
+        },
+        beforeUpdate: (instance) => {
+            // Actualizar el timestamp de actualización
+            instance.setDataValue('updatedAt', new Date());
+        },
         beforeSave: (instance) => {
+            // Convertir objetos a JSON string
             for (const key of Object.keys(instance.dataValues)) {
-                if (typeof instance[key] === 'object' && !Array.isArray(instance[key])) {
+                if (typeof instance[key] === 'object' && !Array.isArray(instance[key]) && key !== 'createdAt' && key !== 'updatedAt') {
                     instance[key] = JSON.stringify(instance[key]);
                 }
             }
@@ -175,16 +155,15 @@ const ${name} = sequelize.define('${name}', {
                     }
                 });
             }
-        },
-    },
+        }
+    }
 });
 
 ${name}.belongsTo(Device, { foreignKey: 'device_id' });
 ${name}.belongsTo(Model, { foreignKey: 'model_id' });
 ${name}.belongsTo(User, { foreignKey: 'user_id' });
 
-export default ${name};
-`;
+export default ${name};`;
 };
 
 const createDataModel = async (name, fields) => {
@@ -195,44 +174,51 @@ const createDataModel = async (name, fields) => {
                 type: 'Number', 
                 required: true, 
                 primaryKey: true, 
-                autoIncrement: true 
+                autoIncrement: true,
+                excludeFromPayload: true // Marcar para excluir del payload
             },
             { 
                 name: 'device_id', 
                 type: 'Number', 
                 required: true, 
                 ref: 'devices', 
-                refColumn: 'device_id' 
+                refColumn: 'device_id',
+                excludeFromPayload: false // No excluir ya que viene del cliente
             },
             { 
                 name: 'model_id', 
                 type: 'Number', 
                 required: true, 
                 ref: 'models', 
-                refColumn: 'model_id' 
+                refColumn: 'model_id',
+                excludeFromPayload: false
             },
             { 
                 name: 'user_id', 
                 type: 'Number', 
                 required: true, 
                 ref: 'users', 
-                refColumn: 'user_id' 
+                refColumn: 'user_id',
+                excludeFromPayload: false
             }
         ];
 
-        // Combinar los campos personalizados con los campos base
-        const allFields = [...fields, ...baseFields];
+        // Combinar campos base con campos personalizados
+        const allFields = [...baseFields, ...fields];
 
-        // Generación dinámica del modelo
+        // Generar el código del modelo
         const jsModel = genJSModel(name, allFields);
 
-        // Definir el modelo con Sequelize
+        // Crear el modelo en Sequelize
         const modelFields = allFields.reduce((acc, field) => {
             let fieldType;
 
             switch (field.type) {
                 case 'String':
                     fieldType = DataTypes.STRING;
+                    break;
+                case 'Integer':
+                    fieldType = DataTypes.INTEGER;
                     break;
                 case 'Number':
                     fieldType = DataTypes.INTEGER;
@@ -262,8 +248,10 @@ const createDataModel = async (name, fields) => {
                     fieldType = DataTypes.TEXT;
             }
 
-            acc[field.name] = {
+            // Configuración base del campo
+            const fieldConfig = {
                 type: fieldType,
+<<<<<<< HEAD
                 ...(field.name === `${name.toLowerCase()}_id` ? {
                     primaryKey: true,
                     autoIncrement: true,
@@ -284,18 +272,81 @@ const createDataModel = async (name, fields) => {
                         ...(field.defaultValue !== undefined && field.defaultValue !== null ? { defaultValue: field.defaultValue } : {})
                     } : {})
                 })
+=======
+                allowNull: !field.required
+>>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
             };
 
+            // Agregar configuración de clave primaria y autoincrement si corresponde
+            if (field.primaryKey) {
+                fieldConfig.primaryKey = true;
+                if (field.autoIncrement) {
+                    fieldConfig.autoIncrement = true;
+                }
+            }
+
+            // Agregar referencias si existen
+            if (field.ref) {
+                fieldConfig.references = { 
+                    model: field.ref, 
+                    key: field.refColumn || `${field.ref}_id` 
+                };
+            }
+
+            // Agregar validaciones específicas por tipo
+            if (field.type === 'Number' || field.type === 'Integer') {
+                fieldConfig.validate = { isInt: true };
+            }
+
+            acc[field.name] = fieldConfig;
             return acc;
         }, {});
 
+        // Agregar campos de timestamp sin valores por defecto
+        modelFields.createdAt = {
+            type: DataTypes.DATE,
+            allowNull: false
+        };
+        modelFields.updatedAt = {
+            type: DataTypes.DATE,
+            allowNull: false
+        };
+
         const model = sequelize.define(name, modelFields, {
-            timestamps: true,
-            tableName: name
+            timestamps: false,
+            tableName: name,
+            hooks: {
+                beforeCreate: (instance) => {
+                    // Excluir cualquier campo que termine en _id del payload
+                    Object.keys(instance.dataValues).forEach(key => {
+                        if (key.endsWith('_id') && key !== 'device_id' && key !== 'model_id' && key !== 'user_id') {
+                            delete instance.dataValues[key];
+                        }
+                    });
+                    
+                    // Establecer timestamps manualmente
+                    const now = new Date();
+                    instance.setDataValue('createdAt', now);
+                    instance.setDataValue('updatedAt', now);
+                },
+                beforeUpdate: (instance) => {
+                    // Actualizar el timestamp de actualización
+                    instance.setDataValue('updatedAt', new Date());
+                },
+                beforeSave: (instance) => {
+                    // Convertir objetos a JSON string
+                    for (const key of Object.keys(instance.dataValues)) {
+                        if (typeof instance[key] === 'object' && !Array.isArray(instance[key]) && key !== 'createdAt' && key !== 'updatedAt') {
+                            instance[key] = JSON.stringify(instance[key]);
+                        }
+                    }
+                }
+            }
         });
 
-        await model.sync({ alter: true });
-        console.log(`Tabla ${name} creada exitosamente`);
+        // Forzar la sincronización de la tabla para asegurar que se cree correctamente
+        await model.sync({ force: true });
+        console.log(`Tabla ${name} creada exitosamente con autoIncrement y timestamps`);
 
         const dirPath = path.join(__dirname, '../models/data');
         const filePath = path.join(dirPath, `${name}.js`);
@@ -313,7 +364,11 @@ const createDataModel = async (name, fields) => {
 
         return true;
     } catch (error) {
+<<<<<<< HEAD
         console.error('Error al crear el modelo de datos:', error);
+=======
+        console.error('Error al crear la tabla:', error);
+>>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
         throw error;
     }
 };
@@ -586,7 +641,7 @@ const finalController = async (req, res) => {
             // Crear el archivo JSON
             await createJson(name, fields);
             
-            res.json({ 
+            return res.json({ 
                 message: 'Modelo y tabla creados exitosamente',
                 model: {
                     name: name,
@@ -597,15 +652,60 @@ const finalController = async (req, res) => {
             // Si hay un error después de crear el registro del modelo, intentar eliminarlo
             try {
                 await modelRecord.destroy();
+                return res.status(500).json({ message: `Error al crear el modelo: ${error.message}` });
             } catch (cleanupError) {
                 console.error('Error al limpiar el modelo después de un fallo:', cleanupError);
+                return res.status(500).json({ message: 'Error al crear el modelo y al limpiar los recursos' });
             }
-            throw error; // Re-lanzar el error original para el manejo en el catch externo
         }
     } catch (error) {
         console.error('Error al crear el modelo y la tabla:', error);
-        res.status(500).json({ message: `Error al crear el modelo y la tabla: ${error.message}` });
+        return res.status(500).json({ message: `Error al crear el modelo y la tabla: ${error.message}` });
     }
+};
+
+const generateModelCode = (name, fields) => {
+    const imports = `import { DataTypes } from 'sequelize';
+import { sequelize } from '../../db/database.js';
+
+`;
+
+    const modelDefinition = `const ${name} = sequelize.define('${name}', {
+    ${fields.map(field => {
+        let fieldDefinition = `${field.name}: {
+        type: DataTypes.${field.type === 'Number' ? 'INTEGER' : field.type.toUpperCase()},
+        allowNull: ${!field.required}`;
+
+        if (field.primaryKey) {
+            fieldDefinition += `,
+        primaryKey: true`;
+        }
+
+        if (field.autoIncrement) {
+            fieldDefinition += `,
+        autoIncrement: true`;
+        }
+
+        if (field.ref) {
+            fieldDefinition += `,
+        references: {
+            model: '${field.ref}',
+            key: '${field.refColumn || `${field.ref}_id`}'
+        }`;
+        }
+
+        fieldDefinition += `
+    }`;
+        return fieldDefinition;
+    }).join(',\n    ')}
+}, {
+    tableName: '${name}',
+    timestamps: true
+});
+
+export default ${name};`;
+
+    return imports + modelDefinition;
 };
 
 export default { finalController };

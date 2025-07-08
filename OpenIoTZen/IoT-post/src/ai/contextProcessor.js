@@ -1,43 +1,31 @@
 /**
  * Sistema de procesamiento de contexto para optimizar las interacciones con IA
- * Este módulo extrae información relevante de las solicitudes del usuario
- * y prepara el contexto para generar prompts más efectivos
+ * Este módulo se enfoca en la creación y optimización de modelos IoT
  */
 
 /**
- * Extrae información relevante del contexto proporcionado
- * @param {Object} requestContext - El contexto completo de la solicitud
+ * Extrae información relevante del modelo actual
+ * @param {Object} requestContext - El contexto de la solicitud
  * @param {string} requestContext.prompt - El prompt del usuario
- * @param {Object} requestContext.currentModel - El modelo actual (si existe)
- * @param {Object} requestContext.userData - Datos del usuario (si están disponibles)
+ * @param {Object} requestContext.currentModel - El modelo actual
  * @returns {Object} Contexto procesado con información relevante
  */
 const extractRelevantContext = (requestContext) => {
+<<<<<<< HEAD
   const { prompt, currentModel, userData } = requestContext;
+=======
+  const { prompt, currentModel } = requestContext;
+>>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
   const relevantContext = {
     userPrompt: prompt,
-    modelContext: null,
-    userContext: null,
-    detectedIntent: detectIntent(prompt),
-    detectedEntities: extractEntities(prompt),
-    complexity: assessComplexity(prompt)
+    modelContext: null
   };
 
   // Procesar el modelo actual si existe
   if (currentModel && Object.keys(currentModel).length > 0) {
     relevantContext.modelContext = {
       name: currentModel.name,
-      fieldCount: currentModel.fields?.length || 0,
-      fieldTypes: extractFieldTypes(currentModel),
-      complexity: assessModelComplexity(currentModel)
-    };
-  }
-
-  // Extraer información relevante del usuario si está disponible
-  if (userData) {
-    relevantContext.userContext = {
-      expertise: userData.expertise || 'intermediate',
-      preferences: userData.preferences || {}
+      fields: currentModel.fields || []
     };
   }
 
@@ -45,6 +33,7 @@ const extractRelevantContext = (requestContext) => {
 };
 
 /**
+<<<<<<< HEAD
  * Detecta la intención principal del prompt del usuario
  * @param {string} prompt - El prompt del usuario
  * @returns {string} La intención detectada
@@ -240,20 +229,24 @@ const assessModelComplexity = (model) => {
 
 /**
  * Optimiza el prompt para la IA basado en el contexto procesado
+=======
+ * Optimiza el prompt para la IA basado en el modelo actual
+>>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
  * @param {Object} processedContext - El contexto procesado
  * @param {string} templatePrompt - La plantilla de prompt seleccionada
  * @returns {string} Prompt optimizado para la IA
  */
 const optimizePrompt = (processedContext, templatePrompt) => {
-  const { userPrompt, modelContext, detectedIntent, detectedEntities, complexity } = processedContext;
+  const { userPrompt, modelContext } = processedContext;
   
-  // Construir un prompt optimizado basado en el contexto
+  // Construir un prompt optimizado basado en el modelo actual
   let optimizedPrompt = templatePrompt;
   
   // Añadir información sobre el modelo actual si existe
   if (modelContext) {
-    optimizedPrompt += "\n\nContexto del modelo actual:";
+    optimizedPrompt += "\n\nModelo actual:";
     optimizedPrompt += `\n- Nombre: ${modelContext.name || 'Sin nombre'}`;
+<<<<<<< HEAD
     optimizedPrompt += `\n- Número de campos: ${modelContext.fieldCount || 0}`;
     
     if (Object.keys(modelContext.fieldTypes).length > 0) {
@@ -290,6 +283,9 @@ const optimizePrompt = (processedContext, templatePrompt) => {
     optimizedPrompt += '\nProporciona una respuesta sencilla y directa.';
   } else if (complexity === 'complex') {
     optimizedPrompt += '\nProporciona una respuesta detallada y completa.';
+=======
+    optimizedPrompt += `\n- Campos: ${JSON.stringify(modelContext.fields)}`;
+>>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
   }
   
   // Añadir el prompt original del usuario
@@ -300,8 +296,5 @@ const optimizePrompt = (processedContext, templatePrompt) => {
 
 export {
   extractRelevantContext,
-  detectIntent,
-  extractEntities,
-  assessComplexity,
   optimizePrompt
 };
