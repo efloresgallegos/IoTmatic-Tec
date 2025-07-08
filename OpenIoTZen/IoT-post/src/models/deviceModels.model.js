@@ -38,29 +38,44 @@ const DeviceModel = sequelize.define("device_models", {
     ]
 });
 
-// Definir las relaciones
+// Definir las relaciones con aliases únicos
 DeviceModel.belongsTo(Device, { 
     foreignKey: 'device_id',
+    as: 'device',
     onDelete: 'CASCADE'
 });
 
 DeviceModel.belongsTo(Model, { 
     foreignKey: 'model_id',
+    as: 'model',
     onDelete: 'CASCADE'
 });
 
 Device.hasMany(DeviceModel, { 
     foreignKey: 'device_id',
+    as: 'deviceModels',
     onDelete: 'CASCADE'
 });
 
 Model.hasMany(DeviceModel, { 
     foreignKey: 'model_id',
+    as: 'modelDevices',
     onDelete: 'CASCADE'
 });
 
 // Relación many-to-many a través de deviceModels
-Device.belongsToMany(Model, { through: DeviceModel, foreignKey: 'device_id' });
-Model.belongsToMany(Device, { through: DeviceModel, foreignKey: 'model_id' });
+Device.belongsToMany(Model, { 
+    through: DeviceModel, 
+    foreignKey: 'device_id',
+    otherKey: 'model_id',
+    as: 'associatedModels'
+});
+
+Model.belongsToMany(Device, { 
+    through: DeviceModel, 
+    foreignKey: 'model_id',
+    otherKey: 'device_id',
+    as: 'associatedDevices'
+});
 
 export default DeviceModel;

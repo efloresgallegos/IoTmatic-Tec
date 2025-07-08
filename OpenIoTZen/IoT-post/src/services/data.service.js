@@ -5,7 +5,7 @@ import { jsons } from '../jsons/index.js';
 import DeviceModel from '../models/devices.model.js';
 import Filter from '../services/filters.service.js';
 import { Op } from 'sequelize';
-import { sequelize } from '../config/database.js';
+import { sequelize } from '../db/database.js';
 
 let loadModels;
 

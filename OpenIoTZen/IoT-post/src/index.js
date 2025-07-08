@@ -6,6 +6,9 @@ import db from './db/db.js';
 import { WebSocketServer } from 'ws';  // Importar ws para WebSockets
 import { setupWebSocketServer } from './WebSockets/webSocket.server.js'; // Asegúrate de tener esta función para manejar los WebSockets
 
+// Importar el administrador de protocolos IoT
+import protocolManager from './protocols/base/ProtocolManager.js';
+
 import usersRoutes from './routes/users.routes.js';
 import devicesRoutes from './routes/devices.routes.js';
 import modelsRoutes from './routes/models.routes.js';
@@ -23,6 +26,7 @@ import aiRoutes from './routes/ai.routes.js';
 import dataRoutes from './routes/data.routes.js';
 import connectionsRoutes from './routes/connections.routes.js';
 import websocketCodeRoutes from './routes/websocketCode.routes.js';
+import protocolsRoutes from './routes/protocols.routes.js'; // Nueva ruta para protocolos
 
 const app = express();
 
@@ -53,7 +57,8 @@ const routes = [
   { path: '/ai', route: aiRoutes},
   { path: '/data', route: dataRoutes},
   { path: '/connections', route: connectionsRoutes},
-  { path: '/websocket', route: websocketCodeRoutes}
+  { path: '/websocket', route: websocketCodeRoutes},
+  { path: '/protocols', route: protocolsRoutes} // Nueva ruta para protocolos
 ];
 
 routes.forEach((route) => {
@@ -78,6 +83,13 @@ const server = app.listen(process.env.PORT || 3000, async () => {
     await db.createDatabaseAndTables();
     await sequelize.authenticate();
     console.log('Conexión a la base de datos establecida correctamente.');
+    
+    // Inicializar sistema de protocolos IoT
+    console.log('Inicializando sistema de protocolos IoT...');
+    await protocolManager.initialize();
+    await protocolManager.startAllProtocols();
+    console.log('Sistema de protocolos IoT iniciado correctamente');
+    
   } catch (error) {
     console.error('Error al inicializar la base de datos:', error);
     process.exit(1);
@@ -100,15 +112,47 @@ const wss = new WebSocketServer({
 // Configurar el servidor WebSocket con manejo de suscripciones y autenticación
 setupWebSocketServer(wss);
 
-// El simulador de dispositivos ha sido eliminado
+// Configurar integración entre WebSocket y el sistema de protocolos
+const webSocketProtocol = protocolManager.getProtocol('websocket');
+if (webSocketProtocol) {
+  // Configurar eventos del sistema WebSocket existente para que se integren con el framework de protocolos
+  console.log('Integrando WebSocket con el framework de protocolos...');
+}
 
 // Manejo de excepciones no capturadas
 process.on('uncaughtException', (err) => {
   console.error('Excepción no capturada:', err);
-  process.exit(1);
+  console.log('Cerrando protocolos IoT...');
+  protocolManager.stopAllProtocols().finally(() => {
+    process.exit(1);
+  });
 });
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Promesa no manejada:', promise, 'razón:', reason);
-  process.exit(1);
+  console.log('Cerrando protocolos IoT...');
+  protocolManager.stopAllProtocols().finally(() => {
+    process.exit(1);
+  });
+});
+
+// Manejo de señales de cierre
+process.on('SIGTERM', () => {
+  console.log('Recibida señal SIGTERM, cerrando servidor...');
+  protocolManager.stopAllProtocols().then(() => {
+    server.close(() => {
+      console.log('Servidor cerrado correctamente');
+      process.exit(0);
+    });
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('Recibida señal SIGINT, cerrando servidor...');
+  protocolManager.stopAllProtocols().then(() => {
+    server.close(() => {
+      console.log('Servidor cerrado correctamente');
+      process.exit(0);
+    });
+  });
 });
