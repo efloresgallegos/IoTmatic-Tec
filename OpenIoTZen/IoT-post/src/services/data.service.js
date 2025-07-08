@@ -1,20 +1,31 @@
 import { models } from '../models/data/index.js';
 import modelsModel from '../models/models.model.js';
 import { emitNewData, emitNewAlert } from '../WebSockets/webSocket.server.js';
-import { emitGraphDataUpdate } from '../WebSockets/graph.socket.js';
 import { jsons } from '../jsons/index.js';
 import DeviceModel from '../models/devices.model.js';
 import Filter from '../services/filters.service.js';
 import { Op } from 'sequelize';
+import { sequelize } from '../config/database.js';
 
 let loadModels;
 
-(async () => {
+// Función para recargar los modelos
+const reloadModels = async () => {
     try {
         loadModels = await models;
-        console.log('Models loaded:', loadModels);
+        console.log('Models reloaded:', Object.keys(loadModels));
     } catch (error) {
-        console.error('Error loading models:', error.message);
+        console.error('Error reloading models:', error.message);
+        throw error;
+    }
+};
+
+// Cargar modelos inicialmente
+(async () => {
+    try {
+        await reloadModels();
+    } catch (error) {
+        console.error('Error in initial model loading:', error.message);
     }
 })();
 
@@ -29,6 +40,9 @@ const createData = async (data) => {
 
         // Obtener el nombre del modelo
         const modelName = await getModelName(model_id);
+        console.log('Modelos disponibles:', Object.keys(loadModels));
+        console.log('Buscando modelo:', modelName);
+        
         if (!modelName) {
             throw new Error('Model not found');
         }
@@ -63,9 +77,6 @@ const createData = async (data) => {
         // Crear nuevo dato
         const newData = await dataModel.create(data); // Use the model to create data
         emitNewData({ device_id, data: newData });
-        
-        // Emitir actualización para gráficos en tiempo real
-        emitGraphDataUpdate({ device_id, model_id, newData });
 
         return newData;
     } catch (error) {
@@ -131,7 +142,7 @@ const getDatabyDevice = async (device_id) => {
     try {
         // Verificar que los modelos estén cargados
         if (!loadModels) {
-            throw new Error('Models are not yet loaded');
+            await reloadModels();
         }
 
         // Verificar que el dispositivo exista
@@ -140,53 +151,41 @@ const getDatabyDevice = async (device_id) => {
             throw new Error('Device not found');
         }
 
-        let fullData = [];
-        // Iterar sobre los modelos cargados correctamente
-        for (const modelName in loadModels) {
-            try {
-                const dataModel = loadModels[modelName]?.default; // Acceder al export default
-                if (dataModel && typeof dataModel.findAll === 'function') {
-                    // Verificar que el modelo tenga rawAttributes antes de intentar acceder
-                    if (!dataModel.rawAttributes) {
-                        console.warn(`El modelo ${modelName} no tiene rawAttributes definidos`);
-                        continue;
-                    }
-                    
-                    // Obtener solo los atributos definidos en el modelo para evitar errores de columnas inexistentes
-                    const attributes = Object.keys(dataModel.rawAttributes);
-                    
-                    // Verificar si el modelo tiene el campo device_id antes de hacer la consulta
-                    if (!attributes.includes('device_id')) {
-                        console.warn(`El modelo ${modelName} no tiene el campo device_id, omitiendo`);
-                        continue;
-                    }
-                    
-                    try {
-                        const data = await dataModel.findAll({ 
-                            attributes: attributes,
-                            where: { device_id } 
-                        });
-                        
-                        if (data && data.length > 0) {
-                            fullData = fullData.concat(data);
-                        }
-                    } catch (queryError) {
-                        console.error(`Error en la consulta al modelo ${modelName}:`, queryError.message);
-                        // Continuar con el siguiente modelo en caso de error en la consulta
-                    }
-                }
-            } catch (modelError) {
-                console.error(`Error al procesar el modelo ${modelName}:`, modelError.message);
-                // Continuar con el siguiente modelo en caso de error
-            }
+        // Obtener el modelo asociado al dispositivo a través de la tabla de unión
+        const deviceModelRelation = await sequelize.models.deviceModels.findOne({
+            where: { device_id },
+            include: [{
+                model: sequelize.models.models,
+                attributes: ['name']
+            }]
+        });
+
+        if (!deviceModelRelation || !deviceModelRelation.model) {
+            throw new Error('Device has no associated model');
         }
 
-        // Si no se encontraron datos, devolver un array vacío en lugar de lanzar un error
-        // Esto evita el error 500 y permite que el frontend maneje el caso de no datos
-        return fullData;
+        const modelName = deviceModelRelation.model.name;
+        const dataModel = loadModels[modelName]?.default;
+
+        if (!dataModel) {
+            throw new Error(`Model "${modelName}" not found in loaded models`);
+        }
+
+        // Obtener los atributos definidos en el modelo
+        const attributes = Object.keys(dataModel.rawAttributes);
+        
+        // Realizar la consulta con límite y ordenamiento
+        const data = await dataModel.findAll({ 
+            attributes: attributes,
+            where: { device_id },
+            order: [['createdAt', 'DESC']],
+            limit: 100 // Limitar a los últimos 100 registros
+        });
+
+        return data;
     } catch (error) {
         console.error('Error en getDatabyDevice:', error);
-        throw new Error(error.message);
+        throw error;
     }
 };
 
@@ -352,13 +351,28 @@ const getLatestData = async (model_id, device_id) => {
     }
 };
 
-
 const getModelName = async (model_id) => {
     const model = await modelsModel.findByPk(Number(model_id));
     if (!model) {
         return null;
     }
-    return model.name;
+    // Buscar el modelo de forma case-insensitive
+    const modelName = model.name;
+    const availableModels = Object.keys(loadModels);
+    const foundModel = availableModels.find(m => m.toLowerCase() === modelName.toLowerCase());
+    return foundModel;
 };
 
-export default { createData, getDatabyModelandDevice, getDatabyModel, getDatabyDevice, getDatabyDateRange, getGraphableData, getJsonForPost, getBooleanFields, getLatestData };
+export default{
+    createData,
+    getDatabyModelandDevice,
+    getDatabyModel,
+    getDatabyDevice,
+    getDatabyDateRange,
+    getGraphableData,
+    getBooleanFields,
+    getJsonForPost,
+    getLatestData,
+    getModelName,
+    reloadModels
+};

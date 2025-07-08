@@ -204,7 +204,7 @@ export const useDevicesStore = defineStore('devices', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await apiService.get(`/data/getByDevice?device=${deviceId}`)
+        const response = await apiService.get(`/data/getByDevice?device_id=${deviceId}`)
         return response.data
       } catch (error) {
         console.error(`Error al obtener datos del dispositivo ${deviceId}:`, error)

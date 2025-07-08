@@ -31,11 +31,22 @@ const getDatabyModel = async (req, res) => {
 
 const getDatabyDevice = async (req, res) => {
     try {
-        const { device } = req.query;
-        const data = await dataService.getDatabyDevice(device);
+        const { device_id } = req.query;
+        
+        if (!device_id) {
+            return res.status(400).json({ message: "device_id es requerido" });
+        }
+
+        const data = await dataService.getDatabyDevice(device_id);
+        
+        if (!data || data.length === 0) {
+            return res.status(404).json({ message: "No se encontraron datos para este dispositivo" });
+        }
+        
         res.status(200).json(data);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error('Error en getDatabyDevice:', error);
+        res.status(500).json({ message: error.message || "Error interno del servidor" });
     }
 };
 
@@ -158,8 +169,7 @@ const getWebSocketCode = async (req, res) => {
     }
 };
 
-// Función auxiliar para generar código Python
-   const generatePythonWebSocketCode = (model_id, device_id, user_id, jsonFields, token) => {
+const generatePythonWebSocketCode = (model_id, device_id, user_id, jsonFields, token) => {
     // Crear plantillas para los campos JSON con valores genéricos
     const fieldTemplates = jsonFields.map(field => {
         return `        "${field}": "x",  # Reemplazar 'x' con el valor deseado`;
@@ -187,11 +197,7 @@ import random
 import threading
 import logging
 import sys
-import re
 import ssl
-import uuid
-import platform
-import subprocess
 from datetime import datetime
 
 # Configuración de logging
@@ -227,102 +233,30 @@ CONFIG = {
 data_thread = None
 running = False
 ws = None
-mac_address = "desconocida"
-
-# Función para obtener la dirección MAC del dispositivo
-def get_mac_address():
-    """
-    Intenta obtener la dirección MAC del dispositivo utilizando diferentes métodos
-    según el sistema operativo.
-    
-    Returns:
-        str: La dirección MAC del dispositivo o 'desconocida' si no se puede obtener
-    """
-    try:
-        # Método 1: Usando uuid (funciona en muchos sistemas)
-        mac = ':'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff) for elements in range(0, 48, 8)][::-1])
-        if mac and mac != '00:00:00:00:00:00':
-            return mac
-            
-        # Método 2: Usando comandos del sistema según la plataforma
-        system = platform.system().lower()
-        
-        if system == 'linux':
-            # En Linux, intentar con ip o ifconfig
-            try:
-                output = subprocess.check_output('ip link show', shell=True).decode('utf-8')
-                for line in output.split('\n'):
-                    if 'link/ether' in line:
-                        mac = line.split('link/ether')[1].split()[0].strip()
-                        if mac and mac != '00:00:00:00:00:00':
-                            return mac
-            except:
-                try:
-                    output = subprocess.check_output('ifconfig', shell=True).decode('utf-8')
-                    for line in output.split('\n'):
-                        if 'ether' in line:
-                            mac = line.split('ether')[1].split()[0].strip()
-                            if mac and mac != '00:00:00:00:00:00':
-                                return mac
-                except:
-                    pass
-                    
-        elif system == 'darwin':  # macOS
-            try:
-                output = subprocess.check_output('ifconfig en0', shell=True).decode('utf-8')
-                for line in output.split('\n'):
-                    if 'ether' in line:
-                        mac = line.split('ether')[1].strip()
-                        if mac and mac != '00:00:00:00:00:00':
-                            return mac
-            except:
-                pass
-                
-        elif system == 'windows':
-            try:
-                output = subprocess.check_output('getmac /v /fo csv /nh', shell=True).decode('utf-8')
-                for line in output.split('\n'):
-                    if ',' in line:
-                        parts = line.split(',')
-                        if len(parts) >= 2:
-                            mac = parts[1].strip('"')
-                            if mac and mac != '00:00:00:00:00:00':
-                                return mac
-            except:
-                pass
-    except Exception as e:
-        logger.error(f"Error al obtener dirección MAC: {e}")
-    
-    # Si todos los métodos fallan, devolver valor por defecto
-    return "desconocida"
-
-
 
 # Estructura de datos basada en el modelo seleccionado
 def generate_data():
     """
     Genera un conjunto de datos completo basado en el modelo definido.
-    Incluye timestamp para seguimiento temporal de los datos, dirección MAC y versión de firmware.
+    Incluye timestamp para seguimiento temporal de los datos.
     """
     # Obtener timestamp actual
     timestamp = datetime.now().isoformat()
     
-    # Obtener dirección MAC si aún no se ha obtenido
-    global mac_address
-    if mac_address == "desconocida":
-        mac_address = get_mac_address()
-        logger.info(f"Dirección MAC obtenida: {mac_address}")
-    
-    # Crear estructura base
-    data = {
-        "model_id": ${model_id},
+    # Crear estructura base del payload
+    payload = {
         "device_id": "${device_id}",
+        "model_id": ${model_id},
         "user_id": "${user_id}",
         "timestamp": timestamp,
-        "mac_address": mac_address,
         "firmware_version": CONFIG["firmware_version"],
-${fieldTemplates},
-        "token": JWT_TOKEN
+${fieldTemplates}
+    }
+    
+    # Crear mensaje completo
+    data = {
+        "token": JWT_TOKEN,
+        "payload": payload
     }
     
     if CONFIG["debug"]:
@@ -384,21 +318,17 @@ def on_message(ws_connection, message):
         if 'event' in data:
             if data['event'] == 'data_received':
                 logger.info(f"Datos recibidos por el servidor: {data['data']}")
-                # Aquí puedes implementar lógica adicional según la respuesta
                 
             elif data['event'] == 'data_event':
                 logger.info(f"Nuevo evento de datos: {data['data']}")
-                # Procesar eventos especiales del servidor
                 process_server_event(data['data'])
                 
             elif data['event'] == 'error':
                 logger.error(f"Error del servidor: {data['data']}")
-                # Manejar errores específicos del servidor
                 handle_server_error(data['data'])
                 
             elif data['event'] == 'config':
                 logger.info(f"Configuración recibida del servidor: {data['data']}")
-                # Actualizar configuración si el servidor lo solicita
                 update_config(data['data'])
             
             else:
@@ -419,10 +349,8 @@ def process_server_event(event_data):
             command = event_data['command']
             logger.info(f"Comando recibido: {command}")
             
-            # Implementar lógica para diferentes comandos
             if command == 'restart':
                 logger.info("Reiniciando cliente por solicitud del servidor...")
-                # Lógica de reinicio
                 
             elif command == 'update_interval':
                 if 'value' in event_data:
@@ -430,7 +358,6 @@ def process_server_event(event_data):
                     logger.info(f"Intervalo actualizado a {CONFIG['interval']} segundos")
                     
             elif command == 'request_data':
-                # Enviar datos inmediatamente si el servidor lo solicita
                 send_data(generate_data())
                 
     except Exception as e:
@@ -448,15 +375,12 @@ def handle_server_error(error_data):
             
             if error_code == 'auth_failed':
                 logger.critical("Error de autenticación. Verificar token JWT.")
-                # Aquí podrías implementar lógica para obtener un nuevo token
                 
             elif error_code == 'invalid_data':
                 logger.error(f"Datos inválidos: {error_data.get('message', '')}")
-                # Corregir formato de datos en próximos envíos
                 
             elif error_code == 'rate_limit':
                 logger.warning("Límite de tasa alcanzado. Reduciendo frecuencia de envío.")
-                # Aumentar intervalo temporalmente
                 CONFIG["interval"] = CONFIG["interval"] * 2
                 
     except Exception as e:
@@ -496,8 +420,6 @@ def on_open(ws_connection):
     Inicia el envío periódico de datos.
     """
     logger.info("Conexión WebSocket establecida correctamente")
-    # La suscripción ahora es automática con el token
-    # Iniciar envío periódico de datos
     start_periodic_data(ws_connection)
 
 # Función para iniciar el envío periódico de datos
@@ -527,12 +449,6 @@ def send_data(data):
     """
     Envía datos manualmente al servidor.
     Útil para envíos puntuales o respuestas a solicitudes.
-    
-    Args:
-        data: Diccionario con los datos a enviar o None para generar datos nuevos
-        
-    Returns:
-        bool: True si el envío fue exitoso, False en caso contrario
     """
     global ws
     
@@ -541,26 +457,14 @@ def send_data(data):
         return False
     
     try:
-        # Si no se proporcionan datos, generarlos
         if data is None:
             data = generate_data()
-        # Si se proporcionan datos, asegurarse de que incluyan los campos requeridos
-        elif isinstance(data, dict):
-            data.update({
-                "model_id": ${model_id},
-                "device_id": "${device_id}",
-                "user_id": "${user_id}",
-                "token": JWT_TOKEN,
-                "timestamp": datetime.now().isoformat()
-            })
         
-        # Crear mensaje de datos
         data_message = {
             "event": "data",
             "data": data
         }
         
-        # Enviar datos
         ws.send(json.dumps(data_message))
         logger.info("Datos enviados manualmente al servidor")
         return True
@@ -577,27 +481,21 @@ def main():
     """
     global ws
     
-    # Mostrar información de inicio
     logger.info("=== Cliente WebSocket IoT - OpenIoTZen ===")
     logger.info(f"Modelo ID: {${model_id}}")
     logger.info(f"Dispositivo ID: {"${device_id}"}")
     logger.info(f"Intervalo de envío: {CONFIG['interval']} segundos")
     
-    # Seleccionar URL según configuración
     url = WS_SECURE_URL if CONFIG["use_ssl"] else WS_URL
-    
-    # Configurar opciones SSL si es necesario
     sslopt = {"cert_reqs": ssl.CERT_NONE} if CONFIG["use_ssl"] else None
     
     try:
-        # Crear conexión WebSocket con encabezados de autenticación
         headers = {"Authorization": f"Bearer {JWT_TOKEN}"}
         
         while True:
             try:
                 logger.info(f"Conectando a {url}...")
                 
-                # Crear objeto WebSocket
                 ws = websocket.WebSocketApp(
                     url,
                     header=headers,
@@ -607,7 +505,6 @@ def main():
                     on_close=on_close
                 )
                 
-                # Iniciar conexión
                 if CONFIG["use_ssl"]:
                     ws.run_forever(sslopt=sslopt)
                 else:
@@ -626,19 +523,16 @@ def main():
                 time.sleep(CONFIG["reconnect_delay"])
                 
     finally:
-        # Asegurarse de detener el envío periódico de datos al salir
         stop_periodic_data()
         logger.info("Cliente WebSocket finalizado")
 
 # Punto de entrada para ejecución directa
 if __name__ == "__main__":
-    # Habilitar modo debug si se solicita
     if "--debug" in sys.argv:
         CONFIG["debug"] = True
         logger.setLevel(logging.DEBUG)
         logger.debug("Modo debug activado")
         
-    # Iniciar cliente
     try:
         main()
     except KeyboardInterrupt:
@@ -648,8 +542,6 @@ if __name__ == "__main__":
         sys.exit(1)`;
 };
 
-
-// Función auxiliar para generar código JavaScript
 const generateJavaScriptWebSocketCode = (model_id, device_id, user_id, jsonFields, token) => {
     // Crear plantillas para los campos JSON con valores genéricos
     const fieldTemplates = jsonFields.map(field => {
@@ -658,7 +550,6 @@ const generateJavaScriptWebSocketCode = (model_id, device_id, user_id, jsonField
     
     return `
 import WebSocket from 'ws';
-import os from 'os'; // Para obtener interfaces de red
   
 // Configuración de la conexión WebSocket
 const wsUrl = "ws://localhost:3000/ws";
@@ -671,52 +562,27 @@ const JWT_TOKEN = "${token}";
 
 // Configuración del dispositivo
 const CONFIG = {
-  firmwareVersion: "1.0.0" // Personalizar con la versión actual del firmware
+  firmwareVersion: "1.0.0", // Personalizar con la versión actual del firmware
+  interval: 10000, // Intervalo de envío en milisegundos
+  debug: false // Modo debug para información adicional
 };
-
-// Función para obtener la dirección MAC del dispositivo
-function getMacAddress() {
-  try {
-    // Obtener interfaces de red
-    const interfaces = os.networkInterfaces();
-    
-    // Buscar la dirección MAC en las interfaces disponibles
-    for (const name of Object.keys(interfaces)) {
-      for (const iface of interfaces[name]) {
-        // Buscar interfaces IPv4 no internas
-        if (iface.family === 'IPv4' && !iface.internal) {
-          // En algunos sistemas, la dirección MAC está disponible como iface.mac
-          if (iface.mac && iface.mac !== '00:00:00:00:00:00') {
-            return iface.mac;
-          }
-        }
-      }
-    }
-    
-    // Si no se encuentra, intentar con otro método dependiendo del entorno
-    // Este código se ejecutará en Node.js, pero se proporciona como referencia
-    
-    return "desconocida"; // Valor por defecto si no se puede determinar
-  } catch (error) {
-    console.error("Error al obtener dirección MAC:", error);
-    return "desconocida";
-  }
-}
-
-// Obtener dirección MAC
-const macAddress = getMacAddress();
-console.log("Dirección MAC del dispositivo:", macAddress);
 
 // Estructura de datos basada en el modelo seleccionado
 function generateData() {
+  // Crear estructura base del payload
+  const payload = {
+    device_id: "${device_id}",
+    model_id: ${model_id},
+    user_id: "${user_id}",
+    timestamp: new Date().toISOString(),
+    firmware_version: CONFIG.firmwareVersion,
+${fieldTemplates}
+  };
+
+  // Crear mensaje completo
   return {
-    "model_id": ${model_id},
-    "device_id": "${device_id}",
-    "user_id": "${user_id}",
-    "mac_address": macAddress,
-    "firmware_version": CONFIG.firmwareVersion,
-${fieldTemplates},
-    "token": JWT_TOKEN
+    token: JWT_TOKEN,
+    payload: payload
   };
 }
 
@@ -733,8 +599,6 @@ function connectWebSocket() {
   // Evento de apertura de conexión
   ws.onopen = function() {
     console.log("Conexión WebSocket establecida");
-    // La suscripción ahora es automática con el token
-    
     // Iniciar envío periódico de datos
     startPeriodicDataSending();
   };
@@ -753,7 +617,6 @@ function connectWebSocket() {
           
         case 'data_event':
           console.log("Nuevo evento de datos:", message.data);
-          // Aquí puedes procesar los datos recibidos y actualizar la UI
           break;
           
         case 'error':
@@ -771,43 +634,33 @@ function connectWebSocket() {
   // Evento de error
   ws.onerror = function(error) {
     console.error("Error en la conexión WebSocket:", error);
-    // Detener el envío periódico de datos si hay un error
     stopPeriodicDataSending();
   };
   
   // Evento de cierre de conexión
   ws.onclose = function() {
     console.log("Conexión WebSocket cerrada. Intentando reconectar...");
-    // Detener el envío periódico de datos
     stopPeriodicDataSending();
-    
-    // Intentar reconectar después del intervalo definido
     setTimeout(connectWebSocket, reconnectInterval);
   };
 }
 
 // Función para iniciar el envío periódico de datos
 function startPeriodicDataSending() {
-  // Detener cualquier intervalo existente
   stopPeriodicDataSending();
   
-  // Iniciar nuevo intervalo para enviar datos cada 10 segundos
   dataInterval = setInterval(() => {
-    // Generar datos de ejemplo
     const data = generateData();
-    
-    // Crear mensaje de datos
     const dataMessage = {
       event: "data",
       data: data
     };
     
-    // Enviar datos
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify(dataMessage));
       console.log("Datos enviados al servidor");
     }
-  }, 10000); // Enviar datos cada 10 segundos
+  }, CONFIG.interval);
 }
 
 // Función para detener el envío periódico de datos
@@ -821,19 +674,15 @@ function stopPeriodicDataSending() {
 // Función para enviar datos al servidor
 function sendData(data) {
   if (ws && ws.readyState === WebSocket.OPEN) {
-    // Crear mensaje de datos
+    if (!data) {
+      data = generateData();
+    }
+    
     const dataMessage = {
       event: "data",
-      data: {
-        ...data,
-        model_id: ${model_id},
-        device_id: "${device_id}",
-        user_id: "${user_id}",
-        token: JWT_TOKEN
-      }
+      data: data
     };
     
-    // Enviar datos
     ws.send(JSON.stringify(dataMessage));
     console.log("Datos enviados al servidor");
     return true;
@@ -841,12 +690,10 @@ function sendData(data) {
   return false;
 }
 
-// Función para cerrar la conexión manualmente (llamar cuando se desmonte el componente)
+// Función para cerrar la conexión manualmente
 function closeWebSocket() {
-  // Detener el envío periódico de datos
   stopPeriodicDataSending();
   
-  // Cerrar conexión
   if (ws) {
     ws.close();
     ws = null;
@@ -867,9 +714,6 @@ const generateArduinoWebSocketCode = (model_id, device_id, user_id, jsonFields, 
 import json
 import time
 import random
-import uuid
-import platform
-import subprocess
 
 # Configuración de la conexión WebSocket
 ws_url = "ws://localhost:3000/ws"
@@ -878,60 +722,30 @@ ws_url = "ws://localhost:3000/ws"
 JWT_TOKEN = "${token}"
 
 # Configuración del dispositivo
-FIRMWARE_VERSION = "1.0.0"  # Personalizar con la versión actual del firmware
-
-# Función para obtener la dirección MAC del dispositivo
-def get_mac_address():
-    try:
-        # Método 1: Usando uuid (funciona en muchos sistemas)
-        mac = ':'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff) for elements in range(0, 48, 8)][::-1])
-        if mac and mac != '00:00:00:00:00:00':
-            return mac
-            
-        # Método 2: Usando comandos del sistema según la plataforma
-        system = platform.system().lower()
-        
-        if system == 'linux':
-            # En Linux, intentar con ip o ifconfig
-            try:
-                output = subprocess.check_output('ip link show', shell=True).decode('utf-8')
-                for line in output.split('\n'):
-                    if 'link/ether' in line:
-                        mac = line.split('link/ether')[1].split()[0].strip()
-                        if mac and mac != '00:00:00:00:00:00':
-                            return mac
-            except:
-                try:
-                    output = subprocess.check_output('ifconfig', shell=True).decode('utf-8')
-                    for line in output.split('\n'):
-                        if 'ether' in line:
-                            mac = line.split('ether')[1].split()[0].strip()
-                            if mac and mac != '00:00:00:00:00:00':
-                                return mac
-                except:
-                    pass
-        
-        # Si todos los métodos fallan, devolver valor por defecto
-        return "desconocida"
-    except Exception as e:
-        print(f"Error al obtener dirección MAC: {e}")
-        return "desconocida"
-
-# Obtener dirección MAC
-mac_address = get_mac_address()
-print(f"Dirección MAC del dispositivo: {mac_address}")
+CONFIG = {
+    "firmware_version": "1.0.0",  # Personalizar con la versión actual del firmware
+    "interval": 10,  # Intervalo de envío en segundos
+    "debug": False  # Modo debug para información adicional
+}
 
 # Estructura de datos basada en el modelo seleccionado
 def generate_data():
-    return {
-        "model_id": ${model_id},
+    # Crear estructura base del payload
+    payload = {
         "device_id": "${device_id}",
+        "model_id": ${model_id},
         "user_id": "${user_id}",
-        "mac_address": mac_address,
-        "firmware_version": FIRMWARE_VERSION,
-        ${fieldTemplates},
-        "token": JWT_TOKEN
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "firmware_version": CONFIG["firmware_version"],
+${fieldTemplates}
     }
+
+    # Crear mensaje completo
+    return {
+        "token": JWT_TOKEN,
+        "payload": payload
+    }
+
 # Función para enviar datos periódicamente
 def send_periodic_data(ws):
     while True:
@@ -947,11 +761,12 @@ def send_periodic_data(ws):
                 # Enviar datos
                 ws.send(json.dumps(data_message))
                 print("Datos enviados al servidor")
-            # Esperar 10 segundos antes de enviar más datos
-            time.sleep(10)
+            # Esperar intervalo configurado antes de enviar más datos
+            time.sleep(CONFIG["interval"])
         except Exception as e:
             print(f"Error al enviar datos periódicos: {e}")
             time.sleep(5)
+
 # Función para manejar mensajes recibidos
 def on_message(ws, message):
     try:
@@ -967,18 +782,21 @@ def on_message(ws, message):
                 print(f"Error del servidor: {data['data']}")
     except Exception as e:
         print(f"Error al procesar mensaje: {e}")
+
 # Función para manejar errores
 def on_error(ws, error):
     print(f"Error: {error}")
+
 # Función para manejar cierre de conexión
 def on_close(ws, close_status_code, close_msg):
     print("Conexión cerrada")
+
 # Función para manejar apertura de conexión
 def on_open(ws):
     print("Conexión establecida")
-    # La suscripción ahora es automática con el token
     # Iniciar envío periódico de datos
     send_periodic_data(ws)
+
 # Crear conexión WebSocket
 ws = websocket.WebSocketApp(ws_url,
                             header={"Authorization": f"Bearer {JWT_TOKEN}"},
@@ -986,6 +804,7 @@ ws = websocket.WebSocketApp(ws_url,
                             on_error=on_error,
                             on_close=on_close)
 ws.on_open = on_open
+
 # Iniciar conexión en un bucle para reconectar automáticamente
 try:
     while True:
@@ -1018,4 +837,16 @@ const getLatestData = async (req, res) => {
     }
 };
 
-export default { createData, getDatabyModelandDevice, getDatabyModel, getDatabyDevice, getDatabyDateRange, getGraphableData, getModelName, getJsonForPost, getLatestData, getBooleanFields, getWebSocketCode };
+export default {
+    create: createData,
+    getByModelAndDevice: getDatabyModelandDevice,
+    getByModel: getDatabyModel,
+    getByDevice: getDatabyDevice,
+    getLatest: getDatabyDateRange,
+    getByDateRange: getDatabyDateRange,
+    getGraphable: getGraphableData,
+    getJsonPost: getJsonForPost,
+    getBoolean: getBooleanFields,
+    getModelName: getModelName,
+    getWebSocketCode
+};

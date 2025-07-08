@@ -466,16 +466,7 @@
             </q-card>
 
             <!-- Componente de Interacción con IA mejorado -->
-            <q-card class="sisdai-card q-mt-md">
-              <q-card-section>
-                <div class="sisdai-section-title">
-                  <q-icon name="smart_toy" class="q-mr-sm" />
-                  Asistente inteligente
-                </div>
-                <p class="q-mb-md">Obtén sugerencias y mejoras para tu modelo usando inteligencia artificial.</p>
-                <ai-interaction :currentModel="model" @modelUpdated="handleAiModelUpdated" />
-              </q-card-section>
-            </q-card>
+            <EnhancedAIInteraction :currentModel="model" @modelUpdated="handleAiModelUpdated" />
 
             <!-- Tips para mejores prácticas -->
             <q-card class="sisdai-card q-mt-md">
@@ -543,17 +534,18 @@
 <script>
 import JSONEditor from "jsoneditor";
 import "jsoneditor/dist/jsoneditor.css";
-import AiInteractionWithStore from "../components/dinamic-components/AIInteractionWithStore.vue";
+import EnhancedAIInteraction from "../components/dinamic-components/EnhancedAIInteraction.vue";
 import { useQuasar } from "quasar";
 import { useModelStore } from "../stores/model-store";
 import { mapState, mapActions } from "pinia";
+import apiService from "../boot/ApiServices/api.service";
 
 export default {
-  components: { AiInteraction: AiInteractionWithStore },
+  components: { EnhancedAIInteraction },
 
   setup() {
     const quasar = useQuasar();
-    return { quasar }; // Renombrado a 'quasar' en lugar de '$q'
+    return { quasar };
   },
 
   data() {
@@ -938,22 +930,37 @@ export default {
       }
 
       try {
-        // Agregar la descripción al modelo antes de guardar
-        const modelToSave = {
-          ...this.currentModel,
-          description: this.modelDescription
+        // Preparar el modelo para enviar al generador
+        const modelToGenerate = {
+          name: this.modelName.toLowerCase().replace(/\s+/g, '_'),
+          fields: this.fields.map(field => ({
+            ...field,
+            name: field.name.trim(),
+            type: typeof field.type === 'object' ? field.type.value : field.type,
+            // Si es un objeto, procesar sus subcampos
+            ...(field.type === 'Object' && field.fields ? {
+              fields: field.fields.map(subField => ({
+                ...subField,
+                name: subField.name.trim(),
+                type: typeof subField.type === 'object' ? subField.type.value : subField.type
+              }))
+            } : {})
+          }))
         };
 
-        await this.saveModel(modelToSave);
+        // Enviar al endpoint del generador
+        const { data } = await apiService.post('generator', modelToGenerate);
 
-        this.$q.notify({
-          type: 'positive',
-          message: this.$t('views.modelCreator.successModelGenerated'),
-          position: 'top',
-          timeout: 3000
-        });
+        if (data) {
+          this.$q.notify({
+            type: 'positive',
+            message: this.$t('views.modelCreator.successModelGenerated'),
+            position: 'top',
+            timeout: 3000
+          });
 
-        this.resetForm();
+          this.resetForm();
+        }
       } catch (error) {
         console.error("Error generating model:", error);
         // Mostrar mensaje de error específico si está disponible
@@ -1493,5 +1500,70 @@ export default {
     margin: 0 0 0 18px;
     top: 0;
   }
+}
+
+/* Estilos para el asistente de IA */
+:deep(.ai-chat-bar) {
+  position: fixed !important;
+  bottom: 140px !important; /* Z-index extremadamente alto para asegurarnos que esté sobre todo */
+  right: 20px !important;
+  width: 350px !important;
+  height: 500px !important;
+  z-index: 999999 !important;
+  transform: translateX(calc(100% - 60px)) !important;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+:deep(.ai-chat-bar.open) {
+  transform: translateX(0) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important; /* Sombra más prominente para enfatizar */
+}
+
+:deep(.ai-toggle-button) {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 60px !important;
+  height: 60px !important;
+  background-color: var(--sisdae-primary-color, #1976d2) !important;
+  border-radius: 16px 0 0 16px !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  cursor: pointer !important;
+  z-index: 2 !important;
+}
+
+:deep(.ai-chat-content) {
+  position: relative !important;
+  height: 100% !important;
+  background-color: #ffffff !important;
+  margin-left: 60px !important;
+  border-radius: 0 16px 16px 0 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+}
+
+:deep(.ai-chat-body) {
+  height: calc(100% - 180px) !important;
+  padding: 16px !important;
+  overflow-y: auto !important;
+}
+
+:deep(.suggestions-container) {
+  max-height: 80px !important;
+  overflow-y: auto !important;
+  padding: 12px !important;
+  background-color: #f8f9fa !important;
+  border-top: 1px solid #e0e0e0 !important;
+}
+
+:deep(.input-container) {
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  background-color: #ffffff !important;
+  border-top: 1px solid #e0e0e0 !important;
+  padding: 12px !important;
 }
 </style>

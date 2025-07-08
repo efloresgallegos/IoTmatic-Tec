@@ -4,7 +4,10 @@ import { DataTypes } from 'sequelize';
 import { sequelize } from '../db/database.js'; // Ajusta la ruta a tu configuración de Sequelize
 import { fileURLToPath } from 'url'; // Importa fileURLToPath para obtener __dirname correctamente
 import Model from '../models/models.model.js'; // Importa el modelo de Model
+import { models, getJsFile } from '../models/data/index.js';
+import dataService from '../services/data.service.js';
 
+const reloadModels = dataService.reloadModels;
 // Obtener __dirname correctamente para ESM
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -54,7 +57,22 @@ const genJSModel = (name, fields) => {
         
         // Construir las propiedades básicas del campo
         let fieldDefinition = `${field.name}: { 
-            type: ${fieldType}${field.required ? ', allowNull: false' : ''}${field.ref ? `, references: { model: '${field.ref}', key: '${field.refColumn || `${field.ref}_id`}' }` : ''}`;
+            type: ${fieldType}`;
+
+        // Agregar propiedades especiales para el campo ID
+        if (field.name === `${name.toLowerCase()}_id`) {
+            fieldDefinition += `,
+            primaryKey: true,
+            autoIncrement: true`;
+        }
+
+        // Agregar otras propiedades
+        if (field.required) {
+            fieldDefinition += `, allowNull: false`;
+        }
+        if (field.ref) {
+            fieldDefinition += `, references: { model: '${field.ref}', key: '${field.refColumn || `${field.ref}_id`}' }`;
+        }
         
         // Agregar propiedades adicionales para campos de tipo Date
         if (field.type === 'Date') {
@@ -172,8 +190,7 @@ export default ${name};
 const createDataModel = async (name, fields) => {
     try {
         // Agregar campos base incluyendo el ID primario
-        const baseFields = [
-            { 
+        const baseFields = [            { 
                 name: `${name}_id`, 
                 type: 'Number', 
                 required: true, 
@@ -247,20 +264,26 @@ const createDataModel = async (name, fields) => {
 
             acc[field.name] = {
                 type: fieldType,
-                allowNull: !field.required,
-                ...(field.ref ? { references: { model: field.ref, key: field.refColumn || `${field.ref}_id` } } : {}),
-                ...(field.primaryKey ? { primaryKey: field.primaryKey } : {}),
-                ...(field.autoIncrement ? { autoIncrement: field.autoIncrement } : {}),
-                ...(field.type === 'Number' ? { validate: { isInt: true } } : {}),
-                // Agregar metadatos para campos de tipo Date si existen
-                ...(field.type === 'Date' && field.dateFormat ? { dateFormat: field.dateFormat } : {}),
-                ...(field.type === 'Date' && field.includeTime ? { includeTime: field.includeTime } : {}),
-                // Agregar validaciones para campos de tipo String o Text
-                ...(field.type === 'String' || field.type === 'Text' ? {
-                    ...(field.pattern ? { validate: { is: new RegExp(field.pattern) } } : {}),
-                    ...(field.minLength !== undefined && field.minLength !== null ? { validate: { len: [field.minLength, field.maxLength || Number.MAX_SAFE_INTEGER] } } : {}),
-                    ...(field.defaultValue !== undefined && field.defaultValue !== null ? { defaultValue: field.defaultValue } : {})
-                } : {})
+                ...(field.name === `${name.toLowerCase()}_id` ? {
+                    primaryKey: true,
+                    autoIncrement: true,
+                    allowNull: false
+                } : {
+                    allowNull: !field.required,
+                    ...(field.ref ? { references: { model: field.ref, key: field.refColumn || `${field.ref}_id` } } : {}),
+                    ...(field.primaryKey ? { primaryKey: field.primaryKey } : {}),
+                    ...(field.autoIncrement ? { autoIncrement: field.autoIncrement } : {}),
+                    ...(field.type === 'Number' ? { validate: { isInt: true } } : {}),
+                    // Agregar metadatos para campos de tipo Date si existen
+                    ...(field.type === 'Date' && field.dateFormat ? { dateFormat: field.dateFormat } : {}),
+                    ...(field.type === 'Date' && field.includeTime ? { includeTime: field.includeTime } : {}),
+                    // Agregar validaciones para campos de tipo String o Text
+                    ...(field.type === 'String' || field.type === 'Text' ? {
+                        ...(field.pattern ? { validate: { is: new RegExp(field.pattern) } } : {}),
+                        ...(field.minLength !== undefined && field.minLength !== null ? { validate: { len: [field.minLength, field.maxLength || Number.MAX_SAFE_INTEGER] } } : {}),
+                        ...(field.defaultValue !== undefined && field.defaultValue !== null ? { defaultValue: field.defaultValue } : {})
+                    } : {})
+                })
             };
 
             return acc;
@@ -283,8 +306,15 @@ const createDataModel = async (name, fields) => {
 
         fs.writeFileSync(filePath, jsModel, 'utf8');
         console.log(`Modelo ${name} generado exitosamente`);
+
+        // Recargar los modelos en el sistema
+        await reloadModels();
+        console.log(`Modelo ${name} recargado exitosamente`);
+
+        return true;
     } catch (error) {
-        console.error('Error al crear la tabla:', error);
+        console.error('Error al crear el modelo de datos:', error);
+        throw error;
     }
 };
 
@@ -467,12 +497,6 @@ const finalController = async (req, res) => {
                 type: fieldType,
                 required: field.required || false
             };
-            
-            // Agregar propiedades de referencia si existen
-            if (field.ref) {
-                normalizedField.ref = field.ref;
-                normalizedField.refColumn = field.refColumn || null;
-            }
             
             // Agregar propiedades específicas para campos de tipo Date
             if (fieldType === 'Date') {

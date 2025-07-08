@@ -8,7 +8,7 @@ const createDatabaseAndTables = async () => {
         host: dbHost,
         password: dbPassword,
         port: dbPort,
-        database: 'postgres', // Use a default database to create the target database
+        database: 'postgres'
     });
 
     try {
@@ -26,7 +26,7 @@ const createDatabaseAndTables = async () => {
         }
         await client.end();
 
-        // Connect to the target database
+        // Conectar a la base de datos creada
         const dbClient = new Client({
             user: dbUser,
             host: dbHost,
@@ -37,31 +37,33 @@ const createDatabaseAndTables = async () => {
 
         await dbClient.connect();
 
-        // Table creation
+        // Crear tablas en orden correcto
         await dbClient.query(`
             CREATE TABLE IF NOT EXISTS users (
                 user_id SERIAL PRIMARY KEY,
                 name VARCHAR(100) NOT NULL,
                 password VARCHAR(200) NOT NULL,
-                username VARCHAR(50) NOT NULL
+                username VARCHAR(50) NOT NULL UNIQUE,
+                "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             )
         `);
 
         await dbClient.query(`
             CREATE TABLE IF NOT EXISTS types (
-            type_id SERIAL PRIMARY KEY,
-            name VARCHAR(50) NOT NULL,
-            "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                type_id SERIAL PRIMARY KEY,
+                name VARCHAR(50) NOT NULL UNIQUE,
+                "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             )
         `);
 
         await dbClient.query(`
             CREATE TABLE IF NOT EXISTS models (
                 model_id SERIAL PRIMARY KEY,
-                name VARCHAR(100) NOT NULL,
-                "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                name VARCHAR(100) NOT NULL UNIQUE,
+                "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             )
         `);
 
@@ -69,23 +71,21 @@ const createDatabaseAndTables = async () => {
             CREATE TABLE IF NOT EXISTS devices (
                 device_id SERIAL PRIMARY KEY,
                 name VARCHAR(100) NOT NULL,
-                type_id INT,
+                type_id INTEGER REFERENCES types(type_id) ON DELETE SET NULL,
                 description VARCHAR(500) NOT NULL,
-                "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (type_id) REFERENCES types(type_id)
+                "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             )
         `);
 
         await dbClient.query(`
-            CREATE TABLE IF NOT EXISTS deviceModels (
-                deviceModels_id SERIAL PRIMARY KEY,
-                device_id INT,
-                model_id INT,
-                "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (device_id) REFERENCES devices(device_id),
-                FOREIGN KEY (model_id) REFERENCES models(model_id)
+            CREATE TABLE IF NOT EXISTS device_models (
+                device_model_id SERIAL PRIMARY KEY,
+                device_id INTEGER NOT NULL REFERENCES devices(device_id) ON DELETE CASCADE,
+                model_id INTEGER NOT NULL REFERENCES models(model_id) ON DELETE CASCADE,
+                "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(device_id, model_id)
             )
         `);
 
@@ -94,92 +94,85 @@ const createDatabaseAndTables = async () => {
                 filter_id SERIAL PRIMARY KEY,
                 conditions JSONB NOT NULL,
                 field VARCHAR(50) NOT NULL,
-                device_id INT,
-                model_id INT,
-                "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (device_id) REFERENCES devices(device_id),
-                FOREIGN KEY (model_id) REFERENCES models(model_id)
+                filter_type VARCHAR(20) NOT NULL DEFAULT 'numeric',
+                device_id INTEGER REFERENCES devices(device_id) ON DELETE CASCADE,
+                model_id INTEGER REFERENCES models(model_id) ON DELETE CASCADE,
+                "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT filter_type_check CHECK (filter_type IN ('numeric', 'boolean', 'string'))
             )
         `);
 
         await dbClient.query(`
             CREATE TABLE IF NOT EXISTS alerts (
                 alert_id SERIAL PRIMARY KEY,
-                device_id INT,
-                model_id INT,
+                device_id INTEGER REFERENCES devices(device_id) ON DELETE CASCADE,
+                model_id INTEGER REFERENCES models(model_id) ON DELETE CASCADE,
                 description VARCHAR(500) NOT NULL,
                 seen BOOLEAN DEFAULT FALSE,
                 resolved BOOLEAN DEFAULT FALSE,
-                "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (device_id) REFERENCES devices(device_id),
-                FOREIGN KEY (model_id) REFERENCES models(model_id)
+                "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             )
         `);
 
         await dbClient.query(`
-            CREATE TABLE IF NOT EXISTS userFilters (
-                userFilters_id SERIAL PRIMARY KEY,
-                filter_id INT,
-                user_id INT,
-                "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (filter_id) REFERENCES filters(filter_id),
-                FOREIGN KEY (user_id) REFERENCES users(user_id)
+            CREATE TABLE IF NOT EXISTS user_filters (
+                user_filter_id SERIAL PRIMARY KEY,
+                filter_id INTEGER NOT NULL REFERENCES filters(filter_id) ON DELETE CASCADE,
+                user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+                "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(filter_id, user_id)
             )
         `);
 
         await dbClient.query(`
-            CREATE TABLE IF NOT EXISTS userAlerts (
-                userAlerts_id SERIAL PRIMARY KEY,
-                user_id INT,
-                alert_id INT,
-                "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(user_id),
-                FOREIGN KEY (alert_id) REFERENCES alerts(alert_id)
+            CREATE TABLE IF NOT EXISTS user_alerts (
+                user_alert_id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+                alert_id INTEGER NOT NULL REFERENCES alerts(alert_id) ON DELETE CASCADE,
+                "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, alert_id)
             )
         `);
 
         await dbClient.query(`
-            CREATE TABLE IF NOT EXISTS userDevices (
-                userDevices_id SERIAL PRIMARY KEY,
-                user_id INT,
-                device_id INT,
-                "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(user_id),
-                FOREIGN KEY (device_id) REFERENCES devices(device_id)
+            CREATE TABLE IF NOT EXISTS user_devices (
+                user_device_id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+                device_id INTEGER NOT NULL REFERENCES devices(device_id) ON DELETE CASCADE,
+                "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, device_id)
             )
         `);
 
         await dbClient.query(`
-            CREATE TABLE IF NOT EXISTS userModels (
-                userModels_id SERIAL PRIMARY KEY,
-                model_id INT,
-                user_id INT,
-                FOREIGN KEY (model_id) REFERENCES models(model_id),
-                FOREIGN KEY (user_id) REFERENCES users(user_id)
+            CREATE TABLE IF NOT EXISTS user_models (
+                user_model_id SERIAL PRIMARY KEY,
+                model_id INTEGER NOT NULL REFERENCES models(model_id) ON DELETE CASCADE,
+                user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+                "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(model_id, user_id)
             )
         `);
 
-        console.log("Tables created successfully!");
+        console.log("¡Tablas creadas exitosamente!");
 
         // Crear usuario administrador por defecto
         try {
-            // Verificar si ya existe un usuario admin
             const adminExists = await dbClient.query(
                 `SELECT 1 FROM users WHERE username = 'admin'`
             );
 
             if (adminExists.rowCount === 0) {
-                // Importar bcrypt para encriptar la contraseña
                 const bcrypt = await import('bcrypt');
                 const salt = await bcrypt.default.genSalt(10);
                 const hashedPassword = await bcrypt.default.hash('admin123', salt);
 
-                // Crear usuario administrador
                 await dbClient.query(
                     `INSERT INTO users (name, password, username) VALUES ($1, $2, $3)`,
                     ['Administrador', hashedPassword, 'admin']
@@ -194,7 +187,7 @@ const createDatabaseAndTables = async () => {
 
         await dbClient.end();
     } catch (err) {
-        console.error("Error creating database and tables:", err.message);
+        console.error("Error al crear la base de datos y las tablas:", err.message);
     }
 };
 

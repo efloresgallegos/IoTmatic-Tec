@@ -22,6 +22,7 @@ import graphRoutes from './routes/graph.routes.js';
 import aiRoutes from './routes/ai.routes.js';
 import dataRoutes from './routes/data.routes.js';
 import connectionsRoutes from './routes/connections.routes.js';
+import websocketCodeRoutes from './routes/websocketCode.routes.js';
 
 const app = express();
 
@@ -51,7 +52,8 @@ const routes = [
   { path: '/graph', route: graphRoutes },
   { path: '/ai', route: aiRoutes},
   { path: '/data', route: dataRoutes},
-  { path: '/connections', route: connectionsRoutes}
+  { path: '/connections', route: connectionsRoutes},
+  { path: '/websocket', route: websocketCodeRoutes}
 ];
 
 routes.forEach((route) => {
@@ -75,8 +77,8 @@ const server = app.listen(process.env.PORT || 3000, async () => {
   try {
     await db.createDatabaseAndTables();
     await sequelize.authenticate();
+    console.log('Conexión a la base de datos establecida correctamente.');
   } catch (error) {
-    await sequelize.sync({ force: true, logging: false });
     console.error('Error al inicializar la base de datos:', error);
     process.exit(1);
   }

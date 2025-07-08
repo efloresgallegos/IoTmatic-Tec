@@ -13,7 +13,7 @@
  * @returns {Object} Contexto procesado con información relevante
  */
 const extractRelevantContext = (requestContext) => {
-  const { prompt, currentModel, userData, supportedFieldTypes } = requestContext;
+  const { prompt, currentModel, userData } = requestContext;
   const relevantContext = {
     userPrompt: prompt,
     modelContext: null,
@@ -187,11 +187,6 @@ const extractFieldTypes = (model) => {
     fields.forEach(field => {
       if (field.type) {
         fieldTypes[field.type] = (fieldTypes[field.type] || 0) + 1;
-        
-        // Identificar campos especiales como invernaderoId
-        if (field.name === 'invernaderoId' && field.type === 'String') {
-          fieldTypes['invernaderoId'] = (fieldTypes['invernaderoId'] || 0) + 1;
-        }
       }
       
       // Procesar campos anidados si es un objeto
@@ -260,14 +255,6 @@ const optimizePrompt = (processedContext, templatePrompt) => {
     optimizedPrompt += "\n\nContexto del modelo actual:";
     optimizedPrompt += `\n- Nombre: ${modelContext.name || 'Sin nombre'}`;
     optimizedPrompt += `\n- Número de campos: ${modelContext.fieldCount || 0}`;
-    
-    // Incluir información sobre campos especiales como invernaderoId
-    if (context.supportedFieldTypes && Object.keys(context.supportedFieldTypes).length > 0) {
-      optimizedPrompt += "\n\nTipos de campos especiales soportados:";
-      for (const [fieldName, fieldConfig] of Object.entries(context.supportedFieldTypes)) {
-        optimizedPrompt += `\n- ${fieldName}: ${JSON.stringify(fieldConfig)}`;
-      }
-    }
     
     if (Object.keys(modelContext.fieldTypes).length > 0) {
       optimizedPrompt += `\n- Tipos de campos: ${JSON.stringify(modelContext.fieldTypes)}`;

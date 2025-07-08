@@ -9,21 +9,28 @@ import enhancedAI from '../ai/enhancedAI.js';
 const router = Router();
 
 /**
- * @route POST /api/ai/sendToAI
- * @desc Envía un prompt a la IA y devuelve la respuesta procesada
+ * @route POST /deepseek
+ * @desc Envía un prompt a DeepSeek y devuelve la respuesta procesada
  * @access Public
  */
-router.post('/sendToAI', enhancedAI.sendToAI);
+router.post('/deepseek', enhancedAI.sendToDeepSeek);
 
 /**
- * @route POST /api/ai/feedback
+ * @route POST /gpt
+ * @desc Envía un prompt a GPT y devuelve la respuesta procesada
+ * @access Public
+ */
+router.post('/gpt', enhancedAI.sendToGPT);
+
+/**
+ * @route POST /feedback
  * @desc Recibe retroalimentación sobre una respuesta de IA
  * @access Public
  */
 router.post('/feedback', enhancedAI.receiveFeedback);
 
 /**
- * @route GET /api/ai/templates
+ * @route GET /templates
  * @desc Obtiene las plantillas disponibles para prompts
  * @access Public
  */

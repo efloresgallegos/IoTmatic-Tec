@@ -1,30 +1,34 @@
 <template>
   <div class="ai-chat-bar" :class="{ open: isVisible }">
     <!-- Botón de activación -->
-    <div class="ai-toggle-button" @click="toggleVisibility" :aria-label="$t('AIInteraction.toggleChat')">
-      <img src="../../assets/AIIcon.png" alt="AI Icon" class="ai-icon" />
-    </div>
+    <button
+      class="ai-toggle-button"
+      :aria-labelledby="$t('AIInteraction.tools')"
+      aria-controls="menuai"
+      :aria-expanded="isVisible"
+      @click="toggleVisibility"
+      type="button"
+      :aria-label="$t('AIInteraction.openMenu')"
+    >
+      <div class="header-content">
+        <q-icon name="smart_toy" size="24px" color="white" />
+        <h3>{{ $t('AIInteraction.chatTitle') }}</h3>
+      </div>
+      <q-icon 
+        :name="isVisible ? 'close' : 'smart_toy'" 
+        size="24px" 
+        color="white"
+        class="close-button"
+      />
+    </button>
 
     <!-- Contenido del chat -->
-    <div v-if="isVisible" class="ai-chat-content">
-      <!-- Encabezado -->
-      <div class="ai-chat-header">
-        <h3>{{ $t('AIInteraction.chatTitle') }}</h3>
-        <button class="close-button" @click="toggleVisibility" :aria-label="$t('AIInteraction.closeChat')">&times;</button>
-      </div>
-
-      <!-- Selector de plantillas -->
-      <div class="template-selector">
-        <label for="template-select">{{ $t('AIInteraction.templateLabel') }}</label>
-        <select id="template-select" v-model="selectedTemplate" class="template-select">
-          <option value="general">{{ $t('AIInteraction.templates.general') }}</option>
-          <option value="modelCreation">{{ $t('AIInteraction.templates.modelCreation') }}</option>
-          <option value="dataAnalysis">{{ $t('AIInteraction.templates.dataAnalysis') }}</option>
-          <option value="deviceConfig">{{ $t('AIInteraction.templates.deviceConfig') }}</option>
-          <option value="troubleshooting">{{ $t('AIInteraction.templates.troubleshooting') }}</option>
-        </select>
-      </div>
-
+    <div 
+      v-if="isVisible" 
+      class="ai-chat-content"
+      id="menuai"
+      :aria-hidden="!isVisible"
+    >
       <!-- Cuerpo del chat -->
       <div class="ai-chat-body" ref="chatContainer">
         <transition-group name="fade" tag="div">
@@ -37,12 +41,26 @@
 
                 <!-- Botones de retroalimentación para mensajes de IA -->
                 <div v-if="!message.user && !message.feedbackGiven" class="feedback-buttons">
-                  <button @click="provideFeedback(message, true)" class="feedback-btn positive" :aria-label="$t('AIInteraction.feedbackHelpful')">
-                    <i class="fas fa-thumbs-up"></i>
-                  </button>
-                  <button @click="provideFeedback(message, false)" class="feedback-btn negative" :aria-label="$t('AIInteraction.feedbackUnhelpful')">
-                    <i class="fas fa-thumbs-down"></i>
-                  </button>
+                  <q-btn
+                    flat
+                    dense
+                    round
+                    icon="thumb_up"
+                    size="sm"
+                    color="positive"
+                    @click="provideFeedback(message, true)"
+                    :aria-label="$t('AIInteraction.feedbackHelpful')"
+                  />
+                  <q-btn
+                    flat
+                    dense
+                    round
+                    icon="thumb_down"
+                    size="sm"
+                    color="negative"
+                    @click="provideFeedback(message, false)"
+                    :aria-label="$t('AIInteraction.feedbackUnhelpful')"
+                  />
                 </div>
                 <div v-else-if="!message.user && message.feedbackGiven" class="feedback-thanks">
                   {{ $t('AIInteraction.feedbackThanks') }}
@@ -62,36 +80,42 @@
 
       <!-- Sugerencias rápidas -->
       <div v-if="suggestions.length > 0" class="suggestions-container">
-        <div
+        <q-chip
           v-for="(suggestion, index) in suggestions"
           :key="index"
+          clickable
+          @click="useSuggestion(suggestion)"
           class="suggestion-chip"
-          @click="useSuggestion(suggestion)">
+        >
           {{ suggestion }}
-        </div>
+        </q-chip>
       </div>
 
       <!-- Entrada de texto -->
       <div class="input-container">
-        <textarea
+        <q-input
           v-model="aiPrompt"
+          type="textarea"
           :placeholder="$t('AIInteraction.inputPlaceholder')"
           class="input"
-          rows="1"
+          autogrow
           ref="promptInput"
-          @input="autoResizeTextarea"
-          @keydown.enter.prevent="sendPromptToBackend"></textarea>
-
-        <q-btn
-          @click="sendPromptToBackend"
-          round
-          flat
-          color="primary"
-          :disable="!aiPrompt.trim() || isTyping"
-          class="send-btn"
-          :aria-label="$t('AIInteraction.sendButton')">
-          <q-icon name="send" />
-        </q-btn>
+          @keydown.enter.prevent="sendPromptToBackend"
+          outlined
+          dense
+        >
+          <template v-slot:after>
+            <q-btn
+              round
+              flat
+              icon="send"
+              color="primary"
+              :disable="!aiPrompt.trim() || isTyping"
+              @click="sendPromptToBackend"
+              :aria-label="$t('AIInteraction.sendButton')"
+            />
+          </template>
+        </q-input>
       </div>
     </div>
   </div>
@@ -119,7 +143,6 @@ export default {
       isVisible: false,
       messages: [],
       isTyping: false,
-      selectedTemplate: "general",
       suggestions: [],
       promptHistory: [],
       historyIndex: -1
@@ -136,13 +159,8 @@ export default {
       };
     }
   },
-  watch: {
-    selectedTemplate() {
-      this.updateSuggestions();
-    }
-  },
   mounted() {
-    // Inicializar sugerencias basadas en la plantilla seleccionada
+    // Inicializar sugerencias
     this.updateSuggestions();
 
     // Escuchar eventos de teclado para navegación del historial
@@ -179,13 +197,16 @@ export default {
         // Enviar el modelo actual junto con el prompt para contexto
         const response = await aiService.sendToAI({
           prompt: userMessage.text,
-          AI: "GPT",
           currentModel: this.currentModel,
-          template: this.selectedTemplate,
           userData: this.contextData.userData
         });
 
         this.isTyping = false;
+
+        // Verificar que la respuesta sea válida
+        if (!response || !response.data) {
+          throw new Error('Respuesta inválida del servidor');
+        }
 
         // Mostrar texto de respuesta
         const aiTextMessage = {
@@ -199,19 +220,31 @@ export default {
 
         this.messages.push(aiTextMessage);
 
-        // Actualizar el modelo en el store si la IA devuelve un JSON
-        if (response.data.Json) {
-          // Actualizar el modelo en el store
-          this.updateModelFromAI(response.data.Json);
+        // Actualizar el modelo en el store si la IA devuelve un modelo
+        if (response.data.model) {
+          try {
+            // Actualizar el modelo en el store
+            this.updateModelFromAI(response.data.model);
 
-          // Emitir evento para notificar al componente padre
-          this.$emit('modelUpdated', response.data.Json);
+            // Emitir evento para notificar al componente padre
+            this.$emit('modelUpdated', response.data.model);
+          } catch (jsonError) {
+            console.error("Error al procesar el modelo:", jsonError);
+            this.messages.push({
+              id: `error_${Date.now()}`,
+              text: "Error al procesar la estructura del modelo. Por favor, intenta de nuevo.",
+              user: false,
+              timestamp: moment().format("HH:mm"),
+              isError: true
+            });
+          }
         }
 
         this.scrollToBottom();
 
         // Actualizar sugerencias basadas en la respuesta
-        this.generateContextualSuggestions(response.data.text);
+        this.generateContextualSuggestions(response.data.text || response.data.error || "");
+
       } catch (error) {
         console.error("Error al enviar el mensaje:", error);
         this.isTyping = false;
@@ -219,7 +252,7 @@ export default {
         // Mostrar mensaje de error en el chat
         this.messages.push({
           id: `error_${Date.now()}`,
-          text: "Error al procesar la solicitud. Por favor, intenta de nuevo.",
+          text: error.message || this.$t('AIInteraction.errorMessage') || "Error al procesar la solicitud. Por favor, intenta de nuevo.",
           user: false,
           timestamp: moment().format("HH:mm"),
           isError: true
@@ -276,9 +309,8 @@ export default {
 
     async updateSuggestions() {
       try {
-        // Obtener sugerencias del servicio de IA basadas en la plantilla seleccionada
+        // Obtener sugerencias del servicio de IA
         const suggestions = await aiService.getSuggestions({
-          template: this.selectedTemplate
         });
 
         if (suggestions && suggestions.length > 0) {
@@ -290,42 +322,11 @@ export default {
       }
 
       // Sugerencias predeterminadas si falla el servicio
-      switch (this.selectedTemplate) {
-        case 'modelCreation':
-          this.suggestions = [
-            "Crea un modelo para un sensor de temperatura",
-            "Necesito un modelo para datos de usuario",
-            "Modifica mi modelo para añadir geolocalización"
-          ];
-          break;
-        case 'dataAnalysis':
-          this.suggestions = [
-            "Analiza estos datos de humedad",
-            "¿Qué tendencias ves en estos valores?",
-            "Compara estos resultados con los estándares"
-          ];
-          break;
-        case 'deviceConfig':
-          this.suggestions = [
-            "Configura un ESP32 para medir temperatura",
-            "¿Cómo conecto mi sensor a la red?",
-            "Optimiza el consumo de batería"
-          ];
-          break;
-        case 'troubleshooting':
-          this.suggestions = [
-            "Mi sensor no envía datos",
-            "Error de conexión en mi dispositivo",
-            "Problemas de precisión en las mediciones"
-          ];
-          break;
-        default:
-          this.suggestions = [
-            "¿Cómo puedo empezar con IoT?",
-            "Explícame qué es MQTT",
-            "Recomienda sensores para mi proyecto"
-          ];
-      }
+      this.suggestions = [
+        "¿Cómo puedo empezar con IoT?",
+        "Explícame qué es MQTT",
+        "Recomienda sensores para mi proyecto"
+      ];
     },
 
     async generateContextualSuggestions(responseText) {
@@ -334,7 +335,6 @@ export default {
       try {
         // Generar sugerencias basadas en la respuesta de la IA
         const suggestions = await aiService.getSuggestions({
-          template: this.selectedTemplate,
           context: responseText
         });
 
@@ -433,106 +433,95 @@ export default {
 <style>
 .ai-chat-bar {
   position: fixed;
-  top: 0;
-  right: 0;
-  width: 380px;
-  height: 100%;
+  bottom: 20px;
+  right: 20px;
+  width: 350px;
   background-color: #ffffff;
-  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
-  transform: translateX(100%);
-  transition: transform 0.3s ease-in-out;
-  z-index: 912999; /* Aumentado de 2005 a 9999 */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border-radius: 16px;
+  z-index: 912999;
   display: flex;
   flex-direction: column;
-  border-radius: 10px 0 0 10px;
+  transform: translateY(calc(100% - 60px));
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.ai-chat-bar.open {
+  transform: translateY(0);
 }
 
 .ai-toggle-button {
   position: absolute;
-  top: 20px;
-  left: -60px;
-  width: 60px;
+  top: 0;
+  left: 0;
+  width: 100%;
   height: 60px;
   background-color: #2196f3;
   color: white;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
-  transition: all 0.2s ease;
-  z-index: 9998; /* Asegurar que el botón también tenga alto z-index */
-}
-
-.ai-toggle-button:hover {
-  transform: scale(1.05);
-  background-color: #1976d2;
-}
-
-.ai-chat-content {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.ai-chat-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 20px;
-  background-color: #2196f3;
-  color: white;
-  border-radius: 10px 0 0 0;
+  padding: 0 20px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  z-index: 2;
+  border: none;
+}
+
+.ai-toggle-button:hover {
+  background-color: #1976d2;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-content h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 500;
 }
 
 .close-button {
   background: none;
   border: none;
   color: white;
-  font-size: 1.5em;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
 }
 
 .close-button:hover {
-  transform: scale(1.1);
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
-.template-selector {
-  padding: 10px 15px;
-  background-color: #f5f5f5;
-  border-bottom: 1px solid #e0e0e0;
+.ai-chat-content {
   display: flex;
-  align-items: center;
-}
-
-.template-selector label {
-  margin-right: 10px;
-  font-size: 14px;
-  color: #555;
-}
-
-.template-select {
-  flex-grow: 1;
-  padding: 8px 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  background-color: white;
+  flex-direction: column;
+  height: 500px;
+  background-color: #f8f9fa;
 }
 
 .ai-chat-body {
-  padding: 15px;
+  padding: 16px;
   overflow-y: auto;
   flex-grow: 1;
-  background-color: #f9f9f9;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .chat-message {
   display: flex;
-  align-items: flex-end;
-  margin-bottom: 15px;
+  align-items: flex-start;
+  gap: 8px;
   animation: fadeIn 0.3s ease-in-out;
 }
 
@@ -543,24 +532,19 @@ export default {
 
 .user {
   flex-direction: row-reverse;
-  text-align: right;
-}
-
-.ai {
-  flex-direction: row;
-  text-align: left;
 }
 
 .message-content {
-  padding: 12px 15px;
-  border-radius: 18px;
+  padding: 12px 16px;
+  border-radius: 16px;
   max-width: 85%;
   position: relative;
   box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .user .message-content {
-  background-color: #e3f2fd;
+  background-color: #2196f3;
+  color: white;
   border-bottom-right-radius: 4px;
 }
 
@@ -571,13 +555,44 @@ export default {
 
 .message-text {
   font-size: 14px;
-  line-height: 1.4;
+  line-height: 1.5;
   word-break: break-word;
 }
 
+.message-text pre {
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 12px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 8px 0;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+}
+
+.message-text pre.json-code {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: inherit;
+}
+
+.user .message-text pre {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
 .message-text a {
-  color: #2196f3;
+  color: inherit;
   text-decoration: underline;
+}
+
+.message-text code {
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+}
+
+.user .message-text code {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .message-footer {
@@ -589,52 +604,28 @@ export default {
 }
 
 .timestamp {
-  color: #9e9e9e;
+  color: inherit;
+  opacity: 0.7;
 }
 
 .feedback-buttons {
   display: flex;
-  gap: 8px;
-}
-
-.feedback-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 2px 5px;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-}
-
-.feedback-btn.positive:hover {
-  color: #4caf50;
-  background-color: rgba(76, 175, 80, 0.1);
-}
-
-.feedback-btn.negative:hover {
-  color: #f44336;
-  background-color: rgba(244, 67, 54, 0.1);
-}
-
-.feedback-thanks {
-  font-size: 11px;
-  color: #9e9e9e;
-  font-style: italic;
+  gap: 4px;
 }
 
 .typing-indicator {
   display: flex;
-  padding: 12px 15px;
+  padding: 12px 16px;
   background-color: #ffffff;
-  border-radius: 18px;
+  border-radius: 16px;
   width: fit-content;
-  margin-bottom: 15px;
+  margin-bottom: 12px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .typing-indicator span {
-  height: 8px;
-  width: 8px;
+  height: 6px;
+  width: 6px;
   background-color: #9e9e9e;
   border-radius: 50%;
   display: inline-block;
@@ -652,96 +643,45 @@ export default {
 
 @keyframes bounce {
   0%, 60%, 100% { transform: translateY(0); }
-  30% { transform: translateY(-4px); }
+  30% { transform: translateY(-3px); }
 }
 
 .suggestions-container {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  padding: 10px 15px;
-  background-color: #f5f5f5;
+  padding: 12px;
+  background-color: #ffffff;
   border-top: 1px solid #e0e0e0;
 }
 
 .suggestion-chip {
-  background-color: #e0e0e0;
-  color: #333;
-  padding: 6px 12px;
-  border-radius: 16px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  max-width: 180px;
   white-space: nowrap;
-  max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.suggestion-chip:hover {
-  background-color: #d5d5d5;
-  transform: translateY(-1px);
+  background-color: #e3f2fd;
+  color: #1976d2;
 }
 
 .input-container {
-  display: flex;
-  align-items: flex-end;
-  padding: 10px 15px 15px;
-  background-color: #fff;
+  padding: 12px;
+  background-color: #ffffff;
   border-top: 1px solid #e0e0e0;
-  border-radius: 0 0 0 10px;
 }
 
 .input {
-  flex-grow: 1;
-  resize: none;
-  border: 1px solid #ddd;
-  border-radius: 18px;
-  padding: 10px 15px;
-  font-size: 14px;
-  line-height: 1.4;
-  max-height: 150px;
-  overflow-y: auto;
-  transition: border-color 0.2s ease;
-}
-
-.input:focus {
-  outline: none;
-  border-color: #2196f3;
-}
-
-.send-btn {
-  margin-left: 10px;
-  background-color: #2196f3 !important;
-  color: white !important;
-  border: none;
-  width: 40px;
-  height: 40px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.send-btn:hover:not(:disabled) {
-  background-color: #1976d2 !important;
-  transform: scale(1.05);
-}
-
-.send-btn:disabled {
-  background-color: #e0e0e0 !important;
-  cursor: not-allowed;
+  width: 100%;
 }
 
 /* Responsive adjustments */
 @media (max-width: 600px) {
   .ai-chat-bar {
     width: 100%;
+    height: 100%;
+    bottom: 0;
+    right: 0;
     border-radius: 0;
-  }
-
-  .ai-toggle-button {
-    top: auto;
-    bottom: 20px;
-    left: 20px;
   }
 
   .message-content {

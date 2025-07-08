@@ -6,39 +6,26 @@ const DeepSeekAPIKey = process.env.DEEPSEEK_API_KEY;
 if (!GptAPIKey) throw new Error("Missing OpenAI API Key.");
 if (!DeepSeekAPIKey) throw new Error("Missing DeepSeek API Key.");
 
-const systemPrompt = `Eres un asistente de desarrollo. Generas modelos de Sequelize basados en las entradas del usuario, como este: {
-  "name": "Usuario",
-  "fields": [
-    {
-      "name": "nombreDeUsuario",
-      "type": "String",
-      "required": true
-    },
-    {
-      "name": "edad",
-      "type": "Number",
-      "required": false
-    },
-    {
-      "name": "configuraciones",
-      "type": "Object",
-      "required": false,
-      "fields": [
-        {
-          "name": "tema",
-          "type": "String",
-          "required": false
-        },
-        {
-          "name": "notificaciones",
-          "type": "Boolean",
-          "required": true
-        }
-      ]
-    }
-  ]
+const systemPrompt = `Eres un asistente especializado en generar modelos de datos para sistemas IoT. 
+Tu tarea es crear modelos JSON basados en las descripciones del usuario.
+
+Ejemplo de formato de respuesta:
+{
+  "text": "Explicación del modelo generado",
+  "model": {
+    "name": "NombreDelModelo",
+    "fields": [
+      {
+        "name": "campo1",
+        "type": "TipoDeDato",
+        "required": true/false
+      }
+    ]
+  }
 }
-Intenta separar la respuesta en un formato JSON dividido en dos propiedades, "texto" y "Json". La propiedad "texto" debe explicar los cambios. Asegúrate de que todo esté en español.`;
+
+Tipos de datos disponibles: String, Number, Float, Boolean, Date, Text, UUID, JSON, Array, Object
+Asegúrate de que la respuesta sea un objeto JSON válido con las propiedades "text" y "model".`;
 
 // Inicialización de APIs
 const GptAPI = new OpenAI({
@@ -51,30 +38,7 @@ const DeepSeekAPI = new OpenAI({
   baseURL: "https://api.deepseek.com",
 });
 
-// Función para enviar prompt a GPT
-const sendToGPT = async (userPrompt) => {
-  try {
-    const completion = await GptAPI.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      temperature: 0.7,
-      max_tokens: 300,
-    });
-
-    const response = completion?.choices?.[0]?.message?.content;
-    if (!response) throw new Error("Invalid API response format.");
-
-    return selectJsonFromResponse(response);
-  } catch (error) {
-    console.error("Error in OpenAI API:", error);
-    return { error: "An error occurred while processing your request.", details: error.message };
-  }
-};
-
-// Función para enviar prompt a DeepSeek
+// Función para enviar prompt a DeepSeek (modelo por defecto)
 const sendToDeepSeek = async (userPrompt) => {
   try {
     const completion = await DeepSeekAPI.chat.completions.create({
@@ -88,51 +52,87 @@ const sendToDeepSeek = async (userPrompt) => {
     const response = completion?.choices?.[0]?.message?.content;
     if (!response) throw new Error("Invalid DeepSeek response format.");
 
-    return selectJsonFromResponse(response);
+    return parseResponse(response);
   } catch (error) {
     console.error("Error in DeepSeek API:", error);
-    return { error: "An error occurred while processing your request with DeepSeek.", details: error.message };
+    // Si falla DeepSeek, intentamos con GPT como respaldo
+    return sendToGPT(userPrompt);
   }
 };
 
-// Función que extrae el JSON de la respuesta generada
-const selectJsonFromResponse = (response) => {
+// Función de respaldo para GPT
+const sendToGPT = async (userPrompt) => {
   try {
-    const match = response.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error("No JSON found in response.");
-    return JSON.parse(match[0]);
+    const completion = await GptAPI.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.7,
+      max_tokens: 800,
+    });
+
+    const response = completion?.choices?.[0]?.message?.content;
+    if (!response) throw new Error("Invalid API response format.");
+
+    return parseResponse(response);
   } catch (error) {
-    console.error("Error parsing JSON from response:", error);
-    return { error: "Failed to parse JSON response." };
+    console.error("Error in OpenAI API:", error);
+    return { error: "Error al procesar la solicitud.", details: error.message };
+  }
+};
+
+// Función para parsear la respuesta
+const parseResponse = (response) => {
+  try {
+    const parsedResponse = JSON.parse(response);
+    
+    // Verificar si tiene la estructura esperada
+    if (parsedResponse.text && parsedResponse.model) {
+      return parsedResponse;
+    }
+    
+    // Si solo tiene el modelo directamente
+    if (parsedResponse.name && Array.isArray(parsedResponse.fields)) {
+      return {
+        text: "Modelo generado correctamente.",
+        model: parsedResponse
+      };
+    }
+    
+    throw new Error("Formato de respuesta inválido");
+  } catch (error) {
+    console.error("Error parsing response:", error);
+    return { 
+      error: "Error al procesar la respuesta de la IA.",
+      rawResponse: response
+    };
   }
 };
 
 // Manejador de solicitudes
 const sendToAI = async (req, res) => {
   try {
-    const { prompt: userPrompt, AI } = req.body;
+    const { prompt: userPrompt, currentModel } = req.body;
 
-    if (!userPrompt || !AI) {
-      return res.status(400).json({ error: "Missing required parameters." });
+    if (!userPrompt) {
+      return res.status(400).json({ error: "Falta el prompt del usuario." });
     }
 
-    let response;
-    switch (AI) {
-      case "GPT":
-        response = await sendToGPT(userPrompt);
-        break;
-      case "DeepSeek":
-        response = await sendToDeepSeek(userPrompt);
-        break;
-      default:
-        return res.status(400).json({ error: "Invalid AI specified. Use 'GPT' or 'DeepSeek'." });
+    // Enriquecer el prompt con el contexto del modelo actual si existe
+    let enhancedPrompt = userPrompt;
+    if (currentModel && currentModel.name) {
+      enhancedPrompt = `Modelo actual: ${JSON.stringify(currentModel)}\n\nSolicitud: ${userPrompt}`;
     }
 
+    // Usar DeepSeek por defecto, con GPT como respaldo
+    const response = await sendToDeepSeek(enhancedPrompt);
     return res.json(response);
   } catch (error) {
     console.error("Error in sendToAI:", error);
     return res.status(500).json({
-      error: "An error occurred while processing your request.",
+      error: "Error al procesar la solicitud.",
       details: error.message
     });
   }

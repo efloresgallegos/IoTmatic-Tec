@@ -77,24 +77,29 @@ export default {
 
       try {
         // Enviar el modelo actual junto con el prompt para contexto
-        // Incluir información sobre el formato de campo invernaderoId
         const response = await apiService.post("/ai/sendToAI", { 
           prompt: userMessage.text, 
           AI: "GPT",
           currentModel: this.currentModel,
-          supportedFieldTypes: {
-            invernaderoId: {
-              type: "String",
-              required: true,
-              defaultValue: null,
-              fields: []
-            }
-          }
+          template: "modelCreation"
         });
+
+        // Manejar el caso donde la respuesta contiene un error
+        if (response.data.error) {
+          const errorMessage = { 
+            text: `Error: ${response.data.error}`, 
+            user: false, 
+            timestamp: moment().format("HH:mm"),
+            isError: true 
+          };
+          this.messages.push(errorMessage);
+          this.scrollToBottom();
+          return;
+        }
 
         // Mostrar texto de respuesta
         const aiTextMessage = { 
-          text: response.data.text, 
+          text: response.data.text || "Modelo generado correctamente", 
           user: false, 
           timestamp: moment().format("HH:mm") 
         };
@@ -102,11 +107,32 @@ export default {
 
         // Actualizar el modelo en el store si la IA devuelve un JSON
         if (response.data.Json) {
-          // Actualizar el modelo en el store
-          this.updateModelFromAI(response.data.Json);
-          
-          // Emitir evento para notificar al componente padre
-          this.$emit('modelUpdated', response.data.Json);
+          try {
+            // Formatear el JSON para mejor visualización en la interfaz
+            const formattedJson = JSON.stringify(response.data.Json, null, 2);
+            const jsonMessage = { 
+              text: `<pre class="json-code">${formattedJson}</pre>`, 
+              user: false, 
+              timestamp: moment().format("HH:mm"),
+              isJson: true 
+            };
+            this.messages.push(jsonMessage);
+            
+            // Actualizar el modelo en el store
+            this.updateModelFromAI(response.data.Json);
+            
+            // Emitir evento para notificar al componente padre
+            this.$emit('modelUpdated', response.data.Json);
+          } catch (jsonError) {
+            console.error("Error procesando el JSON:", jsonError);
+            const errorMessage = { 
+              text: "Error al procesar el modelo JSON devuelto", 
+              user: false, 
+              timestamp: moment().format("HH:mm"),
+              isError: true 
+            };
+            this.messages.push(errorMessage);
+          }
         }
 
         this.scrollToBottom();
@@ -133,6 +159,95 @@ export default {
 };
 </script>
 
-<style scoped>
-@import "../../css/dinamic-components/AIInteraction.css";
+<style>
+.chat-message {
+  margin-bottom: 15px;
+  padding: 10px;
+  border-radius: 8px;
+  max-width: 80%;
+}
+
+.user {
+  background-color: #e3f2fd;
+  align-self: flex-end;
+  margin-left: auto;
+}
+
+.ai {
+  background-color: #f5f5f5;
+  align-self: flex-start;
+  margin-right: auto;
+}
+
+.timestamp {
+  font-size: 0.8em;
+  color: #757575;
+  margin-top: 5px;
+  text-align: right;
+}
+
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.message-input {
+  display: flex;
+  padding: 10px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.message-input input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+
+.send-button {
+  margin-left: 8px;
+}
+
+/* Estilos para el JSON formateado */
+.json-code {
+  background-color: #f8f8f8;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+  color: #333;
+  margin: 10px 0;
+}
+
+/* Destacar propiedades JSON */
+.json-code .key {
+  color: #0d47a1;
+  font-weight: bold;
+}
+
+.json-code .string {
+  color: #2e7d32;
+}
+
+.json-code .number {
+  color: #d32f2f;
+}
+
+.json-code .boolean {
+  color: #7b1fa2;
+}
+
+/* Estilos para mensajes de error */
+.error-message {
+  background-color: #ffebee;
+  color: #c62828;
+  border-left: 4px solid #f44336;
+}
 </style>

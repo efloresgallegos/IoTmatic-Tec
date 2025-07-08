@@ -24,19 +24,6 @@ Debes crear estructuras JSON bien formadas que sigan este formato:
       "type": "[String|Number|Boolean|Date|Object|Array]",
       "required": [true|false],
       "fields": [] // Solo si type es Object
-
-// Para campos especiales como invernaderoId, usa esta estructura:
-// {
-//   "name": "invernaderoId",
-//   "type": "String",
-//   "required": true,
-//   "includeTime": false,
-//   "dateFormat": "ISO",
-//   "minDate": null,
-//   "maxDate": null,
-//   "defaultValue": null,
-//   "fields": []
-// }
     }
   ]
 }
@@ -47,10 +34,36 @@ Sigue estas reglas:
 3. Marca como required solo los campos esenciales
 4. Para campos de tipo Object, define sus sub-campos en la propiedad fields
 5. Asegúrate de que el modelo sea completo y útil para el caso de uso descrito
+6. NO incluyas campos predeterminados ni referencias específicas a invernaderos u otros sistemas existentes
 
-Intenta separar la respuesta en un formato JSON con dos propiedades:
+IMPORTANTE: Debes devolver tu respuesta como un objeto JSON con DOS propiedades:
 - "text": Una explicación clara en español de los cambios o del modelo creado
 - "Json": El modelo de datos en formato JSON
+
+Por ejemplo:
+{
+  "text": "He creado un modelo genérico para un Sensor de Temperatura con campos para temperatura, humedad y timestamp. Este modelo es flexible y puede adaptarse a diferentes implementaciones sin depender de estructuras predefinidas.",
+  "Json": {
+    "name": "SensorTemperatura",
+    "fields": [
+      {
+        "name": "temperatura",
+        "type": "Float",
+        "required": true
+      },
+      {
+        "name": "humedad",
+        "type": "Float",
+        "required": false
+      },
+      {
+        "name": "timestamp",
+        "type": "Date",
+        "required": true
+      }
+    ]
+  }
+}
 `;
 
 // Plantilla para análisis de datos y recomendaciones
@@ -176,8 +189,6 @@ const selectPromptTemplate = (context) => {
     return troubleshootingPrompt;
   } else if (keywords.codeGeneration.some(keyword => lowercaseContext.includes(keyword))) {
     return codeGenerationPrompt;
-
-
   } else if (keywords.websocketAuth.some(keyword => lowercaseContext.includes(keyword))) {
     return websocketAuthPrompt;
   }

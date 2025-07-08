@@ -514,41 +514,48 @@ export default {
         if (!deviceId || !modelId) {
           throw new Error('ID de dispositivo o modelo no encontrado');
         }
-        // Obtener la estructura JSON del modelo para usar en el código WebSocket
-        const userId = this.authStore?.user?.id || 1; // Valor por defecto si no hay usuario
+        
+        const userId = this.authStore?.user?.id || 1;
 
         // Mostrar indicador de carga
         this.isLoading = true;
 
         // Llamar al endpoint del backend para obtener el código WebSocket
-        // Usamos la versión mejorada del endpoint con tipo de conexión
-        const response = await apiService.post('data/getWebSocketCode', {
-          device_id: deviceId,
-          model_id: modelId.model_id,
-          user_id: userId,
-          connectionType: this.wsCodeType.value  // Añadir tipo de conexión seleccionado
+        const response = await apiService.post('/websocket/generate', {
+          deviceId,
+          modelId: modelId.model_id,
+          userId,
+          connectionType: this.wsCodeType.value
         });
 
-        if (response.data) {
+        if (response.data && response.data.success) {
           // Actualizar los códigos generados
-          this.pythonWebSocketCode = response.data.pythonCode || 'No se pudo generar el código Python';
-          this.javascriptWebSocketCode = response.data.javascriptCode || 'No se pudo generar el código JavaScript';
-          this.arduinoCode = response.data.arduinoCode || 'No se pudo generar el código Arduino';
+          const { pythonCode, javascriptCode } = response.data.data;
+          this.pythonWebSocketCode = pythonCode || 'No se pudo generar el código Python';
+          this.javascriptWebSocketCode = javascriptCode || 'No se pudo generar el código JavaScript';
+          this.arduinoCode = 'Código Arduino próximamente disponible';
         } else {
           throw new Error('Respuesta inválida del servidor');
         }
       } catch (error) {
         console.error('Error al obtener el código WebSocket:', error);
-        this.pythonWebSocketCode = 'Error al obtener código del servidor. Contacte al administrador.';
-        this.javascriptWebSocketCode = 'Error al obtener código del servidor. Contacte al administrador.';
-        this.arduinoCode = 'Error al obtener código del servidor. Contacte al administrador.';
+        
+        // Mensaje específico si el servicio está deshabilitado
+        if (error.message.includes('deshabilitado')) {
+          this.pythonWebSocketCode = 'El servicio WebSocket está temporalmente deshabilitado.';
+          this.javascriptWebSocketCode = 'El servicio WebSocket está temporalmente deshabilitado.';
+          this.arduinoCode = 'El servicio WebSocket está temporalmente deshabilitado.';
+        } else {
+          this.pythonWebSocketCode = 'Error al obtener código del servidor. Contacte al administrador.';
+          this.javascriptWebSocketCode = 'Error al obtener código del servidor. Contacte al administrador.';
+          this.arduinoCode = 'Error al obtener código del servidor. Contacte al administrador.';
+        }
 
         this.q.notify({
           type: 'negative',
           message: 'Error al generar código WebSocket'
         });
       } finally {
-        // Ocultar indicador de carga
         this.isLoading = false;
       }
     },
@@ -565,14 +572,14 @@ export default {
         }
         // Asegurarse de que estamos pasando el ID del modelo, no el objeto completo
         const modelId = typeof this.selectedModel === 'object' ? this.selectedModel.model_id : this.selectedModel;
-        const response = await apiService.post('/data/getJson', { model_id: modelId, device_id: this.$route.params.id, user_id: this.user.id  });
-        this.jsonResponse = response.data;
+        const jsonResponse = await apiService.post('/api/data/getJson', { model_id: modelId, device_id: this.$route.params.id, user_id: this.user.id  });
+        this.jsonResponse = jsonResponse.data;
 
         // Verificar si la respuesta tiene la estructura esperada
-        if (response.data && response.data.data) {
-          this.jsonResponse = response.data.data;
+        if (jsonResponse.data && jsonResponse.data.data) {
+          this.jsonResponse = jsonResponse.data.data;
         } else {
-          this.jsonResponse = response.data;
+          this.jsonResponse = jsonResponse.data;
         }
 
         this.$nextTick(() => {
@@ -596,8 +603,8 @@ export default {
         const deviceId = parseInt(this.$route.params.id);
 
         // Usar el método actualizado que incluye el ID del dispositivo
-        const response = await apiService.get(`/data/getLatest?model=${modelId}&device=${deviceId}`);
-        this.latestDataResponse = response.data;
+        const latestResponse = await apiService.get(`/api/data/getLatest?model_id=${modelId}&device_id=${deviceId}`);
+        this.latestDataResponse = latestResponse.data;
         this.$nextTick(() => {
           this.initLatestJsonEditor();
         });
@@ -724,6 +731,67 @@ export default {
           this.addCopyButton(ref, editor);
         }
       });
+    },
+
+    async handleModelSelection(modelId) {
+      try {
+        if (!modelId) {
+          this.fields = [];
+          return;
+        }
+        
+        const fieldsResponse = await apiService.get(`/api/data/getGraphable/${modelId}`);
+        this.fields = fieldsResponse.data;
+      } catch (error) {
+        console.error('Error al obtener campos graficables:', error);
+        this.q.notify({
+          type: 'negative',
+          message: 'Error al obtener campos graficables'
+        });
+        this.fields = [];
+      }
+    },
+
+    async handleAddGraph() {
+      if (!this.selectedFields.length) {
+        this.q.notify({
+          type: 'warning',
+          message: 'Por favor, selecciona al menos un campo para graficar'
+        });
+        return;
+      }
+
+      try {
+        const deviceId = parseInt(this.$route.params.id);
+        const graphResponse = await apiService.get(`/api/data/getByRange?model_id=${this.selectedGraphModule}&device_id=${deviceId}&start_date=${this.dateRange.startDate}&end_date=${this.dateRange.endDate}&group_by=${this.groupBy}`);
+
+        const graphConfig = {
+          module: this.selectedGraphModule,
+          chartType: this.chartType,
+          chartData: graphResponse.data,
+          variables: this.selectedFields,
+          nombreColor: 'color',
+          nombreBarra: 'barra',
+          tituloEjeX: 'Fecha',
+          tituloEjeY: 'Valor'
+        };
+
+        this.graphs.push(graphConfig);
+        
+        // Limpiar selección
+        this.selectedFields = [];
+        
+        this.q.notify({
+          type: 'positive',
+          message: 'Gráfica agregada exitosamente'
+        });
+      } catch (error) {
+        console.error('Error al obtener datos para la gráfica:', error);
+        this.q.notify({
+          type: 'negative',
+          message: 'Error al crear la gráfica'
+        });
+      }
     },
   },
   watch: {

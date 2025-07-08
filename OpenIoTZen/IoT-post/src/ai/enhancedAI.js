@@ -39,7 +39,7 @@ const DeepSeekAPI = new OpenAI({
  */
 const processAIRequest = async (requestData) => {
   try {
-    const { prompt, AI = "GPT", currentModel = {}, userData = {}, supportedFieldTypes = {} } = requestData;
+    const { prompt, AI = "GPT", currentModel = {}, userData = {}, template = "" } = requestData;
     
     if (!prompt) {
       return { error: "Se requiere un prompt." };
@@ -53,13 +53,13 @@ const processAIRequest = async (requestData) => {
     }
     
     // 2. Extraer contexto relevante
-    const processedContext = extractRelevantContext({ prompt, currentModel, userData, supportedFieldTypes });
+    const processedContext = extractRelevantContext({ prompt, currentModel, userData });
     
     // 3. Buscar retroalimentación relevante
     const relevantFeedback = findRelevantFeedback(prompt);
     
     // 4. Seleccionar plantilla de prompt adecuada
-    const templatePrompt = selectPromptTemplate(prompt);
+    const templatePrompt = template ? template : selectPromptTemplate(prompt);
     
     // 5. Mejorar el prompt con retroalimentación
     const enhancedPrompt = enhancePromptWithFeedback(prompt, relevantFeedback);
@@ -103,11 +103,27 @@ const sendToGPT = async (userPrompt, systemPrompt) => {
     const completion = await GptAPI.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
-        { role: "system", content: systemPrompt },
+        { 
+          role: "system", 
+          content: `${systemPrompt}\n\nIMPORTANTE: Tu respuesta debe ser en formato JSON con la siguiente estructura:\n{
+            "text": "Tu respuesta en texto plano",
+            "Json": {
+              "name": "Nombre del modelo",
+              "fields": [
+                {
+                  "name": "nombre_campo",
+                  "type": "tipo_campo",
+                  "description": "descripción del campo"
+                }
+              ]
+            }
+          }`
+        },
         { role: "user", content: userPrompt },
       ],
       temperature: 0.7,
       max_tokens: 1800,
+      response_format: { type: "json_object" }
     });
 
     const response = completion?.choices?.[0]?.message?.content;
@@ -134,11 +150,27 @@ const sendToDeepSeek = async (userPrompt, systemPrompt) => {
     const completion = await DeepSeekAPI.chat.completions.create({
       model: "deepseek-chat",
       messages: [
-        { role: "system", content: systemPrompt },
+        { 
+          role: "system", 
+          content: `${systemPrompt}\n\nIMPORTANTE: Tu respuesta debe ser en formato JSON con la siguiente estructura:\n{
+            "text": "Tu respuesta en texto plano",
+            "Json": {
+              "name": "Nombre del modelo",
+              "fields": [
+                {
+                  "name": "nombre_campo",
+                  "type": "tipo_campo",
+                  "description": "descripción del campo"
+                }
+              ]
+            }
+          }`
+        },
         { role: "user", content: userPrompt },
       ],
       temperature: 0.7,
       max_tokens: 500,
+      response_format: { type: "json_object" }
     });
 
     const response = completion?.choices?.[0]?.message?.content;
@@ -161,38 +193,50 @@ const sendToDeepSeek = async (userPrompt, systemPrompt) => {
  */
 const parseAIResponse = (response) => {
   try {
-    // Intentar extraer JSON de la respuesta
-    const jsonMatch = response.match(/\{[\s\S]*\}/); 
-    
-    if (jsonMatch) {
-      // Intentar parsear el JSON encontrado
-      try {
-        const parsedJson = JSON.parse(jsonMatch[0]);
-        
-        // Verificar si tiene la estructura esperada (text y Json)
-        if (parsedJson.text && parsedJson.Json) {
-          return parsedJson;
-        } else {
-          // Si tiene estructura JSON pero no el formato esperado
-          return {
-            text: response,
-            Json: parsedJson
-          };
-        }
-      } catch (jsonError) {
-        // Si hay error al parsear el JSON, devolver el texto completo
-        console.warn("Error al parsear JSON de la respuesta:", jsonError);
-        return { text: response };
+    // Si la respuesta es un string vacío o null
+    if (!response || typeof response !== 'string') {
+      return {
+        text: "No se recibió una respuesta válida.",
+        error: true
+      };
+    }
+
+    // Intentar parsear la respuesta como JSON
+    try {
+      const parsedResponse = JSON.parse(response);
+      
+      // Si la respuesta es un modelo directo (tiene name y fields)
+      if (parsedResponse.name && Array.isArray(parsedResponse.fields)) {
+        return {
+          text: "He creado un modelo basado en tu descripción.",
+          Json: parsedResponse
+        };
       }
-    } else {
-      // Si no se encuentra JSON, devolver el texto completo
-      return { text: response };
+      
+      // Si la respuesta ya tiene la estructura esperada
+      if (parsedResponse.text && parsedResponse.Json) {
+        return parsedResponse;
+      }
+
+      // Si la respuesta es otro tipo de JSON
+      return {
+        text: "He procesado tu solicitud.",
+        Json: parsedResponse
+      };
+    } catch (jsonError) {
+      console.error("Error al parsear JSON:", jsonError);
+      
+      // Si no es JSON válido, devolver como texto plano
+      return {
+        text: response,
+        error: false
+      };
     }
   } catch (error) {
     console.error("Error al procesar la respuesta:", error);
-    return { 
-      error: "Error al procesar la respuesta de la IA.",
-      text: response 
+    return {
+      text: response || "Ocurrió un error al procesar la respuesta.",
+      error: true
     };
   }
 };
@@ -206,65 +250,83 @@ const submitFeedback = (feedbackData) => {
   return recordFeedback(feedbackData);
 };
 
-/**
- * Manejador de solicitudes para la API
- * @param {Object} req - Objeto de solicitud
- * @param {Object} res - Objeto de respuesta
- */
-const sendToAI = async (req, res) => {
-  try {
-    const requestData = req.body;
-    
-    if (!requestData.prompt || !requestData.AI) {
-      return res.status(400).json({ error: "Faltan parámetros requeridos." });
+const enhancedAI = {
+  /**
+   * Controlador para enviar prompts a DeepSeek
+   */
+  async sendToDeepSeek(req, res) {
+    try {
+      const { prompt, currentModel } = req.body;
+
+      if (!prompt) {
+        return res.status(400).json({ message: "El prompt es requerido" });
+      }
+
+      const response = await processAIRequest({
+        prompt,
+        AI: "DeepSeek",
+        currentModel
+      });
+
+      if (response.error) {
+        return res.status(400).json({ message: response.error });
+      }
+
+      return res.json(response);
+    } catch (error) {
+      console.error("Error en DeepSeek API:", error);
+      return res.status(500).json({
+        message: error.message || "Error al procesar la solicitud con DeepSeek"
+      });
     }
-    
-    // Add support for field types
-    const { supportedFieldTypes } = requestData;
-    
-    // Procesar la solicitud con el sistema mejorado
-    const response = await processAIRequest(requestData);
-    return res.json(response);
-  } catch (error) {
-    console.error("Error en sendToAI:", error);
-    return res.status(500).json({
-      error: "Ocurrió un error al procesar tu solicitud.",
-      details: error.message
-    });
+  },
+
+  /**
+   * Controlador para enviar prompts a GPT
+   */
+  async sendToGPT(req, res) {
+    try {
+      const { prompt, currentModel } = req.body;
+
+      if (!prompt) {
+        return res.status(400).json({ message: "El prompt es requerido" });
+      }
+
+      const response = await processAIRequest({
+        prompt,
+        AI: "GPT",
+        currentModel
+      });
+
+      if (response.error) {
+        return res.status(400).json({ message: response.error });
+      }
+
+      return res.json(response);
+    } catch (error) {
+      console.error("Error en GPT API:", error);
+      return res.status(500).json({
+        message: error.message || "Error al procesar la solicitud con GPT"
+      });
+    }
+  },
+
+  /**
+   * Controlador para recibir retroalimentación
+   */
+  async receiveFeedback(req, res) {
+    try {
+      const { prompt, response, helpful, comments } = req.body;
+      
+      // Aquí puedes implementar la lógica para almacenar el feedback
+      console.log('Feedback recibido:', { prompt, response, helpful, comments });
+      
+      return res.json({ message: "Feedback recibido correctamente" });
+    } catch (error) {
+      console.error("Error al procesar feedback:", error);
+      return res.status(500).json({ message: "Error al procesar el feedback" });
+    }
   }
 };
 
-/**
- * Manejador para recibir retroalimentación del usuario
- * @param {Object} req - Objeto de solicitud
- * @param {Object} res - Objeto de respuesta
- */
-const receiveFeedback = (req, res) => {
-  try {
-    const feedbackData = req.body;
-    
-    if (!feedbackData.promptId || !feedbackData.rating) {
-      return res.status(400).json({ error: "Faltan parámetros requeridos para la retroalimentación." });
-    }
-    
-    const success = submitFeedback(feedbackData);
-    
-    if (success) {
-      return res.json({ success: true, message: "Retroalimentación registrada correctamente." });
-    } else {
-      return res.status(500).json({ error: "Error al registrar la retroalimentación." });
-    }
-  } catch (error) {
-    console.error("Error en receiveFeedback:", error);
-    return res.status(500).json({
-      error: "Ocurrió un error al procesar la retroalimentación.",
-      details: error.message
-    });
-  }
-};
-
-export default { 
-  sendToAI,
-  receiveFeedback,
-  processAIRequest
-};
+export default enhancedAI;

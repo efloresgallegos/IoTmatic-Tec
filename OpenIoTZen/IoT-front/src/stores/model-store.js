@@ -127,33 +127,88 @@ export const useModelStore = defineStore('model', {
         
         this.currentModel.name = aiModel.name || ''
         this.currentModel.fields = (aiModel.fields || []).map(field => {
-          // Manejar el caso donde field.type puede ser un objeto o un string
+          // Manejar el caso donde field.type puede ser un objeto (con value y label) o un string
           let fieldType = field.type
           if (typeof field.type === 'object' && field.type !== null) {
             fieldType = field.type.value || 'String'
           }
           
-          return {
+          // Crear objeto base del campo con propiedades comunes
+          const normalizedField = {
             name: field.name || '',
             type: fieldType || 'String',
             required: field.required || false,
-            defaultValue: field.defaultValue || null,
-            fields: fieldType === 'Object' ? (field.fields || []).map(subField => {
-              // Manejar el caso donde subField.type puede ser un objeto o un string
-              let subFieldType = subField.type
-              if (typeof subField.type === 'object' && subField.type !== null) {
-                subFieldType = subField.type.value || 'String'
-              }
-              
-              return {
-                name: subField.name || '',
-                type: subFieldType || 'String',
-                required: subField.required || false,
-                defaultValue: subField.defaultValue || null
-              }
-            }) : []
+            defaultValue: field.defaultValue || null
           }
+          
+          // Añadir campos adicionales específicos para cada tipo
+          // Manejar campos de tipo Date
+          if (fieldType === 'Date') {
+            normalizedField.includeTime = field.includeTime || false
+            normalizedField.dateFormat = field.dateFormat || 'ISO'
+            normalizedField.minDate = field.minDate || null
+            normalizedField.maxDate = field.maxDate || null
+          }
+          
+          // Manejar campos numéricos
+          if (fieldType === 'Number' || fieldType === 'Integer' || fieldType === 'Float') {
+            normalizedField.min = field.min !== undefined ? field.min : null
+            normalizedField.max = field.max !== undefined ? field.max : null
+          }
+          
+          // Manejar campos de texto
+          if (fieldType === 'String' || fieldType === 'Text') {
+            normalizedField.minLength = field.minLength !== undefined ? field.minLength : null
+            normalizedField.maxLength = field.maxLength !== undefined ? field.maxLength : null
+            normalizedField.pattern = field.pattern || null
+          }
+          
+          // Manejar campos de tipo Object con subcampos
+          if (fieldType === 'Object') {
+            normalizedField.fields = Array.isArray(field.fields) 
+              ? field.fields.map(subField => {
+                  // Normalizar el tipo del subcampo
+                  let subFieldType = subField.type
+                  if (typeof subField.type === 'object' && subField.type !== null) {
+                    subFieldType = subField.type.value || 'String'
+                  }
+                  
+                  // Crear objeto normalizado para el subcampo
+                  const normalizedSubField = {
+                    name: subField.name || '',
+                    type: subFieldType || 'String',
+                    required: subField.required || false,
+                    defaultValue: subField.defaultValue || null
+                  }
+                  
+                  // Añadir propiedades específicas según el tipo
+                  if (subFieldType === 'Date') {
+                    normalizedSubField.includeTime = subField.includeTime || false
+                    normalizedSubField.dateFormat = subField.dateFormat || 'ISO'
+                    normalizedSubField.minDate = subField.minDate || null
+                    normalizedSubField.maxDate = subField.maxDate || null
+                  }
+                  
+                  if (subFieldType === 'Number' || subFieldType === 'Integer' || subFieldType === 'Float') {
+                    normalizedSubField.min = subField.min !== undefined ? subField.min : null
+                    normalizedSubField.max = subField.max !== undefined ? subField.max : null
+                  }
+                  
+                  if (subFieldType === 'String' || subFieldType === 'Text') {
+                    normalizedSubField.minLength = subField.minLength !== undefined ? subField.minLength : null
+                    normalizedSubField.maxLength = subField.maxLength !== undefined ? subField.maxLength : null
+                    normalizedSubField.pattern = subField.pattern || null
+                  }
+                  
+                  return normalizedSubField
+                })
+              : []
+          }
+          
+          return normalizedField
         })
+        
+        console.log('Modelo actualizado desde IA:', this.currentModel)
       } catch (error) {
         console.error('Error al actualizar el modelo desde la IA:', error)
       }

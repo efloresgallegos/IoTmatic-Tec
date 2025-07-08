@@ -176,9 +176,6 @@ function setupWebSocketServer(wss) {
         
         // Manejar diferentes tipos de mensajes
         switch (parsedMessage.event) {
-          case 'subscribe_to_graph_updates':
-            subscribeToGraphUpdates(ws, parsedMessage.data);
-            break;
           case 'subscribe_to_device_status':
             subscribeToDeviceStatus(ws, parsedMessage.data);
             break;

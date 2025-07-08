@@ -299,22 +299,49 @@ export default {
     }
   },
   AIInteraction: {
-    chatTitle: 'Chat con IA',
-    toggleChat: 'Alternar chat con IA',
-    closeChat: 'Cerrar chat con IA',
-    templateLabel: 'Seleccionar una plantilla',
+    tools: "Herramientas de IA",
+    openMenu: "Abrir asistente de IA",
+    chatTitle: "Asistente de IA",
+    templateLabel: "Seleccionar plantilla",
+    inputPlaceholder: "Pregúntame algo sobre tu modelo...",
+    sendButton: "Enviar mensaje",
+    feedbackHelpful: "Esta respuesta fue útil",
+    feedbackUnhelpful: "Esta respuesta no fue útil",
+    feedbackThanks: "Gracias por tu retroalimentación",
+    errorMessage: "Error al procesar la solicitud. Por favor, intenta de nuevo.",
+    toggleChat: "Alternar chat IA",
+    closeChat: "Cerrar chat",
     templates: {
-      general: 'General',
-      modelCreation: 'Creación de Modelos',
-      dataAnalysis: 'Análisis de Datos',
-      deviceConfig: 'Configuración de Dispositivos',
-      troubleshooting: 'Solución de Problemas'
+      modelCreation: "Creación de modelos"
     },
-    feedbackHelpful: 'Esto fue útil',
-    feedbackUnhelpful: 'Esto no fue útil',
-    feedbackThanks: '¡Gracias por tu feedback!',
-    inputPlaceholder: 'Escribe un mensaje...',
-    sendButton: 'Enviar mensaje'
+    suggestions: {
+      first: "¿Cómo puedo crear un campo de temperatura?",
+      second: "¿Qué tipo de datos debo usar para coordenadas GPS?",
+      third: "¿Cómo puedo estructurar datos de sensores?",
+      createModel: "Crea un modelo para un sensor de temperatura",
+      addFields: "Añade campos comunes al modelo",
+      optimizeModel: "Optimiza la estructura del modelo",
+      validateModel: "Valida la estructura del modelo"
+    },
+    generalSuggestions: {
+      first: "¿Cómo empiezo a crear un modelo?",
+      second: "¿Me puedes dar un ejemplo de modelo para IoT?",
+      third: "¿Cómo puedo optimizar mi modelo?"
+    },
+    contextSuggestions: {
+      sensor1: "¿Qué sensores son mejores para mi caso?",
+      sensor2: "¿Cómo calibrar sensores?",
+      temperature1: "¿Qué precisión tiene un sensor de temperatura?",
+      temperature2: "¿Cómo manejar datos de temperatura?",
+      connection1: "¿Cómo mejorar la conexión de mis dispositivos?",
+      connection2: "¿Qué protocolo de conexión es mejor?",
+      battery1: "¿Cómo optimizar el consumo de batería?",
+      battery2: "¿Qué duración tiene la batería en un sensor?",
+      data1: "¿Cómo visualizar estos datos?",
+      data2: "¿Cómo analizar estos datos?",
+      error1: "¿Cómo resolver este error?",
+      error2: "¿Cómo prevenir este problema?"
+    }
   },
   enhancedGraphics: {
     loading: 'Cargando datos...',

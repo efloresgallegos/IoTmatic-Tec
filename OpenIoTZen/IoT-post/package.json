@@ -21,6 +21,7 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "graphql-ws": "^6.0.1",
+    "jsonwebtoken": "^9.0.2",
     "jwt-simple": "^0.5.6",
     "nodemon": "^3.1.9",
     "openai": "^4.77.0",
