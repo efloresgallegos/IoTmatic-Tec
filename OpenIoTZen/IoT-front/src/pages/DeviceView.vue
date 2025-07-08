@@ -514,7 +514,7 @@ export default {
         if (!deviceId || !modelId) {
           throw new Error('ID de dispositivo o modelo no encontrado');
         }
-        
+
         const userId = this.authStore?.user?.id || 1;
 
         // Mostrar indicador de carga
@@ -539,7 +539,7 @@ export default {
         }
       } catch (error) {
         console.error('Error al obtener el código WebSocket:', error);
-        
+
         // Mensaje específico si el servicio está deshabilitado
         if (error.message.includes('deshabilitado')) {
           this.pythonWebSocketCode = 'El servicio WebSocket está temporalmente deshabilitado.';
@@ -636,7 +636,7 @@ export default {
       });
 
       this.jsonEditorInstance.set(this.jsonResponse);
-      
+
       // Agregar botón de copiar directamente aquí
       const copyButton = document.createElement('button');
       copyButton.className = 'copy-button q-btn q-btn-item non-selectable no-outline q-btn--flat q-btn--rectangle text-primary q-btn--actionable q-focusable q-hoverable';
@@ -734,14 +734,13 @@ export default {
       });
     },
 
-<<<<<<< HEAD
     async handleModelSelection(modelId) {
       try {
         if (!modelId) {
           this.fields = [];
           return;
         }
-        
+
         const fieldsResponse = await apiService.get(`/api/data/getGraphable/${modelId}`);
         this.fields = fieldsResponse.data;
       } catch (error) {
@@ -751,21 +750,6 @@ export default {
           message: 'Error al obtener campos graficables'
         });
         this.fields = [];
-=======
-    async handleModelSelection() {
-      if (this.selectedGraphModule) {
-        try {
-          const response = await apiService.get(`/data/getGraphable/${this.selectedGraphModule.model_id}`);
-          this.fields = response.data;
-          this.selectedFields = []; // Resetear campos seleccionados
-        } catch (error) {
-          console.error('Error al obtener campos graficables:', error);
-          this.q.notify({
-            type: 'negative',
-            message: 'Error al obtener campos graficables'
-          });
-        }
->>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
       }
     },
 
@@ -779,7 +763,6 @@ export default {
       }
 
       try {
-<<<<<<< HEAD
         const deviceId = parseInt(this.$route.params.id);
         const graphResponse = await apiService.get(`/api/data/getByRange?model_id=${this.selectedGraphModule}&device_id=${deviceId}&start_date=${this.dateRange.startDate}&end_date=${this.dateRange.endDate}&group_by=${this.groupBy}`);
 
@@ -795,47 +778,14 @@ export default {
         };
 
         this.graphs.push(graphConfig);
-        
+
         // Limpiar selección
         this.selectedFields = [];
-        
+
         this.q.notify({
           type: 'positive',
           message: 'Gráfica agregada exitosamente'
         });
-=======
-        const response = await apiService.post('/graph/data', {
-          model_id: this.selectedGraphModule.model_id,
-          device_id: this.deviceData.device_id,
-          start_date: this.dateRange.startDate,
-          end_date: this.dateRange.endDate,
-          group_by: this.groupBy,
-          fields: this.selectedFields
-        });
-
-        if (response.data && response.data.length > 0) {
-          this.graphs.push({
-            module: this.selectedGraphModule.model_id,
-            chartType: this.chartType,
-            chartData: response.data,
-            variables: this.selectedFields,
-            nombreColor: 'color',
-            nombreBarra: 'fecha',
-            tituloEjeX: 'Fecha',
-            tituloEjeY: 'Valor'
-          });
-
-          this.q.notify({
-            type: 'positive',
-            message: 'Gráfica añadida exitosamente'
-          });
-        } else {
-          this.q.notify({
-            type: 'warning',
-            message: 'No hay datos disponibles para el rango seleccionado'
-          });
-        }
->>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
       } catch (error) {
         console.error('Error al obtener datos para la gráfica:', error);
         this.q.notify({

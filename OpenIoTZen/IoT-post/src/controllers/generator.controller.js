@@ -52,7 +52,6 @@ const genJSModel = (name, fields) => {
 
         // Construir las propiedades básicas del campo
         let fieldDefinition = `${field.name}: { 
-<<<<<<< HEAD
             type: ${fieldType}`;
 
         // Agregar propiedades especiales para el campo ID
@@ -69,9 +68,6 @@ const genJSModel = (name, fields) => {
         if (field.ref) {
             fieldDefinition += `, references: { model: '${field.ref}', key: '${field.refColumn || `${field.ref}_id`}' }`;
         }
-=======
-            type: ${fieldType}${field.required ? ', allowNull: false' : ''}`;
->>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
         
         // Agregar configuración de clave primaria y autoincrement si corresponde
         if (field.primaryKey) {
@@ -251,7 +247,6 @@ const createDataModel = async (name, fields) => {
             // Configuración base del campo
             const fieldConfig = {
                 type: fieldType,
-<<<<<<< HEAD
                 ...(field.name === `${name.toLowerCase()}_id` ? {
                     primaryKey: true,
                     autoIncrement: true,
@@ -272,9 +267,6 @@ const createDataModel = async (name, fields) => {
                         ...(field.defaultValue !== undefined && field.defaultValue !== null ? { defaultValue: field.defaultValue } : {})
                     } : {})
                 })
-=======
-                allowNull: !field.required
->>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
             };
 
             // Agregar configuración de clave primaria y autoincrement si corresponde
@@ -364,11 +356,7 @@ const createDataModel = async (name, fields) => {
 
         return true;
     } catch (error) {
-<<<<<<< HEAD
         console.error('Error al crear el modelo de datos:', error);
-=======
-        console.error('Error al crear la tabla:', error);
->>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
         throw error;
     }
 };

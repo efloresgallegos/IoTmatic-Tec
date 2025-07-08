@@ -3,16 +3,16 @@
     <div class="ai-toggle-button" @click="toggleVisibility" style="bottom: 140px;">
       <img src="../../assets/AIIcon.png" alt="AI Icon" class="ai-icon" />
     </div>
-    
+
     <div v-if="isVisible" class="ai-chat-content">
       <div class="ai-chat-header">
         <h3>{{ $t('AIInteraction.chatTitle') }}</h3>
         <button class="close-button" @click="toggleVisibility" :aria-label="$t('AIInteraction.closeChat')">&times;</button>
       </div>
-      
+
       <div class="ai-chat-body" ref="chatContainer">
         <transition-group name="fade" tag="div">
-          <div v-for="(message, index) in messages" :key="index" 
+          <div v-for="(message, index) in messages" :key="index"
                :class="['chat-message', message.user ? 'user' : 'ai']">
             <div class="message-content">
               <div class="message-text">{{ message.text }}</div>
@@ -21,17 +21,17 @@
           </div>
         </transition-group>
       </div>
-      
+
       <div class="input-container">
-        <textarea v-model="aiPrompt" 
-                  :placeholder="$t('AIInteraction.inputPlaceholder')" 
+        <textarea v-model="aiPrompt"
+                  :placeholder="$t('AIInteraction.inputPlaceholder')"
                   class="input"
                   rows="1"
                   @keyup.enter="sendPromptToBackend"></textarea>
-        
+
         <q-btn @click="sendPromptToBackend"
-               round flat color="primary" 
-               :disable="!aiPrompt.trim()" 
+               round flat color="primary"
+               :disable="!aiPrompt.trim()"
                class="send-btn">
           <q-icon name="send" />
         </q-btn>
@@ -65,7 +65,7 @@ export default {
   },
   methods: {
     ...mapActions(useModelStore, ['updateModelFromAI']),
-    
+
     async sendPromptToBackend() {
       if (!this.aiPrompt.trim()) return;
 
@@ -77,39 +77,20 @@ export default {
 
       try {
         // Enviar el modelo actual junto con el prompt para contexto
-        const response = await apiService.post("/ai/sendToAI", { 
-          prompt: userMessage.text, 
+        const response = await apiService.post("/ai/sendToAI", {
+          prompt: userMessage.text,
           AI: "DeepSeek",
           currentModel: this.currentModel,
-<<<<<<< HEAD
           template: "modelCreation"
-=======
-          context: {
-            modelType: "IoT",
-            supportedFieldTypes: {
-              invernaderoId: {
-                type: "String",
-                required: true,
-                defaultValue: null,
-                fields: []
-              }
-            },
-            modelContext: {
-              name: this.currentModel.name,
-              description: this.currentModel.description,
-              fields: this.currentModel.fields
-            }
-          }
->>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
         });
 
         // Manejar el caso donde la respuesta contiene un error
         if (response.data.error) {
-          const errorMessage = { 
-            text: `Error: ${response.data.error}`, 
-            user: false, 
+          const errorMessage = {
+            text: `Error: ${response.data.error}`,
+            user: false,
             timestamp: moment().format("HH:mm"),
-            isError: true 
+            isError: true
           };
           this.messages.push(errorMessage);
           this.scrollToBottom();
@@ -117,10 +98,10 @@ export default {
         }
 
         // Mostrar texto de respuesta
-        const aiTextMessage = { 
-          text: response.data.text || "Modelo generado correctamente", 
-          user: false, 
-          timestamp: moment().format("HH:mm") 
+        const aiTextMessage = {
+          text: response.data.text || "Modelo generado correctamente",
+          user: false,
+          timestamp: moment().format("HH:mm")
         };
         this.messages.push(aiTextMessage);
 
@@ -129,26 +110,26 @@ export default {
           try {
             // Formatear el JSON para mejor visualización en la interfaz
             const formattedJson = JSON.stringify(response.data.Json, null, 2);
-            const jsonMessage = { 
-              text: `<pre class="json-code">${formattedJson}</pre>`, 
-              user: false, 
+            const jsonMessage = {
+              text: `<pre class="json-code">${formattedJson}</pre>`,
+              user: false,
               timestamp: moment().format("HH:mm"),
-              isJson: true 
+              isJson: true
             };
             this.messages.push(jsonMessage);
-            
+
             // Actualizar el modelo en el store
             this.updateModelFromAI(response.data.Json);
-            
+
             // Emitir evento para notificar al componente padre
             this.$emit('modelUpdated', response.data.Json);
           } catch (jsonError) {
             console.error("Error procesando el JSON:", jsonError);
-            const errorMessage = { 
-              text: "Error al procesar el modelo JSON devuelto", 
-              user: false, 
+            const errorMessage = {
+              text: "Error al procesar el modelo JSON devuelto",
+              user: false,
               timestamp: moment().format("HH:mm"),
-              isError: true 
+              isError: true
             };
             this.messages.push(errorMessage);
           }
@@ -178,7 +159,6 @@ export default {
 };
 </script>
 
-<<<<<<< HEAD
 <style>
 .chat-message {
   margin-bottom: 15px;
@@ -269,39 +249,5 @@ export default {
   background-color: #ffebee;
   color: #c62828;
   border-left: 4px solid #f44336;
-=======
-<style scoped>
-@import "../../css/dinamic-components/AIInteraction.css";
-
-.ai-chat-bar {
-  position: fixed;
-  right: 0;
-  width: 350px;
-  background-color: #fff;
-  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
-  z-index: 999999;
-  transition: transform 0.3s ease;
-  transform: translateX(100%);
-}
-
-.ai-chat-bar.open {
-  transform: translateX(0);
-}
-
-.ai-toggle-button {
-  position: fixed;
-  right: 20px;
-  width: 50px;
-  height: 50px;
-  background-color: #1976d2;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  z-index: 999999;
-  transition: transform 0.3s ease;
->>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
 }
 </style>

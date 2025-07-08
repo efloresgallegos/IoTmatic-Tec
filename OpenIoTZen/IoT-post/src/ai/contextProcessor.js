@@ -11,11 +11,7 @@
  * @returns {Object} Contexto procesado con información relevante
  */
 const extractRelevantContext = (requestContext) => {
-<<<<<<< HEAD
   const { prompt, currentModel, userData } = requestContext;
-=======
-  const { prompt, currentModel } = requestContext;
->>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
   const relevantContext = {
     userPrompt: prompt,
     modelContext: null
@@ -33,7 +29,6 @@ const extractRelevantContext = (requestContext) => {
 };
 
 /**
-<<<<<<< HEAD
  * Detecta la intención principal del prompt del usuario
  * @param {string} prompt - El prompt del usuario
  * @returns {string} La intención detectada
@@ -229,9 +224,6 @@ const assessModelComplexity = (model) => {
 
 /**
  * Optimiza el prompt para la IA basado en el contexto procesado
-=======
- * Optimiza el prompt para la IA basado en el modelo actual
->>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
  * @param {Object} processedContext - El contexto procesado
  * @param {string} templatePrompt - La plantilla de prompt seleccionada
  * @returns {string} Prompt optimizado para la IA
@@ -246,7 +238,6 @@ const optimizePrompt = (processedContext, templatePrompt) => {
   if (modelContext) {
     optimizedPrompt += "\n\nModelo actual:";
     optimizedPrompt += `\n- Nombre: ${modelContext.name || 'Sin nombre'}`;
-<<<<<<< HEAD
     optimizedPrompt += `\n- Número de campos: ${modelContext.fieldCount || 0}`;
     
     if (Object.keys(modelContext.fieldTypes).length > 0) {
@@ -283,9 +274,6 @@ const optimizePrompt = (processedContext, templatePrompt) => {
     optimizedPrompt += '\nProporciona una respuesta sencilla y directa.';
   } else if (complexity === 'complex') {
     optimizedPrompt += '\nProporciona una respuesta detallada y completa.';
-=======
-    optimizedPrompt += `\n- Campos: ${JSON.stringify(modelContext.fields)}`;
->>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
   }
   
   // Añadir el prompt original del usuario

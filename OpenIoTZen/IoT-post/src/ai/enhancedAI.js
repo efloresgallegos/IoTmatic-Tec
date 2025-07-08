@@ -152,7 +152,6 @@ const sendToDeepSeek = async (userPrompt, systemPrompt) => {
       messages: [
         { 
           role: "system", 
-<<<<<<< HEAD
           content: `${systemPrompt}\n\nIMPORTANTE: Tu respuesta debe ser en formato JSON con la siguiente estructura:\n{
             "text": "Tu respuesta en texto plano",
             "Json": {
@@ -171,14 +170,6 @@ const sendToDeepSeek = async (userPrompt, systemPrompt) => {
       ],
       temperature: 0.7,
       max_tokens: 500,
-=======
-          content: systemPrompt + "\nIMPORTANTE: Tu respuesta debe ser un JSON válido con la siguiente estructura:\n{\n  \"text\": \"tu explicación aquí\",\n  \"Json\": {\n    \"name\": \"nombre del modelo\",\n    \"fields\": [\n      {\n        \"name\": \"nombre del campo\",\n        \"type\": \"tipo del campo\",\n        \"required\": true/false,\n        \"fields\": []\n      }\n    ]\n  }\n}\n\nReglas para la generación del modelo:\n1. Mantén el modelo conciso y enfocado (máximo 8-10 campos principales)\n2. Agrupa información relacionada en campos de tipo Object\n3. Usa solo los tipos de datos básicos: String, Number, Boolean, Date, Object\n4. Marca como required solo los campos verdaderamente esenciales\n5. Evita campos redundantes o que puedan derivarse de otros\n6. Prioriza la simplicidad y la claridad sobre la exhaustividad" 
-        },
-        { role: "user", content: userPrompt },
-      ],
-      temperature: 0.5,
-      max_tokens: 3000,
->>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
       response_format: { type: "json_object" }
     });
 

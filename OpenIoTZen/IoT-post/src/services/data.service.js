@@ -75,23 +75,7 @@ const createData = async (data) => {
         }
 
         // Crear nuevo dato
-<<<<<<< HEAD
         const newData = await dataModel.create(data); // Use the model to create data
-=======
-        const { firmware_version, token, timestamp, ...dataToCreate } = data;
-        
-        // Añadir timestamps manualmente
-        const now = new Date();
-        const dataWithTimestamps = {
-            ...dataToCreate,
-            createdAt: now,
-            updatedAt: now
-        };
-        
-        console.log('Data to create:', JSON.stringify(dataWithTimestamps, null, 2));
-        const newData = await dataModel.create(dataWithTimestamps);
-
->>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
         emitNewData({ device_id, data: newData });
 
         return newData;

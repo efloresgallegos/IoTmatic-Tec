@@ -7,11 +7,8 @@ import { emitToRoom, addToRoom } from './webSocket.server.js';
 import jwt from 'jwt-simple';
 import 'dotenv/config';
 import dataService from '../services/data.service.js';
-<<<<<<< HEAD
 
 const createData = dataService.createData;
-=======
->>>>>>> d5400d713f195b3cff70d4a82df972cab384402c
 
 // Mapa para almacenar las suscripciones activas
 const subscriptions = new Map();
@@ -318,7 +315,7 @@ const emitDataEvent = async (data) => {
 
     // Preparar datos para la base de datos
     // Excluir campos que no deben ir a la base de datos y que podrían causar problemas
-    const { timestamp, firmware_version, token: _, createdAt, updatedAt, ...cleanPayload } = payload;
+    const { timestamp, firmware_version, token: tokenValue, createdAt, updatedAt, ...cleanPayload } = payload;
     const deviceData = {
       ...cleanPayload,
       device_id: Number(device_id),
